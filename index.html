@@ -248,10 +248,94 @@
 
   footer{text-align:center;color:var(--dim);font-size:12px;padding:20px;border-top:1px solid var(--line);}
 
-  @media(max-width:600px){
-    h1.display{font-size:32px;}
-    .toolbar{flex-direction:column;}
-    .card-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));}
+  /* MOBILE FILTER DRAWER */
+  .filter-drawer{
+    display:none;max-width:1280px;margin:0 auto;padding:0 16px 12px;
+    gap:10px;flex-wrap:wrap;
+  }
+  .filter-drawer.open{display:flex;}
+  .filter-drawer select{flex:1;min-width:140px;}
+  .filter-toggle-btn{
+    background:var(--panel);border:1px solid var(--line);color:var(--dim);
+    padding:11px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit;
+    display:none;align-items:center;gap:6px;transition:border-color .15s,color .15s;
+  }
+  .filter-toggle-btn.active{border-color:var(--gold);color:var(--gold);}
+
+  @media(max-width:700px){
+    /* Header */
+    header.hero{padding:20px 16px 16px;}
+    h1.display{font-size:34px;}
+    .sub{font-size:13px;}
+
+    /* Stats — 3 equal columns */
+    .stats-row{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:10px;margin-top:14px;
+    }
+    .stat{min-width:0;padding:10px 10px;}
+    .stat .n{font-size:22px;}
+    .stat .l{font-size:10px;}
+
+    /* Toolbar — search full width, filters hidden behind button */
+    .toolbar{
+      padding:12px 16px 0;margin-top:12px;
+      flex-direction:column;gap:10px;
+    }
+    .search-wrap{min-width:0;width:100%;}
+    .toolbar-row2{display:flex;gap:8px;width:100%;align-items:center;}
+    .filter-toggle-btn{display:flex;}
+
+    /* Hide desktop selects and view toggle in toolbar, show in drawer */
+    .toolbar select{display:none;}
+    .toolbar .view-toggle{display:none;}
+
+    /* Filter drawer */
+    .filter-drawer{padding:0 16px 12px;}
+    .filter-drawer select{
+      width:100%;flex:none;
+      padding:12px 10px;font-size:14px;
+    }
+    /* Show grid toggle inside drawer on mobile */
+    .mobile-view-toggle{display:flex;gap:8px;width:100%;}
+    .mobile-view-toggle .vbtn{flex:1;text-align:center;padding:12px;}
+
+    /* Main padding */
+    main{padding:16px 12px 80px;}
+
+    /* Grid — 2 columns */
+    .card-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
+
+    /* Bigger touch targets */
+    .tile-check{
+      width:34px;height:34px;font-size:18px;
+      top:6px;right:6px;border-radius:8px;
+    }
+    .tile-info{padding:8px 10px;}
+    .tile-name{font-size:12.5px;}
+    .tile-set{font-size:10px;}
+    .tile-price{font-size:11.5px;}
+
+    /* Modal — full screen on mobile */
+    .modal-backdrop{padding:0;align-items:flex-end;}
+    .modal{
+      max-width:100%;border-radius:20px 20px 0 0;
+      padding:20px 20px 32px;
+      max-height:92vh;overflow-y:auto;
+    }
+    .modal-imgwrap img{max-height:40vh;}
+
+    /* List view — hide less important columns on mobile */
+    .card-table .td-date{display:none;}
+    .card-table .td-set{display:none;}
+    .card-table th:nth-child(7){display:none;}
+    .card-table th:nth-child(5){display:none;}
+
+    /* Era headers */
+    .era-title{font-size:18px;}
+
+    footer{font-size:11px;padding:16px;}
   }
 </style>
 </head>
@@ -277,6 +361,9 @@
     <input id="search" type="text" placeholder="Search cards, sets, or series…">
     <button id="clearSearch" type="button" aria-label="Clear">&times;</button>
   </div>
+  <div class="toolbar-row2">
+    <button class="filter-toggle-btn" id="filterToggleBtn" onclick="toggleFilterDrawer()">⚙ Filters</button>
+  </div>
   <select id="eraFilter"><option value="">All Eras</option></select>
   <select id="rarityFilter"><option value="">All Rarities</option></select>
   <select id="sortBy">
@@ -289,6 +376,23 @@
   <div class="view-toggle">
     <button class="vbtn active" id="btnGrid" onclick="setView('grid')">⊞ Grid</button>
     <button class="vbtn" id="btnList" onclick="setView('list')">☰ List</button>
+  </div>
+</div>
+
+<!-- Mobile filter drawer (cloned selects, synced via JS) -->
+<div class="filter-drawer" id="filterDrawer">
+  <select id="eraFilterM"><option value="">All Eras</option></select>
+  <select id="rarityFilterM"><option value="">All Rarities</option></select>
+  <select id="sortByM">
+    <option value="date-asc">Oldest First</option>
+    <option value="date-desc">Newest First</option>
+    <option value="price-desc">Price: High to Low</option>
+    <option value="price-asc">Price: Low to High</option>
+    <option value="name-asc">Name A–Z</option>
+  </select>
+  <div class="mobile-view-toggle">
+    <button class="vbtn active" id="btnGridM" onclick="setView('grid')">⊞ Grid</button>
+    <button class="vbtn" id="btnListM" onclick="setView('list')">☰ List</button>
   </div>
 </div>
 
@@ -509,6 +613,7 @@ function populateFilters() {
   const rarEl = document.getElementById('rarityFilter');
   eraEl.innerHTML = '<option value="">All Eras</option>' + eras.map(e => `<option value="${e}">${e}</option>`).join('');
   rarEl.innerHTML = '<option value="">All Rarities</option>' + rarities.map(r => `<option value="${r}">${r}</option>`).join('');
+  syncMobileFilters();
 }
 
 // ─── FILTER + SORT ───────────────────────────────────────────────────────────
@@ -695,13 +800,7 @@ function renderList(cards, el) {
   el.innerHTML = html;
 }
 
-// ─── VIEW SWITCH ─────────────────────────────────────────────────────────────
-function setView(v) {
-  currentView = v;
-  document.getElementById('btnGrid').classList.toggle('active', v === 'grid');
-  document.getElementById('btnList').classList.toggle('active', v === 'list');
-  render();
-}
+// ─── VIEW SWITCH (defined below with mobile sync) ────────────────────────────
 
 // ─── MODAL ───────────────────────────────────────────────────────────────────
 let _modalCard = null;
@@ -770,6 +869,46 @@ document.getElementById('clearSearch').addEventListener('click', function() {
 ['eraFilter','rarityFilter','sortBy'].forEach(id =>
   document.getElementById(id).addEventListener('change', render)
 );
+
+// ─── MOBILE FILTER DRAWER ────────────────────────────────────────────────────
+function toggleFilterDrawer() {
+  const drawer = document.getElementById('filterDrawer');
+  const btn = document.getElementById('filterToggleBtn');
+  const open = drawer.classList.toggle('open');
+  btn.classList.toggle('active', open);
+  btn.textContent = open ? '✕ Close' : '⚙ Filters';
+}
+
+// Sync mobile selects ↔ desktop selects
+function syncMobileFilters() {
+  const eras = [...new Set(ALL_CARDS.map(c => c.series).filter(Boolean))].sort();
+  const rarities = [...new Set(ALL_CARDS.map(c => c.rarity).filter(Boolean))].sort();
+  document.getElementById('eraFilterM').innerHTML =
+    '<option value="">All Eras</option>' + eras.map(e => `<option value="${e}">${e}</option>`).join('');
+  document.getElementById('rarityFilterM').innerHTML =
+    '<option value="">All Rarities</option>' + rarities.map(r => `<option value="${r}">${r}</option>`).join('');
+}
+
+// Mobile selects mirror desktop and vice versa
+[['eraFilter','eraFilterM'],['rarityFilter','rarityFilterM'],['sortBy','sortByM']].forEach(([desk, mob]) => {
+  document.getElementById(mob).addEventListener('change', function() {
+    document.getElementById(desk).value = this.value;
+    render();
+  });
+  document.getElementById(desk).addEventListener('change', function() {
+    document.getElementById(mob).value = this.value;
+  });
+});
+
+// Mobile view toggle state sync
+function setView(v) {
+  currentView = v;
+  ['btnGrid','btnList','btnGridM','btnListM'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('active', id.startsWith(v === 'grid' ? 'btnGrid' : 'btnList'));
+  });
+  render();
+}
 
 // ─── CSV UPLOAD ──────────────────────────────────────────────────────────────
 document.getElementById('csvFile').addEventListener('change', function(e) {

@@ -134,13 +134,29 @@
     position:relative;
   }
   .card-tile:hover{transform:translateY(-4px);border-color:var(--gold);box-shadow:0 10px 28px rgba(0,0,0,0.4);}
+  .card-tile.owned{border-color:#4ade80;box-shadow:0 0 0 1px #4ade8040;}
+  .card-tile.owned .tile-name{color:var(--dim);text-decoration:line-through;}
   .card-tile img{width:100%;display:block;aspect-ratio:2.5/3.5;object-fit:cover;background:var(--panel);}
+  .card-tile.owned img{opacity:0.5;}
   .card-tile .tile-info{padding:10px 12px;}
   .tile-name{font-size:13.5px;font-weight:700;margin-bottom:2px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .tile-set{font-size:11px;color:var(--dim);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .tile-footer{display:flex;justify-content:space-between;align-items:center;}
   .tile-price{font-size:12px;font-weight:800;color:var(--gold-bright);}
   .tile-num{font-size:11px;color:var(--dim);}
+  .tile-check{
+    position:absolute;top:8px;right:8px;width:26px;height:26px;
+    background:rgba(14,16,22,0.75);border:2px solid var(--line);border-radius:6px;
+    display:flex;align-items:center;justify-content:center;font-size:14px;
+    transition:all .15s;backdrop-filter:blur(4px);
+  }
+  .card-tile.owned .tile-check{background:#4ade80;border-color:#4ade80;color:#0e1016;}
+  /* LIST VIEW owned */
+  .card-table tr.owned td{opacity:0.5;}
+  .card-table tr.owned .td-name{text-decoration:line-through;}
+  .card-table tr.owned .row-check{color:#4ade80;}
+  .row-check{font-size:16px;cursor:pointer;padding:0 4px;user-select:none;color:var(--line);transition:color .15s;}
+  .row-check:hover{color:#4ade80;}
 
   /* LIST VIEW */
   .card-table{width:100%;border-collapse:collapse;}
@@ -207,8 +223,16 @@
   .modal-name{font-family:'Luckiest Guy','Bebas Neue';font-size:24px;letter-spacing:0.01em;}
   .modal-meta{color:var(--dim);font-size:13px;margin-top:6px;line-height:1.6;}
   .modal-price{font-size:20px;font-weight:800;color:var(--gold-bright);margin-top:12px;}
+  .modal-own{
+    display:block;width:100%;margin-top:14px;padding:11px 18px;border-radius:9px;
+    background:transparent;border:2px solid #4ade80;color:#4ade80;font-weight:800;
+    font-size:14px;font-family:inherit;cursor:pointer;transition:all .15s;
+  }
+  .modal-own:hover{background:#4ade8022;}
+  .modal-own.owned{background:#4ade80;color:#0e1016;border-color:#4ade80;}
+  .modal-own.owned::before{content:'✓ ';}
   .modal-buy{
-    display:block;margin-top:18px;padding:13px 18px;border-radius:9px;
+    display:block;margin-top:10px;padding:13px 18px;border-radius:9px;
     background:var(--gold);color:#231a00;font-weight:800;text-decoration:none;
     font-size:14px;letter-spacing:0.02em;transition:background .15s,transform .15s;
   }
@@ -239,6 +263,8 @@
       <div class="stat"><div class="n" id="statSets">—</div><div class="l">Sets Covered</div></div>
       <div class="stat"><div class="n" id="statEras">—</div><div class="l">Eras</div></div>
       <div class="stat"><div class="n" id="statRarities">—</div><div class="l">Rarity Types</div></div>
+      <div class="stat" style="border-color:var(--green);"><div class="n" id="statOwned" style="color:#4ade80;">0</div><div class="l">Owned</div></div>
+      <div class="stat" style="border-color:var(--gold);"><div class="n" id="statValue" style="color:var(--gold-bright);font-size:18px;">$0.00</div><div class="l">Collection Value</div></div>
     </div>
   </div>
 </header>
@@ -297,6 +323,7 @@
     <div class="modal-name" id="mName"></div>
     <div class="modal-meta" id="mMeta"></div>
     <div class="modal-price" id="mPrice"></div>
+    <button class="modal-own" id="mOwn" onclick="toggleFromModal()">＋ Mark as Owned</button>
     <a class="modal-buy" id="mBuy" href="#" target="_blank" rel="noopener">Find on TCGplayer →</a>
   </div>
 </div>
@@ -307,6 +334,44 @@
 // ─── DATA ────────────────────────────────────────────────────────────────────
 let ALL_CARDS = [];
 let currentView = 'grid';
+const STORAGE_KEY = 'pokemon-rarity-binder-owned';
+
+// ─── OWNED COLLECTION (persisted to localStorage) ────────────────────────────
+function cardKey(c) {
+  return `${c.set}||${c.num}||${c.name}`;
+}
+function getOwned() {
+  try { return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')); }
+  catch(e) { return new Set(); }
+}
+function setOwned(owned) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify([...owned]));
+}
+function toggleOwned(c) {
+  const owned = getOwned();
+  const key = cardKey(c);
+  if (owned.has(key)) owned.delete(key);
+  else owned.add(key);
+  setOwned(owned);
+  updateCollectionValue();
+}
+function isOwned(c) {
+  return getOwned().has(cardKey(c));
+}
+function updateCollectionValue() {
+  const owned = getOwned();
+  let total = 0;
+  let count = 0;
+  for (const c of ALL_CARDS) {
+    if (owned.has(cardKey(c))) {
+      const v = priceVal(c.price);
+      if (v > 0) total += v;
+      count++;
+    }
+  }
+  document.getElementById('statOwned').textContent = count.toLocaleString();
+  document.getElementById('statValue').textContent = total > 0 ? '$' + total.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : '$0.00';
+}
 
 // ─── RARITY HELPERS ─────────────────────────────────────────────────────────
 function rarityClass(r) {
@@ -419,6 +484,7 @@ function loadCards(rawCards) {
   document.getElementById('noDataState').style.display = 'none';
   document.getElementById('loadingState').style.display = 'none';
   document.getElementById('cardView').style.display = '';
+  updateCollectionValue();
   render();
 }
 
@@ -527,12 +593,15 @@ function cardTile(c) {
   const cls = rarityClass(c.rarity);
   const short = shortRarity(c.rarity);
   const nameDisp = c.name || '(Unknown)';
+  const owned = isOwned(c);
   const imgSrc = c.pic && c.pic !== 'N/A' ? c.pic : '';
   const imgTag = imgSrc
     ? `<img src="${imgSrc}" alt="${nameDisp}" loading="lazy" onerror="this.style.background='var(--panel2)';this.removeAttribute('src')">`
     : `<div style="aspect-ratio:2.5/3.5;background:var(--panel2);display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:12px;">No Image</div>`;
-  return `<div class="card-tile" onclick='openModal(${JSON.stringify(c)})'>
+  const cdata = JSON.stringify(c).replace(/'/g, '&#39;');
+  return `<div class="card-tile${owned ? ' owned' : ''}" id="tile-${cardKey(c).replace(/[^a-z0-9]/gi,'_')}" onclick='openModal(${cdata})'>
     ${imgTag}
+    <div class="tile-check" onclick='event.stopPropagation();handleToggle(${cdata})'>${owned ? '✓' : ''}</div>
     <div class="tile-info">
       <div class="tile-name" title="${nameDisp}">${nameDisp}</div>
       <div class="tile-set" title="${c.set}">${c.set}</div>
@@ -542,6 +611,25 @@ function cardTile(c) {
       </div>
     </div>
   </div>`;
+}
+
+function handleToggle(c) {
+  toggleOwned(c);
+  // Update just this tile in place without full re-render
+  const key = cardKey(c).replace(/[^a-z0-9]/gi,'_');
+  const tile = document.getElementById('tile-' + key);
+  if (tile) {
+    const owned = isOwned(c);
+    tile.classList.toggle('owned', owned);
+    tile.querySelector('.tile-check').textContent = owned ? '✓' : '';
+  }
+  // Update list row if present
+  const row = document.getElementById('row-' + key);
+  if (row) {
+    const owned2 = isOwned(c);
+    row.classList.toggle('owned', owned2);
+    row.querySelector('.row-check').textContent = owned2 ? '☑' : '☐';
+  }
 }
 
 function renderList(cards, el) {
@@ -563,6 +651,7 @@ function renderList(cards, el) {
       </div>
       <table class="card-table">
         <thead><tr>
+          <th style="width:32px;"></th>
           <th class="td-img"></th>
           <th>Name</th>
           <th>Set</th>
@@ -575,11 +664,15 @@ function renderList(cards, el) {
     for (const c of eraCards) {
       const cls = rarityClass(c.rarity);
       const short = shortRarity(c.rarity);
+      const owned = isOwned(c);
       const imgSrc = c.pic && c.pic !== 'N/A' ? c.pic : '';
       const imgTag = imgSrc
         ? `<img src="${imgSrc}" alt="" loading="lazy" onerror="this.style.display='none'">`
         : '';
-      html += `<tr onclick='openModal(${JSON.stringify(c)})'>
+      const cdata = JSON.stringify(c).replace(/'/g, '&#39;');
+      const key = cardKey(c).replace(/[^a-z0-9]/gi,'_');
+      html += `<tr id="row-${key}" class="${owned ? 'owned' : ''}" onclick='openModal(${cdata})'>
+        <td onclick='event.stopPropagation();handleToggle(${cdata})'><span class="row-check">${owned ? '☑' : '☐'}</span></td>
         <td class="td-img">${imgTag}</td>
         <td class="td-name">${c.name || '—'}</td>
         <td class="td-set">${c.set}</td>
@@ -603,7 +696,9 @@ function setView(v) {
 }
 
 // ─── MODAL ───────────────────────────────────────────────────────────────────
+let _modalCard = null;
 function openModal(c) {
+  _modalCard = c;
   const nameStr = c.name || '(Unknown)';
   document.getElementById('mName').textContent = nameStr;
   document.getElementById('mMeta').innerHTML =
@@ -625,8 +720,23 @@ function openModal(c) {
   const query = encodeURIComponent(`${nameStr} ${c.set} ${c.num}`);
   document.getElementById('mBuy').href = `https://www.tcgplayer.com/search/pokemon/product?q=${query}`;
 
+  // Update own button state
+  const ownBtn = document.getElementById('mOwn');
+  const owned = isOwned(c);
+  ownBtn.textContent = owned ? 'Owned' : '＋ Mark as Owned';
+  ownBtn.classList.toggle('owned', owned);
+
   document.getElementById('modalBackdrop').classList.add('active');
   document.body.style.overflow = 'hidden';
+}
+
+function toggleFromModal() {
+  if (!_modalCard) return;
+  handleToggle(_modalCard);
+  const owned = isOwned(_modalCard);
+  const ownBtn = document.getElementById('mOwn');
+  ownBtn.textContent = owned ? 'Owned' : '＋ Mark as Owned';
+  ownBtn.classList.toggle('owned', owned);
 }
 
 function closeModal() {

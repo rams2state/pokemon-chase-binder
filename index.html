@@ -56,6 +56,10 @@
   .stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 16px;min-width:110px;}
   .stat .n{font-family:'Luckiest Guy','Bebas Neue';font-size:26px;color:var(--gold-bright);line-height:1;}
   .stat .l{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:0.08em;margin-top:3px;}
+  .stat-owned{border-color:var(--green);cursor:pointer;transition:background .15s,transform .15s;user-select:none;}
+  .stat-owned:hover{background:#4ade8015;transform:translateY(-1px);}
+  .stat-owned.active{background:#4ade8022;border-color:#4ade80;box-shadow:0 0 0 1px #4ade8060;}
+  .stat-owned.active .l::after{content:' ✓';}
 
   /* TOOLBAR */
   .toolbar{max-width:1280px;margin:22px auto 0;padding:0 28px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
@@ -260,11 +264,10 @@
     <p class="sub">Every chase-worthy pull from Base Set to Pitch Black — Illustration Rares, Special Illustration Rares, Secret Rares, Gold Stars, and more.</p>
     <div class="stats-row">
       <div class="stat"><div class="n" id="statCards">—</div><div class="l">Total Cards</div></div>
-      <div class="stat"><div class="n" id="statSets">—</div><div class="l">Sets Covered</div></div>
-      <div class="stat"><div class="n" id="statEras">—</div><div class="l">Eras</div></div>
-      <div class="stat"><div class="n" id="statRarities">—</div><div class="l">Rarity Types</div></div>
-      <div class="stat" style="border-color:var(--green);"><div class="n" id="statOwned" style="color:#4ade80;">0</div><div class="l">Owned</div></div>
-      <div class="stat" style="border-color:var(--gold);"><div class="n" id="statValue" style="color:var(--gold-bright);font-size:18px;">$0.00</div><div class="l">Collection Value</div></div>
+      <div class="stat stat-owned" id="statOwnedBox" onclick="toggleOwnedFilter()" title="Click to show only owned cards">
+        <div class="n" id="statOwned" style="color:#4ade80;">0</div><div class="l">Owned</div>
+      </div>
+      <div class="stat" style="border-color:var(--gold);"><div class="n" id="statValue" style="color:var(--gold-bright);font-size:18px;">$0.00</div><div class="l">Value</div></div>
     </div>
   </div>
 </header>
@@ -334,6 +337,7 @@
 // ─── DATA ────────────────────────────────────────────────────────────────────
 let ALL_CARDS = [];
 let currentView = 'grid';
+let showOwnedOnly = false;
 const STORAGE_KEY = 'pokemon-rarity-binder-owned';
 
 // ─── OWNED COLLECTION (persisted to localStorage) ────────────────────────────
@@ -371,6 +375,12 @@ function updateCollectionValue() {
   }
   document.getElementById('statOwned').textContent = count.toLocaleString();
   document.getElementById('statValue').textContent = total > 0 ? '$' + total.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : '$0.00';
+}
+
+function toggleOwnedFilter() {
+  showOwnedOnly = !showOwnedOnly;
+  document.getElementById('statOwnedBox').classList.toggle('active', showOwnedOnly);
+  render();
 }
 
 // ─── RARITY HELPERS ─────────────────────────────────────────────────────────
@@ -490,9 +500,6 @@ function loadCards(rawCards) {
 
 function updateStats() {
   document.getElementById('statCards').textContent = ALL_CARDS.length.toLocaleString();
-  document.getElementById('statSets').textContent = new Set(ALL_CARDS.map(c => c.set)).size;
-  document.getElementById('statEras').textContent = new Set(ALL_CARDS.map(c => c.series).filter(Boolean)).size;
-  document.getElementById('statRarities').textContent = new Set(ALL_CARDS.map(c => c.rarity).filter(Boolean)).size;
 }
 
 function populateFilters() {
@@ -512,6 +519,7 @@ function getFiltered() {
   const sort = document.getElementById('sortBy').value;
 
   let cards = ALL_CARDS.filter(c => {
+    if (showOwnedOnly && !isOwned(c)) return false;
     if (era && c.series !== era) return false;
     if (rarity && c.rarity !== rarity) return false;
     if (q) {

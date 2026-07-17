@@ -1494,9 +1494,11 @@ function renderPriceChart(cardId) {
 
 // ─── AUTO-LOAD: try fetching CSV from same directory ─────────────────────────
 async function tryAutoLoad() {
+  const bust = `?v=${Date.now()}`;
+
   // Also try to load price history JSON
   try {
-    const histResp = await fetch('card-price-history.json');
+    const histResp = await fetch('card-price-history.json' + bust);
     if (histResp.ok) {
       PRICE_HISTORY = await histResp.json();
     }
@@ -1504,13 +1506,13 @@ async function tryAutoLoad() {
 
   // Try to fetch the CSV from the same folder (works when served via HTTP)
   const candidates = [
+    'cards.csv',
     'POKEMON_RARITY_COLLECTION.csv',
     'pokemon_rarities_collection.csv',
-    'cards.csv'
   ];
   for (const name of candidates) {
     try {
-      const resp = await fetch(name);
+      const resp = await fetch(name + bust);
       if (resp.ok) {
         const text = await resp.text();
         const cards = parseCSV(text);

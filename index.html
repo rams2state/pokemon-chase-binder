@@ -6,14 +6,10 @@
 <title>Pokémon Rarity Binder — Chase Cards Across Every Era</title>
 <link rel="manifest" href="manifest.json">
 <script>
-// Unregister any stale service workers so they stop intercepting fetches
+// Kill all service workers — they cause stale CSV caching issues
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => {
     regs.forEach(r => r.unregister());
-  });
-  // Re-register fresh SW after clearing
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
   });
 }
 </script>

@@ -6,6 +6,7 @@
 <title>Pokémon Rarity Binder — Chase Cards Across Every Era</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Luckiest+Guy&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root{
     --ink:#0e1016;
@@ -120,63 +121,130 @@
     color:#231a00;border-radius:9px;font-weight:800;font-size:14px;cursor:pointer;
   }
 
-  /* ERA SECTION VIEW */
+  /* ERA SECTION */
   .era-section{margin-bottom:44px;}
-  .era-header{
-    display:flex;align-items:baseline;gap:12px;
-    border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:18px;
-  }
-  .era-title{font-family:'Luckiest Guy','Bebas Neue';font-size:22px;color:var(--foil);letter-spacing:0.01em;}
-  .era-count{font-size:12px;color:var(--dim);font-weight:600;}
 
   /* GRID VIEW */
-  .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
+  .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;}
   .card-tile{
     background:linear-gradient(160deg,var(--panel2),var(--panel));
     border:1px solid var(--line);border-radius:12px;overflow:hidden;
-    cursor:pointer;transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease;
-    position:relative;
+    cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s;position:relative;
   }
   .card-tile:hover{transform:translateY(-4px);border-color:var(--gold);box-shadow:0 10px 28px rgba(0,0,0,0.4);}
   .card-tile.owned{border-color:#4ade80;box-shadow:0 0 0 1px #4ade8040;}
+  .card-tile.owned img{opacity:0.5;}
   .card-tile.owned .tile-name{color:var(--dim);text-decoration:line-through;}
   .card-tile img{width:100%;display:block;aspect-ratio:2.5/3.5;object-fit:cover;background:var(--panel);}
-  .card-tile.owned img{opacity:0.5;}
-  .card-tile .tile-info{padding:10px 12px;}
-  .tile-name{font-size:13.5px;font-weight:700;margin-bottom:2px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .tile-set{font-size:11px;color:var(--dim);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .tile-info{padding:9px 11px;}
+  .tile-name{font-size:13px;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .tile-set{font-size:10.5px;color:var(--dim);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .tile-footer{display:flex;justify-content:space-between;align-items:center;}
+  .tile-price-row{display:flex;align-items:center;flex-wrap:wrap;gap:2px;}
   .tile-price{font-size:12px;font-weight:800;color:var(--gold-bright);}
-  .tile-num{font-size:11px;color:var(--dim);}
   .tile-check{
-    position:absolute;top:8px;right:8px;width:26px;height:26px;
+    position:absolute;top:7px;right:7px;width:28px;height:28px;
     background:rgba(14,16,22,0.75);border:2px solid var(--line);border-radius:6px;
     display:flex;align-items:center;justify-content:center;font-size:14px;
-    transition:all .15s;backdrop-filter:blur(4px);
+    transition:all .15s;backdrop-filter:blur(4px);cursor:pointer;
   }
   .card-tile.owned .tile-check{background:#4ade80;border-color:#4ade80;color:#0e1016;}
-  /* LIST VIEW owned */
-  .card-table tr.owned td{opacity:0.5;}
-  .card-table tr.owned .td-name{text-decoration:line-through;}
-  .card-table tr.owned .row-check{color:#4ade80;}
-  .row-check{font-size:16px;cursor:pointer;padding:0 4px;user-select:none;color:var(--line);transition:color .15s;}
-  .row-check:hover{color:#4ade80;}
-
-  /* LIST VIEW */
-  .card-table{width:100%;border-collapse:collapse;}
-  .card-table th{
-    text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;
-    color:var(--dim);padding:8px 10px;border-bottom:1px solid var(--line);font-weight:700;
+  @media(max-width:700px){
+    .card-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
+    .tile-check{width:34px;height:34px;font-size:18px;}
   }
-  .card-table td{padding:8px 10px;border-bottom:1px solid rgba(43,47,61,0.5);font-size:13.5px;}
-  .card-table tr:hover td{background:var(--panel2);cursor:pointer;}
-  .td-img{width:44px;}
-  .td-img img{width:36px;height:50px;object-fit:cover;border-radius:4px;display:block;background:var(--panel);}
-  .td-name{font-weight:700;}
-  .td-set{color:var(--dim);}
-  .td-num{color:var(--dim);font-size:12px;}
-  .td-price{font-weight:800;color:var(--gold-bright);}
-  .td-date{color:var(--dim);font-size:12px;}
+  .era-header{
+    display:flex;align-items:baseline;gap:12px;
+    border-bottom:2px solid var(--line);padding-bottom:10px;margin-bottom:18px;
+  }
+  .era-title{font-family:'Luckiest Guy','Bebas Neue';font-size:22px;color:var(--foil);letter-spacing:0.04em;text-transform:uppercase;}
+  .era-count{font-size:12px;color:var(--dim);font-weight:600;}
+
+  /* SET GRID — outer container of set cards */
+  .set-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+
+  /* SET CARD */
+  .set-card{
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    overflow:hidden;transition:border-color .15s,box-shadow .15s;
+  }
+  .set-card:hover{border-color:var(--gold);box-shadow:0 6px 24px rgba(0,0,0,0.35);}
+
+  /* SET CARD HEADER */
+  .set-card-header{
+    padding:14px 16px 12px;border-bottom:1px solid var(--line);
+    display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
+  }
+  .set-card-meta{flex:1;min-width:0;}
+  .set-card-code{
+    font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;
+    color:var(--dim);margin-bottom:4px;
+  }
+  .set-card-name{
+    font-family:'Luckiest Guy','Bebas Neue';font-size:18px;color:var(--text);
+    letter-spacing:0.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .set-card-year{font-size:11px;color:var(--dim);margin-top:2px;}
+  .set-card-logo{
+    width:44px;height:44px;object-fit:contain;flex-shrink:0;opacity:0.85;
+  }
+
+  /* RARITY SECTION inside set card */
+  .rarity-section{padding:0 16px 4px;}
+  .rarity-section:last-child{padding-bottom:14px;}
+  .rarity-header{
+    display:flex;align-items:center;gap:8px;
+    padding:10px 0 6px;border-top:1px solid var(--line);
+  }
+  .rarity-section:first-child .rarity-header{border-top:none;padding-top:12px;}
+  .rarity-label{
+    font-size:11px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;
+  }
+  .rarity-count{font-size:11px;color:var(--dim);font-weight:600;}
+
+  /* CARD ROW */
+  .card-row{
+    display:flex;align-items:center;gap:10px;
+    padding:6px 6px;border-bottom:1px solid rgba(43,47,61,0.4);
+    cursor:pointer;transition:background .1s;border-radius:7px;
+    margin:0 -6px;
+  }
+  .card-row:last-child{border-bottom:none;}
+  .card-row:hover{background:var(--panel2);}
+  .card-row.owned .crow-name{color:var(--dim);text-decoration:line-through;}
+  .card-row.owned .crow-check{background:#4ade80;border-color:#4ade80;color:#0e1016;}
+  .card-row.owned{opacity:0.65;}
+
+  /* Checkbox */
+  .crow-check{
+    width:20px;height:20px;flex-shrink:0;
+    border:2px solid var(--line);border-radius:5px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:11px;font-weight:800;transition:all .15s;color:transparent;
+    background:transparent;cursor:pointer;
+  }
+  .crow-check:hover{border-color:#4ade80;}
+
+  /* Thumbnail */
+  .crow-thumb{
+    width:36px;height:50px;flex-shrink:0;border-radius:4px;
+    object-fit:cover;background:var(--panel2);display:block;
+  }
+  .crow-thumb-empty{
+    width:36px;height:50px;flex-shrink:0;border-radius:4px;
+    background:var(--panel2);display:flex;align-items:center;justify-content:center;
+    font-size:10px;color:var(--line);
+  }
+
+  /* Card number */
+  .crow-num{font-size:11px;color:var(--dim);width:32px;flex-shrink:0;text-align:right;}
+
+  /* Card name */
+  .crow-name{flex:1;font-size:13.5px;font-weight:700;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+  /* Price + change */
+  .crow-price-wrap{display:flex;align-items:center;gap:4px;flex-shrink:0;}
+  .crow-price{font-size:13px;font-weight:800;color:var(--gold-bright);}
 
   /* RARITY PILLS */
   .pill{
@@ -202,51 +270,88 @@
 
   /* MODAL */
   .modal-backdrop{
-    display:none;position:fixed;inset:0;background:rgba(8,9,14,0.85);
+    display:none;position:fixed;inset:0;background:rgba(6,7,12,0.88);
     z-index:90;align-items:center;justify-content:center;padding:24px;
+    backdrop-filter:blur(4px);
   }
   .modal-backdrop.active{display:flex;}
   .modal{
-    background:linear-gradient(160deg,var(--panel2),var(--panel));
-    border:1px solid var(--line);border-radius:16px;padding:24px;
-    max-width:400px;width:100%;position:relative;
-    box-shadow:0 24px 64px rgba(0,0,0,0.55);text-align:center;
+    background:linear-gradient(170deg,#1e2235,#13161f);
+    border:1px solid var(--line);border-radius:20px;padding:0;
+    max-width:380px;width:100%;position:relative;
+    box-shadow:0 32px 80px rgba(0,0,0,0.7);overflow:hidden;
   }
+  /* Close button */
   .modal-close{
-    position:absolute;top:10px;right:10px;background:none;border:none;
-    color:var(--dim);font-size:26px;cursor:pointer;line-height:1;padding:4px 10px;
+    position:absolute;top:12px;right:12px;z-index:2;
+    background:rgba(14,16,22,0.7);border:1px solid var(--line);
+    color:var(--dim);font-size:18px;cursor:pointer;line-height:1;
+    width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    transition:all .15s;backdrop-filter:blur(6px);
   }
-  .modal-close:hover{color:var(--gold-bright);}
+  .modal-close:hover{background:var(--line);color:var(--text);}
+
+  /* Card image — full bleed top */
   .modal-imgwrap{
-    background:var(--panel);border:1px solid var(--line);border-radius:12px;
-    padding:10px;margin-bottom:16px;min-height:180px;
+    background:linear-gradient(160deg,#1a1d2b,#0e1016);
+    padding:24px 24px 16px;
     display:flex;align-items:center;justify-content:center;
+    min-height:200px;
   }
-  .modal-imgwrap img{max-width:100%;max-height:52vh;border-radius:8px;display:block;}
-  .modal-fallback{color:var(--dim);font-size:13px;padding:60px 10px;display:none;}
-  .modal-name{font-family:'Luckiest Guy','Bebas Neue';font-size:24px;letter-spacing:0.01em;}
-  .modal-meta{color:var(--dim);font-size:13px;margin-top:6px;line-height:1.6;}
-  .modal-price{font-size:20px;font-weight:800;color:var(--gold-bright);margin-top:12px;}
+  .modal-imgwrap img{
+    max-width:200px;max-height:46vh;border-radius:10px;display:block;
+    box-shadow:0 16px 48px rgba(0,0,0,0.6);
+  }
+  .modal-fallback{color:var(--dim);font-size:13px;padding:60px 10px;display:none;text-align:center;}
+
+  /* Content area */
+  .modal-body{padding:16px 20px 24px;text-align:center;}
+  .modal-name{font-family:'Luckiest Guy','Bebas Neue';font-size:22px;letter-spacing:0.01em;line-height:1.1;}
+  .modal-meta{color:var(--dim);font-size:12px;margin-top:5px;line-height:1.7;}
+  .modal-price{font-size:22px;font-weight:800;color:var(--gold-bright);margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;}
+
+  /* Action buttons */
+  .modal-actions{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
   .modal-own{
-    display:block;width:100%;margin-top:14px;padding:11px 18px;border-radius:9px;
-    background:transparent;border:2px solid #4ade80;color:#4ade80;font-weight:800;
-    font-size:14px;font-family:inherit;cursor:pointer;transition:all .15s;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    width:100%;padding:12px 18px;border-radius:12px;
+    background:transparent;border:1.5px solid #4ade80;color:#4ade80;font-weight:700;
+    font-size:14px;font-family:inherit;cursor:pointer;transition:all .2s;letter-spacing:0.01em;
   }
-  .modal-own:hover{background:#4ade8022;}
-  .modal-own.owned{background:#4ade80;color:#0e1016;border-color:#4ade80;}
-  .modal-own.owned::before{content:'✓ ';}
+  .modal-own:hover{background:#4ade8018;box-shadow:0 0 0 1px #4ade8040;}
+  .modal-own.owned{background:#4ade8022;color:#4ade80;border-color:#4ade80;}
+  .modal-own.owned::before{content:'✓  ';}
   .modal-buy{
-    display:block;margin-top:10px;padding:13px 18px;border-radius:9px;
-    background:var(--gold);color:#231a00;font-weight:800;text-decoration:none;
-    font-size:14px;letter-spacing:0.02em;transition:background .15s,transform .15s;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    padding:12px 18px;border-radius:12px;
+    background:var(--gold);color:#231a00;font-weight:700;text-decoration:none;
+    font-size:14px;letter-spacing:0.01em;transition:all .2s;
   }
-  .modal-buy:hover{background:var(--gold-bright);transform:translateY(-1px);}
+  .modal-buy:hover{background:var(--gold-bright);box-shadow:0 4px 16px rgba(255,203,5,0.3);}
 
   /* EMPTY */
   .empty{text-align:center;padding:60px 20px;color:var(--dim);border:1px dashed var(--line);border-radius:12px;}
   .empty .display{font-size:22px;color:var(--text);margin-bottom:8px;}
 
   footer{text-align:center;color:var(--dim);font-size:12px;padding:20px;border-top:1px solid var(--line);}
+
+  /* PRICE CHANGE BADGES */
+  .price-change{font-size:10.5px;font-weight:700;padding:1px 5px;border-radius:4px;display:inline-block;margin-left:4px;white-space:nowrap;}
+  .price-up{background:#4ade8022;color:#4ade80;}
+  .price-down{background:#f87171 22;color:#f87171;}
+  .price-flat{color:var(--dim);}
+  .tile-price-row{display:flex;align-items:center;flex-wrap:wrap;gap:2px;}
+  /* List view change column */
+  .td-change{font-size:12px;font-weight:700;white-space:nowrap;}
+
+  /* PRICE HISTORY CHART IN MODAL */
+  .modal-chart-wrap{
+    margin-top:14px;background:var(--panel);border:1px solid var(--line);
+    border-radius:10px;padding:10px 12px;
+  }
+  .modal-chart-label{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;}
+  #priceChart{width:100%!important;height:110px!important;}
+  .modal-chart-empty{font-size:12px;color:var(--dim);text-align:center;padding:18px 0;}
 
   /* MOBILE FILTER DRAWER */
   .filter-drawer{
@@ -304,33 +409,22 @@
     /* Main padding */
     main{padding:16px 12px 80px;}
 
-    /* Grid — 2 columns */
-    .card-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
+    /* Set grid — 1 column on mobile */
+    .set-grid{grid-template-columns:1fr;}
 
-    /* Bigger touch targets */
-    .tile-check{
-      width:34px;height:34px;font-size:18px;
-      top:6px;right:6px;border-radius:8px;
-    }
-    .tile-info{padding:8px 10px;}
-    .tile-name{font-size:12.5px;}
-    .tile-set{font-size:10px;}
-    .tile-price{font-size:11.5px;}
+    /* Card rows — bigger touch targets */
+    .card-row{padding:9px 6px;}
+    .crow-name{font-size:13px;}
+    .crow-num{font-size:10px;}
 
-    /* Modal — full screen on mobile */
+    /* Modal — sheet from bottom on mobile */
     .modal-backdrop{padding:0;align-items:flex-end;}
     .modal{
       max-width:100%;border-radius:20px 20px 0 0;
-      padding:20px 20px 32px;
       max-height:92vh;overflow-y:auto;
     }
-    .modal-imgwrap img{max-height:40vh;}
-
-    /* List view — hide less important columns on mobile */
-    .card-table .td-date{display:none;}
-    .card-table .td-set{display:none;}
-    .card-table th:nth-child(7){display:none;}
-    .card-table th:nth-child(5){display:none;}
+    .modal-imgwrap img{max-height:36vh;max-width:160px;}
+    .modal-body{padding:14px 16px 32px;}
 
     /* Era headers */
     .era-title{font-size:18px;}
@@ -345,7 +439,7 @@
   <div class="hero-inner">
     <div class="eyebrow">Pokémon TCG · Chase Card Archive</div>
     <h1 class="display">Rarity <span>Binder</span></h1>
-    <p class="sub">Every chase-worthy pull from Base Set to Pitch Black — Illustration Rares, Special Illustration Rares, Secret Rares, Gold Stars, and more.</p>
+    <p class="sub">The era-defining chase pulls from Base Set to Scarlet & Violet — Gold Stars, SIRs, Mega Hyper Rares, LEGEND cards, and every era's hardest hit.</p>
     <div class="stats-row">
       <div class="stat"><div class="n" id="statCards">—</div><div class="l">Total Cards</div></div>
       <div class="stat stat-owned" id="statOwnedBox" onclick="toggleOwnedFilter()" title="Click to show only owned cards">
@@ -374,8 +468,8 @@
     <option value="name-asc">Name A–Z</option>
   </select>
   <div class="view-toggle">
-    <button class="vbtn active" id="btnGrid" onclick="setView('grid')">⊞ Grid</button>
     <button class="vbtn" id="btnList" onclick="setView('list')">☰ List</button>
+    <button class="vbtn" id="btnGrid" onclick="setView('grid')">⊞ Grid</button>
   </div>
 </div>
 
@@ -391,8 +485,8 @@
     <option value="name-asc">Name A–Z</option>
   </select>
   <div class="mobile-view-toggle">
-    <button class="vbtn active" id="btnGridM" onclick="setView('grid')">⊞ Grid</button>
     <button class="vbtn" id="btnListM" onclick="setView('list')">☰ List</button>
+    <button class="vbtn" id="btnGridM" onclick="setView('grid')">⊞ Grid</button>
   </div>
 </div>
 
@@ -427,11 +521,20 @@
         onerror="this.style.display='none';document.getElementById('mFallback').style.display='block'">
       <div class="modal-fallback" id="mFallback">Image unavailable</div>
     </div>
-    <div class="modal-name" id="mName"></div>
-    <div class="modal-meta" id="mMeta"></div>
-    <div class="modal-price" id="mPrice"></div>
-    <button class="modal-own" id="mOwn" onclick="toggleFromModal()">＋ Mark as Owned</button>
-    <a class="modal-buy" id="mBuy" href="#" target="_blank" rel="noopener">Find on TCGplayer →</a>
+    <div class="modal-body">
+      <div class="modal-name" id="mName"></div>
+      <div class="modal-meta" id="mMeta"></div>
+      <div class="modal-price" id="mPrice"></div>
+      <div class="modal-chart-wrap" id="mChartWrap">
+        <div class="modal-chart-label">Price History</div>
+        <canvas id="priceChart"></canvas>
+        <div class="modal-chart-empty" id="mChartEmpty" style="display:none;">No history yet — run the collector daily to build a chart.</div>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-own" id="mOwn" onclick="toggleFromModal()">＋ Mark as Owned</button>
+        <a class="modal-buy" id="mBuy" href="#" target="_blank" rel="noopener">Find on TCGplayer →</a>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -440,9 +543,11 @@
 <script>
 // ─── DATA ────────────────────────────────────────────────────────────────────
 let ALL_CARDS = [];
-let currentView = 'grid';
+let PRICE_HISTORY = {};  // card_id -> [{d: 'YYYY-MM-DD', p: 1.23}, ...]
+let currentView = 'list';  // default to list view
 let showOwnedOnly = false;
 const STORAGE_KEY = 'pokemon-rarity-binder-owned';
+let _priceChart = null;  // Chart.js instance
 
 // ─── OWNED COLLECTION (persisted to localStorage) ────────────────────────────
 function cardKey(c) {
@@ -492,7 +597,6 @@ function rarityClass(r) {
   if (!r) return 'pill-default';
   const l = r.toLowerCase();
   if (l.includes('special illustration')) return 'pill-sir';
-  if (l.includes('illustration rare')) return 'pill-ir';
   if (l.includes('trainer gallery')) return 'pill-tg';
   if (l.includes('hyper rare') && l.includes('mega')) return 'pill-mhr';
   if (l.includes('hyper rare')) return 'pill-hr';
@@ -514,7 +618,6 @@ function shortRarity(r) {
   if (!r) return '?';
   const map = {
     'Special Illustration Rare': 'SIR',
-    'Illustration Rare': 'IR',
     'Trainer Gallery Rare Holo': 'TG',
     'Hyper Rare': 'HR',
     'Mega Hyper Rare': 'MHR',
@@ -572,21 +675,36 @@ function parseCSVLine(line) {
 
 // Map CSV columns — handle both old and new format
 function normalizeCard(raw) {
-  // Try new format first (has 'card_name' or 'name')
-  const name = raw.card_name || raw.name || raw.card_name || '';
-  const series = raw.series || raw.series_name || raw['series_name'] || '';
+  const name = raw.card_name || raw.name || '';
+  const series = raw.series || raw.series_name || '';
   const set = raw.set_name || raw['set_name'] || '';
   const num = raw.card_number || raw['card_number'] || raw.number || '';
   const rarity = raw.rarity || '';
   const price = raw.price || 'N/A';
+  const prevPrice = raw.previous_price || raw['previous_price'] || 'N/A';
+  const cardId = raw.card_id || raw['card_id'] || '';
   const pic = raw.picture_url || raw['picture_url'] || raw.image || '';
   const date = raw.release_date || raw['release_date'] || '';
-  return { name, series, set, num, rarity, price, pic, date };
+  return { name, series, set, num, rarity, price, prevPrice, cardId, pic, date };
 }
 
 function priceVal(p) {
   if (!p || p === 'N/A') return -1;
   return parseFloat(p.replace(/[^0-9.]/g, '')) || 0;
+}
+
+// Returns HTML badge string for price change, or ''
+function priceChangeBadge(current, prev) {
+  const cv = priceVal(current);
+  const pv = priceVal(prev);
+  if (cv < 0 || pv < 0 || pv === 0) return '';
+  const delta = cv - pv;
+  const pct = (delta / pv) * 100;
+  if (Math.abs(delta) < 0.01) return '<span class="price-change price-flat">—</span>';
+  const arrow = delta > 0 ? '↑' : '↓';
+  const cls = delta > 0 ? 'price-up' : 'price-down';
+  const sign = delta > 0 ? '+' : '';
+  return `<span class="price-change ${cls}">${arrow} ${sign}${pct.toFixed(1)}%</span>`;
 }
 
 // ─── LOAD DATA ───────────────────────────────────────────────────────────────
@@ -599,7 +717,7 @@ function loadCards(rawCards) {
   document.getElementById('loadingState').style.display = 'none';
   document.getElementById('cardView').style.display = '';
   updateCollectionValue();
-  render();
+  setView('list'); // default to list view on load
 }
 
 function updateStats() {
@@ -653,6 +771,41 @@ function getFiltered() {
 }
 
 // ─── RENDER ──────────────────────────────────────────────────────────────────
+// Rarity sort priority — rarest first within each set
+const RARITY_ORDER = [
+  'Mega Hyper Rare','Special Illustration Rare','Hyper Rare',
+  'Trainer Gallery Rare Holo','Rare Shiny GX','Rare Secret',
+  'Gold Star','LEGEND','LV.X','Rare Prime','Rare Holo Star',
+  'Rare Shining','Rare Holo',
+];
+function rarityRank(r, subtypes) {
+  if (subtypes && subtypes.includes && subtypes.includes('Gold Star')) return RARITY_ORDER.indexOf('Gold Star');
+  if (subtypes && subtypes.includes && subtypes.includes('LEGEND')) return RARITY_ORDER.indexOf('LEGEND');
+  if (subtypes && subtypes.includes && subtypes.includes('LV.X')) return RARITY_ORDER.indexOf('LV.X');
+  const idx = RARITY_ORDER.indexOf(r);
+  return idx === -1 ? 99 : idx;
+}
+
+function rarityColor(r) {
+  // Returns the CSS color var for the rarity label text
+  const map = {
+    'Mega Hyper Rare': '#ff4d6d',
+    'Special Illustration Rare': '#ff6fb8',
+    'Hyper Rare': '#7c9bff',
+    'Trainer Gallery Rare Holo': '#FFCB05',
+    'Rare Shiny GX': '#ff7fc2',
+    'Rare Secret': '#9d7cff',
+    'Gold Star': '#5ce1e6',
+    'LEGEND': '#ffd700',
+    'LV.X': '#ffb3e0',
+    'Rare Prime': '#e0779c',
+    'Rare Holo Star': '#5ce1e6',
+    'Rare Shining': '#b98aff',
+    'Rare Holo': '#E8B914',
+  };
+  return map[r] || '#8b8fa3';
+}
+
 function render() {
   const cards = getFiltered();
   const el = document.getElementById('cardView');
@@ -662,145 +815,163 @@ function render() {
     return;
   }
 
-  if (currentView === 'grid') {
-    renderGrid(cards, el);
-  } else {
-    renderList(cards, el);
-  }
-}
+  if (currentView === 'grid') { renderGrid(cards, el); return; }
 
-function renderGrid(cards, el) {
-  // Group by era → set
+  // Group: era → set → rarity → cards[]
   const byEra = {};
+  // Track era order and set order (insertion = date order from sort)
+  const eraOrder = [];
+  const setOrderByEra = {};
+
   for (const c of cards) {
     const era = c.series || 'Unknown Era';
-    if (!byEra[era]) byEra[era] = {};
     const set = c.set || 'Unknown Set';
-    if (!byEra[era][set]) byEra[era][set] = [];
-    byEra[era][set].push(c);
+    if (!byEra[era]) { byEra[era] = {}; eraOrder.push(era); setOrderByEra[era] = []; }
+    if (!byEra[era][set]) { byEra[era][set] = {}; setOrderByEra[era].push(set); }
+    const r = c.rarity || (c.subtypes || []).find(s => ['Gold Star','LEGEND','LV.X'].includes(s)) || 'Unknown';
+    if (!byEra[era][set][r]) byEra[era][set][r] = [];
+    byEra[era][set][r].push(c);
   }
-
-  const eraOrder = [...new Set(cards.map(c => c.series || 'Unknown Era'))];
 
   let html = '';
   for (const era of eraOrder) {
-    const sets = byEra[era];
-    const eraCount = Object.values(sets).reduce((a, b) => a + b.length, 0);
+    const eraTotal = cards.filter(c => (c.series || 'Unknown Era') === era).length;
     html += `<div class="era-section">
       <div class="era-header">
         <div class="era-title">${era}</div>
-        <div class="era-count">${eraCount} card${eraCount !== 1 ? 's' : ''}</div>
+        <div class="era-count">${eraTotal} card${eraTotal !== 1 ? 's' : ''}</div>
       </div>
-      <div class="card-grid">`;
-    for (const [set, setCards] of Object.entries(sets)) {
-      for (const c of setCards) {
-        html += cardTile(c);
+      <div class="set-grid">`;
+
+    for (const set of setOrderByEra[era]) {
+      const setData = byEra[era][set];
+      const firstCard = Object.values(setData)[0][0];
+      const setTotal = Object.values(setData).reduce((a, b) => a + b.length, 0);
+      const setCode = firstCard.num ? '' : '';
+      const setYear = firstCard.date ? firstCard.date.slice(0,4) : '';
+
+      // Sort rarities within set by rarity rank
+      const rarities = Object.keys(setData).sort((a, b) => rarityRank(a) - rarityRank(b));
+
+      html += `<div class="set-card">
+        <div class="set-card-header">
+          <div class="set-card-meta">
+            <div class="set-card-code">${era} · ${setTotal} card${setTotal !== 1 ? 's' : ''}</div>
+            <div class="set-card-name">${set}</div>
+            <div class="set-card-year">${setYear}</div>
+          </div>
+        </div>`;
+
+      for (const rarity of rarities) {
+        const rarCards = setData[rarity];
+        const color = rarityColor(rarity);
+        const label = shortRarity(rarity);
+        html += `<div class="rarity-section">
+          <div class="rarity-header">
+            <span class="rarity-label" style="color:${color};">${label}</span>
+            <span class="rarity-count">(${rarCards.length})</span>
+          </div>`;
+
+        // Sort cards within rarity by number
+        rarCards.sort((a,b) => {
+          const an = parseInt(a.num) || 0, bn = parseInt(b.num) || 0;
+          return an - bn;
+        });
+
+        for (const c of rarCards) {
+          const owned = isOwned(c);
+          const cdata = JSON.stringify(c).replace(/'/g, '&#39;');
+          const key = cardKey(c).replace(/[^a-z0-9]/gi,'_');
+          const changeBadge = priceChangeBadge(c.price, c.prevPrice);
+          const thumbHtml = c.pic && c.pic !== 'N/A'
+            ? `<img class="crow-thumb" src="${c.pic}" alt="${c.name || ''}" loading="lazy" onerror="this.style.display='none'">`
+            : `<div class="crow-thumb-empty">?</div>`;
+          html += `<div class="card-row${owned ? ' owned' : ''}" id="row-${key}" onclick='openModal(${cdata})'>
+            <div class="crow-check${owned ? ' owned' : ''}" onclick='event.stopPropagation();handleToggle(${cdata})'>${owned ? '✓' : ''}</div>
+            ${thumbHtml}
+            <span class="crow-num">#${c.num || '—'}</span>
+            <span class="crow-name">${c.name || '—'}</span>
+            <div class="crow-price-wrap">
+              <span class="crow-price">${c.price !== 'N/A' ? c.price : '—'}</span>${changeBadge}
+            </div>
+          </div>`;
+        }
+        html += `</div>`; // rarity-section
       }
+      html += `</div>`; // set-card
     }
-    html += `</div></div>`;
+    html += `</div></div>`; // set-grid + era-section
   }
   el.innerHTML = html;
 }
 
-function cardTile(c) {
-  const cls = rarityClass(c.rarity);
-  const short = shortRarity(c.rarity);
-  const nameDisp = c.name || '(Unknown)';
-  const owned = isOwned(c);
-  const imgSrc = c.pic && c.pic !== 'N/A' ? c.pic : '';
-  const imgTag = imgSrc
-    ? `<img src="${imgSrc}" alt="${nameDisp}" loading="lazy" onerror="this.style.background='var(--panel2)';this.removeAttribute('src')">`
-    : `<div style="aspect-ratio:2.5/3.5;background:var(--panel2);display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:12px;">No Image</div>`;
-  const cdata = JSON.stringify(c).replace(/'/g, '&#39;');
-  return `<div class="card-tile${owned ? ' owned' : ''}" id="tile-${cardKey(c).replace(/[^a-z0-9]/gi,'_')}" onclick='openModal(${cdata})'>
-    ${imgTag}
-    <div class="tile-check" onclick='event.stopPropagation();handleToggle(${cdata})'>${owned ? '✓' : ''}</div>
-    <div class="tile-info">
-      <div class="tile-name" title="${nameDisp}">${nameDisp}</div>
-      <div class="tile-set" title="${c.set}">${c.set}</div>
-      <div class="tile-footer">
-        <span class="tile-price">${c.price !== 'N/A' ? c.price : '—'}</span>
-        <span class="pill ${cls}">${short}</span>
-      </div>
-    </div>
-  </div>`;
-}
-
-function handleToggle(c) {
-  toggleOwned(c);
-  // Update just this tile in place without full re-render
-  const key = cardKey(c).replace(/[^a-z0-9]/gi,'_');
-  const tile = document.getElementById('tile-' + key);
-  if (tile) {
-    const owned = isOwned(c);
-    tile.classList.toggle('owned', owned);
-    tile.querySelector('.tile-check').textContent = owned ? '✓' : '';
-  }
-  // Update list row if present
-  const row = document.getElementById('row-' + key);
-  if (row) {
-    const owned2 = isOwned(c);
-    row.classList.toggle('owned', owned2);
-    row.querySelector('.row-check').textContent = owned2 ? '☑' : '☐';
-  }
-}
-
-function renderList(cards, el) {
+function renderGrid(cards, el) {
   const byEra = {};
+  const eraOrder = [];
   for (const c of cards) {
     const era = c.series || 'Unknown Era';
-    if (!byEra[era]) byEra[era] = [];
+    if (!byEra[era]) { byEra[era] = []; eraOrder.push(era); }
     byEra[era].push(c);
   }
-  const eraOrder = [...new Set(cards.map(c => c.series || 'Unknown Era'))];
-
   let html = '';
   for (const era of eraOrder) {
     const eraCards = byEra[era];
     html += `<div class="era-section">
       <div class="era-header">
         <div class="era-title">${era}</div>
-        <div class="era-count">${eraCards.length} cards</div>
+        <div class="era-count">${eraCards.length} card${eraCards.length !== 1 ? 's' : ''}</div>
       </div>
-      <table class="card-table">
-        <thead><tr>
-          <th style="width:32px;"></th>
-          <th class="td-img"></th>
-          <th>Name</th>
-          <th>Set</th>
-          <th>#</th>
-          <th>Rarity</th>
-          <th>Price</th>
-          <th>Date</th>
-        </tr></thead>
-        <tbody>`;
+      <div class="card-grid">`;
     for (const c of eraCards) {
       const cls = rarityClass(c.rarity);
       const short = shortRarity(c.rarity);
       const owned = isOwned(c);
-      const imgSrc = c.pic && c.pic !== 'N/A' ? c.pic : '';
-      const imgTag = imgSrc
-        ? `<img src="${imgSrc}" alt="" loading="lazy" onerror="this.style.display='none'">`
-        : '';
       const cdata = JSON.stringify(c).replace(/'/g, '&#39;');
       const key = cardKey(c).replace(/[^a-z0-9]/gi,'_');
-      html += `<tr id="row-${key}" class="${owned ? 'owned' : ''}" onclick='openModal(${cdata})'>
-        <td onclick='event.stopPropagation();handleToggle(${cdata})'><span class="row-check">${owned ? '☑' : '☐'}</span></td>
-        <td class="td-img">${imgTag}</td>
-        <td class="td-name">${c.name || '—'}</td>
-        <td class="td-set">${c.set}</td>
-        <td class="td-num">${c.num}</td>
-        <td><span class="pill ${cls}">${short}</span></td>
-        <td class="td-price">${c.price !== 'N/A' ? c.price : '—'}</td>
-        <td class="td-date">${c.date || '—'}</td>
-      </tr>`;
+      const changeBadge = priceChangeBadge(c.price, c.prevPrice);
+      const imgSrc = c.pic && c.pic !== 'N/A' ? c.pic : '';
+      const imgTag = imgSrc
+        ? `<img src="${imgSrc}" alt="${c.name||''}" loading="lazy" onerror="this.style.background='var(--panel2)';this.removeAttribute('src')">`
+        : `<div style="aspect-ratio:2.5/3.5;background:var(--panel2);display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:12px;">No Image</div>`;
+      html += `<div class="card-tile${owned?' owned':''}" id="tile-${key}" onclick='openModal(${cdata})'>
+        ${imgTag}
+        <div class="tile-check" onclick='event.stopPropagation();handleToggle(${cdata})'>${owned?'✓':''}</div>
+        <div class="tile-info">
+          <div class="tile-name" title="${c.name||''}">${c.name||'—'}</div>
+          <div class="tile-set" title="${c.set}">${c.set}</div>
+          <div class="tile-footer">
+            <div class="tile-price-row"><span class="tile-price">${c.price!=='N/A'?c.price:'—'}</span>${changeBadge}</div>
+            <span class="pill ${cls}">${short}</span>
+          </div>
+        </div>
+      </div>`;
     }
-    html += `</tbody></table></div>`;
+    html += `</div></div>`;
   }
   el.innerHTML = html;
 }
 
-// ─── VIEW SWITCH (defined below with mobile sync) ────────────────────────────
+function handleToggle(c) {
+  toggleOwned(c);
+  const key = cardKey(c).replace(/[^a-z0-9]/gi,'_');
+  const owned = isOwned(c);
+  // List row
+  const row = document.getElementById('row-' + key);
+  if (row) {
+    row.classList.toggle('owned', owned);
+    const chk = row.querySelector('.crow-check');
+    if (chk) { chk.textContent = owned ? '✓' : ''; chk.classList.toggle('owned', owned); }
+  }
+  // Grid tile
+  const tile = document.getElementById('tile-' + key);
+  if (tile) {
+    tile.classList.toggle('owned', owned);
+    const chk = tile.querySelector('.tile-check');
+    if (chk) chk.textContent = owned ? '✓' : '';
+  }
+}
+
+// ─── VIEW SWITCH (no-op — kept for filter drawer mobile sync compat) ─────────
 
 // ─── MODAL ───────────────────────────────────────────────────────────────────
 let _modalCard = null;
@@ -810,7 +981,18 @@ function openModal(c) {
   document.getElementById('mName').textContent = nameStr;
   document.getElementById('mMeta').innerHTML =
     `${c.set}${c.num ? ` &nbsp;·&nbsp; #${c.num}` : ''}<br>${c.series || ''}<br>${c.date || ''}`;
-  document.getElementById('mPrice').textContent = c.price && c.price !== 'N/A' ? c.price : 'Price N/A';
+  // Price with change indicator in modal
+  const cv = priceVal(c.price), pv = priceVal(c.prevPrice);
+  let priceHtml = c.price && c.price !== 'N/A' ? c.price : 'Price N/A';
+  if (cv >= 0 && pv >= 0 && pv > 0) {
+    const delta = cv - pv;
+    const pct = (delta / pv * 100).toFixed(1);
+    const sign = delta >= 0 ? '+' : '';
+    const cls = delta >= 0 ? 'price-up' : 'price-down';
+    const arrow = delta >= 0 ? '↑' : '↓';
+    priceHtml += ` <span class="price-change ${cls}" style="font-size:13px;">${arrow} ${sign}${pct}%</span>`;
+  }
+  document.getElementById('mPrice').innerHTML = priceHtml;
 
   const img = document.getElementById('mImg');
   const fallback = document.getElementById('mFallback');
@@ -833,6 +1015,9 @@ function openModal(c) {
   ownBtn.textContent = owned ? 'Owned' : '＋ Mark as Owned';
   ownBtn.classList.toggle('owned', owned);
 
+  // Render price history chart
+  renderPriceChart(c.cardId || '');
+
   document.getElementById('modalBackdrop').classList.add('active');
   document.body.style.overflow = 'hidden';
 }
@@ -849,6 +1034,7 @@ function toggleFromModal() {
 function closeModal() {
   document.getElementById('modalBackdrop').classList.remove('active');
   document.body.style.overflow = '';
+  if (_priceChart) { _priceChart.destroy(); _priceChart = null; }
 }
 
 document.getElementById('modalBackdrop').addEventListener('click', function(e) {
@@ -900,12 +1086,11 @@ function syncMobileFilters() {
   });
 });
 
-// Mobile view toggle state sync
 function setView(v) {
   currentView = v;
-  ['btnGrid','btnList','btnGridM','btnListM'].forEach(id => {
+  ['btnList','btnGrid','btnListM','btnGridM'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.classList.toggle('active', id.startsWith(v === 'grid' ? 'btnGrid' : 'btnList'));
+    if (el) el.classList.toggle('active', id.startsWith(v === 'list' ? 'btnList' : 'btnGrid'));
   });
   render();
 }
@@ -940,8 +1125,92 @@ dz.addEventListener('drop', e => {
   reader.readAsText(file, 'utf-8');
 });
 
+// ─── PRICE HISTORY CHART ─────────────────────────────────────────────────────
+function renderPriceChart(cardId) {
+  const canvas = document.getElementById('priceChart');
+  const emptyMsg = document.getElementById('mChartEmpty');
+
+  // Destroy existing chart instance
+  if (_priceChart) { _priceChart.destroy(); _priceChart = null; }
+
+  const history = PRICE_HISTORY[cardId] || [];
+
+  if (history.length < 2) {
+    canvas.style.display = 'none';
+    emptyMsg.style.display = '';
+    return;
+  }
+
+  canvas.style.display = '';
+  emptyMsg.style.display = 'none';
+
+  const labels = history.map(e => e.d);
+  const prices = history.map(e => e.p);
+
+  const first = prices[0], last = prices[prices.length - 1];
+  const trending = last >= first ? '#4ade80' : '#f87171';
+
+  _priceChart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: prices,
+        borderColor: trending,
+        backgroundColor: trending + '18',
+        borderWidth: 2,
+        pointRadius: history.length <= 30 ? 3 : 0,
+        pointBackgroundColor: trending,
+        fill: true,
+        tension: 0.3,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => `$${ctx.parsed.y.toFixed(2)}`,
+          },
+          backgroundColor: '#1f2330',
+          borderColor: '#2b2f3d',
+          borderWidth: 1,
+          titleColor: '#8b8fa3',
+          bodyColor: '#eae7dd',
+          padding: 8,
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: '#8b8fa3', font: { size: 9 }, maxTicksLimit: 6 },
+          grid: { color: '#2b2f3d' },
+        },
+        y: {
+          ticks: {
+            color: '#8b8fa3',
+            font: { size: 9 },
+            callback: v => '$' + v.toFixed(0),
+          },
+          grid: { color: '#2b2f3d' },
+        }
+      }
+    }
+  });
+}
+
 // ─── AUTO-LOAD: try fetching CSV from same directory ─────────────────────────
 async function tryAutoLoad() {
+  // Also try to load price history JSON
+  try {
+    const histResp = await fetch('card-price-history.json');
+    if (histResp.ok) {
+      PRICE_HISTORY = await histResp.json();
+    }
+  } catch(e) {}
+
   // Try to fetch the CSV from the same folder (works when served via HTTP)
   const candidates = [
     'POKEMON_RARITY_COLLECTION.csv',

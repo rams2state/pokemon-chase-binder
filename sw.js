@@ -1,4 +1,4 @@
-// Self-destructing SW v8 — unregisters itself immediately
+// Self-destructing SW v9 — unregisters itself immediately
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => {
   event.waitUntil(

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pokémon Rarity Binder — Chase Cards Across Every Era</title>
+<title>Pokémon Rarity Binder v2.0 — Chase Cards Across Every Era</title>
 <link rel="manifest" href="manifest.json">
 <script>
 // Kill all service workers — they cause stale CSV caching issues
@@ -288,7 +288,13 @@ if ('serviceWorker' in navigator) {
   .pill-sir{background:#ff6fb829;color:#ff6fb8;}
   .pill-hr{background:#7c9bff29;color:#7c9bff;}
   .pill-mhr{background:#ff4d6d29;color:#ff4d6d;}
+  .pill-rainbow{background:#a78bfa29;color:#a78bfa;}
+  .pill-acespec{background:#f472b629;color:#f472b6;}
+  .pill-shiny{background:#fda4af29;color:#fda4af;}
+  .pill-amazing{background:#34d39929;color:#34d399;}
+  .pill-radiant{background:#fb923c29;color:#fb923c;}
   .pill-sr{background:#9d7cff29;color:#9d7cff;}
+  .pill-fullart{background:#60a5fa29;color:#60a5fa;}
   .pill-gs{background:#5ce1e629;color:#5ce1e6;}
   .pill-shine{background:#b98aff29;color:#b98aff;}
   .pill-legend{background:#ffd70029;color:#ffd700;}
@@ -643,7 +649,7 @@ if ('serviceWorker' in navigator) {
   </div>
 </div>
 
-<footer>Pokémon TCG Rarity Binder · Data from Pokémon TCG API & TCGplayer</footer>
+<footer>Pokémon TCG Rarity Binder v2.0 · Data from Pokémon TCG API & TCGplayer</footer>
 
 <script>
 // ─── DATA ────────────────────────────────────────────────────────────────────
@@ -701,18 +707,26 @@ function toggleOwnedFilter() {
 function rarityClass(r) {
   if (!r) return 'pill-default';
   const l = r.toLowerCase();
-  if (l.includes('special illustration')) return 'pill-sir';
-  if (l.includes('trainer gallery')) return 'pill-tg';
-  if (l.includes('hyper rare') && l.includes('mega')) return 'pill-mhr';
-  if (l.includes('hyper rare')) return 'pill-hr';
+  // Order matters — most specific matches first
   if (l.includes('mega hyper')) return 'pill-mhr';
+  if (l.includes('special illustration')) return 'pill-sir';
+  if (l.includes('hyper rare')) return 'pill-hr';
+  if (l.includes('rare rainbow') || l === 'rare rainbow') return 'pill-rainbow';
+  if (l.includes('trainer gallery')) return 'pill-tg';
+  if (l.includes('ace spec')) return 'pill-acespec';
+  if (l.includes('shiny gx')) return 'pill-shgx';
+  if (l === 'rare shiny') return 'pill-shiny';
+  if (l.includes('amazing rare')) return 'pill-amazing';
+  if (l.includes('radiant rare')) return 'pill-radiant';
   if (l.includes('rare secret') || l.includes('secret rare')) return 'pill-sr';
+  if (l.includes('rare ultra')) return 'pill-fullart';
+  if (l === 'illustration rare') return 'pill-ir';
+  if (l === 'double rare') return 'pill-default';
   if (l.includes('gold star')) return 'pill-gs';
   if (l.includes('rare shining')) return 'pill-shine';
   if (l.includes('legend')) return 'pill-legend';
   if (l.includes('lv.x') || l.includes('lv x')) return 'pill-lv';
   if (l.includes('prime')) return 'pill-prime';
-  if (l.includes('shiny gx')) return 'pill-shgx';
   if (l.includes('rare break')) return 'pill-break';
   if (l.includes('holo star')) return 'pill-star';
   if (l.includes('rare holo')) return 'pill-holo';
@@ -722,21 +736,29 @@ function rarityClass(r) {
 function shortRarity(r) {
   if (!r) return '?';
   const map = {
+    'Mega Hyper Rare':           'MHR',
     'Special Illustration Rare': 'SIR',
+    'Hyper Rare':                'HR',
+    'Rare Rainbow':              'Rainbow',
     'Trainer Gallery Rare Holo': 'TG',
-    'Hyper Rare': 'HR',
-    'Mega Hyper Rare': 'MHR',
-    'Rare Secret': 'SR',
-    'Secret Rare': 'SR',
-    'Gold Star': '★',
-    'Rare Shining': 'Shining',
-    'LEGEND': 'LEGEND',
-    'LV.X': 'LV.X',
-    'Rare Prime': 'Prime',
-    'Rare Shiny GX': 'Shiny GX',
-    'Rare BREAK': 'BREAK',
-    'Rare Holo Star': 'Holo ★',
-    'Rare Holo': 'Rare Holo',
+    'ACE SPEC Rare':             'ACE SPEC',
+    'Rare Shiny GX':             'Shiny GX',
+    'Rare Shiny':                'Shiny',
+    'Amazing Rare':              'Amazing',
+    'Radiant Rare':              'Radiant',
+    'Rare Secret':               'SR',
+    'Secret Rare':               'SR',
+    'Rare Ultra':                'Full Art',
+    'Illustration Rare':         'IR',
+    'Double Rare':               'ex UR',
+    'Gold Star':                 '★',
+    'Rare Shining':              'Shining',
+    'LEGEND':                    'LEGEND',
+    'LV.X':                      'LV.X',
+    'Rare Prime':                'Prime',
+    'Rare BREAK':                'BREAK',
+    'Rare Holo Star':            'Holo ★',
+    'Rare Holo':                 'Rare Holo',
   };
   for (const [k, v] of Object.entries(map)) {
     if (r.includes(k)) return v;
@@ -881,10 +903,27 @@ function getFiltered() {
 // ─── RENDER ──────────────────────────────────────────────────────────────────
 // Rarity sort priority — rarest first within each set
 const RARITY_ORDER = [
-  'Mega Hyper Rare','Special Illustration Rare','Hyper Rare',
-  'Trainer Gallery Rare Holo','Rare Shiny GX','Rare Secret',
-  'Gold Star','LEGEND','LV.X','Rare Prime','Rare Holo Star',
-  'Rare Shining','Rare Holo',
+  'Mega Hyper Rare',           // SV apex
+  'Special Illustration Rare', // SIR
+  'Hyper Rare',                // SWSH Rainbow Rare
+  'Rare Rainbow',              // SM Rainbow Rare
+  'Trainer Gallery Rare Holo', // SWSH TG subset
+  'ACE SPEC Rare',             // SV ACE SPEC
+  'Rare Shiny GX',             // Shiny Vault GX
+  'Rare Shiny',                // Shiny Vault base
+  'Amazing Rare',              // SWSH lightning art
+  'Radiant Rare',              // SWSH 1-per-deck
+  'Rare Secret',               // Gold-border Secret Rares
+  'Rare Ultra',                // Full Art EX/GX/V
+  'Illustration Rare',         // SV IR
+  'Double Rare',               // SV Pokémon ex (specific IDs only)
+  'Gold Star',                 // EX era Gold Star
+  'LEGEND',                    // HGSS dual-card pairs
+  'LV.X',                      // DP/Platinum LV.X
+  'Rare Prime',                // HGSS Prime
+  'Rare Holo Star',            // DP shiny star + CoL SL
+  'Rare Shining',              // Neo Shining
+  'Rare Holo',                 // Vintage era holos
 ];
 function rarityRank(r, subtypes) {
   if (subtypes && subtypes.includes && subtypes.includes('Gold Star')) return RARITY_ORDER.indexOf('Gold Star');
@@ -897,19 +936,27 @@ function rarityRank(r, subtypes) {
 function rarityColor(r) {
   // Returns the CSS color var for the rarity label text
   const map = {
-    'Mega Hyper Rare': '#ff4d6d',
+    'Mega Hyper Rare':           '#ff4d6d',
     'Special Illustration Rare': '#ff6fb8',
-    'Hyper Rare': '#7c9bff',
+    'Hyper Rare':                '#7c9bff',
+    'Rare Rainbow':              '#a78bfa',
     'Trainer Gallery Rare Holo': '#FFCB05',
-    'Rare Shiny GX': '#ff7fc2',
-    'Rare Secret': '#9d7cff',
-    'Gold Star': '#5ce1e6',
-    'LEGEND': '#ffd700',
-    'LV.X': '#ffb3e0',
-    'Rare Prime': '#e0779c',
-    'Rare Holo Star': '#5ce1e6',
-    'Rare Shining': '#b98aff',
-    'Rare Holo': '#E8B914',
+    'ACE SPEC Rare':             '#f472b6',
+    'Rare Shiny GX':             '#ff7fc2',
+    'Rare Shiny':                '#fda4af',
+    'Amazing Rare':              '#34d399',
+    'Radiant Rare':              '#fb923c',
+    'Rare Secret':               '#9d7cff',
+    'Rare Ultra':                '#60a5fa',
+    'Illustration Rare':         '#FFE066',
+    'Double Rare':               '#94a3b8',
+    'Gold Star':                 '#5ce1e6',
+    'LEGEND':                    '#ffd700',
+    'LV.X':                      '#ffb3e0',
+    'Rare Prime':                '#e0779c',
+    'Rare Holo Star':            '#5ce1e6',
+    'Rare Shining':              '#b98aff',
+    'Rare Holo':                 '#E8B914',
   };
   return map[r] || '#8b8fa3';
 }

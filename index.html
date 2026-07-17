@@ -1134,7 +1134,6 @@ function renderSetOverview(cards, el) {
       html += `<div class="set-ov-card" onclick="openSetDetail('${eraEnc}','${setEnc}')">
         <div class="set-ov-top">
           <div class="set-ov-left">
-            <span class="set-ov-code">${(firstCard?.setCode || era.slice(0,4)).toUpperCase()}</span>
             ${symbolHtml}
           </div>
           <span class="set-ov-year">${setYear}</span>

@@ -1,15 +1,23 @@
 {
-  "name": "Chase Binder — Pokémon TCG Tracker",
-  "short_name": "Chase Binder",
-  "description": "Track Illustration Rares, Special Illustration Rares, and Hyper Rares across every Pokémon TCG set.",
+  "name": "Pokémon Rarity Binder",
+  "short_name": "Rarity Binder",
+  "description": "Chase card tracker across every Pokémon TCG era",
   "start_url": "./index.html",
-  "scope": "./",
   "display": "standalone",
-  "orientation": "portrait-primary",
   "background_color": "#0e1016",
   "theme_color": "#0e1016",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ]
 }

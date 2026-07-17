@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rarity-binder-v4';
+const CACHE_NAME = 'rarity-binder-v5';
 const ASSETS = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png', './cards.csv'];
 
 self.addEventListener('install', (event) => {

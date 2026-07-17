@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pokémon Rarity Binder — Chase Cards Across Every Era</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0e1016">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Rarity Binder">
+<link rel="apple-touch-icon" href="icon-192.png">
+<!-- Pokéball SVG favicon inline via data URI -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%23e63946' stroke='%23111' stroke-width='4'/%3E%3Crect x='2' y='46' width='96' height='8' fill='%23111'/%3E%3Ccircle cx='50' cy='50' r='48' fill='none' stroke='%23111' stroke-width='4'/%3E%3Ccircle cx='50' cy='50' r='14' fill='%23fff' stroke='%23111' stroke-width='4'/%3E%3Ccircle cx='50' cy='50' r='7' fill='%23e63946'/%3E%3Cpath d='M2 46 Q50 2 98 46' fill='%23e63946'/%3E%3Cpath d='M2 54 Q50 98 98 54' fill='%23f1f1f1'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Luckiest+Guy&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -1236,8 +1244,44 @@ function openModal(c) {
     fallback.style.display = 'block';
   }
 
-  const query = encodeURIComponent(`${nameStr} ${c.set} ${c.num}`);
-  document.getElementById('mBuy').href = `https://www.tcgplayer.com/search/pokemon/product?q=${query}`;
+  // Map API set names → TCGplayer set names where they differ
+  const SET_NAME_MAP = {
+    'Base':                   'Base Set',
+    'Jungle':                 'Jungle',
+    'Fossil':                 'Fossil',
+    'Base Set 2':             'Base Set 2',
+    'Team Rocket':            'Team Rocket',
+    'Gym Heroes':             'Gym Heroes',
+    'Gym Challenge':          'Gym Challenge',
+    'Neo Genesis':            'Neo Genesis',
+    'Neo Discovery':          'Neo Discovery',
+    'Neo Revelation':         'Neo Revelation',
+    'Neo Destiny':            'Neo Destiny',
+    'Legendary Collection':   'Legendary Collection',
+    'Expedition Base Set':    'Expedition',
+    'Aquapolis':              'Aquapolis',
+    'Skyridge':               'Skyridge',
+    'EX Ruby & Sapphire':     'EX Ruby & Sapphire',
+    'EX Sandstorm':           'EX Sandstorm',
+    'EX Dragon':              'EX Dragon',
+    'EX Team Magma vs Team Aqua': 'EX Team Magma vs Team Aqua',
+    'EX Hidden Legends':      'EX Hidden Legends',
+    'EX FireRed & LeafGreen': 'EX FireRed & LeafGreen',
+    'EX Team Rocket Returns': 'EX Team Rocket Returns',
+    'EX Deoxys':              'EX Deoxys',
+    'EX Emerald':             'EX Emerald',
+    'EX Unseen Forces':       'EX Unseen Forces',
+    'EX Delta Species':       'EX Delta Species',
+    'EX Legend Maker':        'EX Legend Maker',
+    'EX Holon Phantoms':      'EX Holon Phantoms',
+    'EX Crystal Guardians':   'EX Crystal Guardians',
+    'EX Dragon Frontiers':    'EX Dragon Frontiers',
+    'EX Power Keepers':       'EX Power Keepers',
+  };
+  const tcgSet = SET_NAME_MAP[c.set] || c.set;
+  const tcgQuery = encodeURIComponent(`${nameStr} ${tcgSet}`);
+  document.getElementById('mBuy').href =
+    `https://www.tcgplayer.com/search/pokemon/product?q=${tcgQuery}&view=grid`;
 
   // Update own button state
   const ownBtn = document.getElementById('mOwn');

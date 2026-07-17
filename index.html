@@ -401,42 +401,60 @@
 
   @media(max-width:700px){
     /* Header */
-    header.hero{padding:20px 16px 16px;}
+    header.hero{padding:20px 16px 16px;overflow:hidden;}
     h1.display{font-size:34px;}
-    .sub{font-size:13px;}
+    .sub{font-size:13px;white-space:normal;overflow:hidden;}
 
-    /* Stats — 3 equal columns */
+    /* Prevent horizontal scroll on body */
+    body{overflow-x:hidden;}
+    main{overflow-x:hidden;}
+
+    /* Stats — 3 equal columns, no overflow */
     .stats-row{
       display:grid;
       grid-template-columns:repeat(3,1fr);
-      gap:10px;margin-top:14px;
+      gap:8px;margin-top:14px;
+      width:100%;box-sizing:border-box;
     }
-    .stat{min-width:0;padding:10px 10px;}
-    .stat .n{font-size:22px;}
+    .stat{min-width:0;padding:10px 8px;box-sizing:border-box;}
+    .stat .n{font-size:20px;word-break:break-all;}
     .stat .l{font-size:10px;}
 
-    /* Toolbar — search full width, filters hidden behind button */
+    /* Toolbar — centered column layout */
     .toolbar{
       padding:12px 16px 0;margin-top:12px;
       flex-direction:column;gap:10px;
+      align-items:stretch;
     }
     .search-wrap{min-width:0;width:100%;}
-    .toolbar-row2{display:flex;gap:8px;width:100%;align-items:center;}
-    .filter-toggle-btn{display:flex;}
+    .toolbar-row2{
+      display:flex;gap:8px;width:100%;align-items:center;
+      justify-content:center;
+    }
+    .filter-toggle-btn{
+      display:flex;flex:1;justify-content:center;
+      padding:14px;font-size:15px;
+    }
 
     /* Hide desktop selects and view toggle in toolbar, show in drawer */
     .toolbar select{display:none;}
     .toolbar .view-toggle{display:none;}
+    /* Hide desktop Gainers/Drops from toolbar on mobile */
+    .toolbar .trend-btn{display:none;}
 
     /* Filter drawer */
-    .filter-drawer{padding:0 16px 12px;}
+    .filter-drawer{padding:0 16px 16px;}
     .filter-drawer select{
       width:100%;flex:none;
-      padding:12px 10px;font-size:14px;
+      padding:14px 12px;font-size:15px;
+      border-radius:10px;
     }
     /* Show grid toggle inside drawer on mobile */
     .mobile-view-toggle{display:flex;gap:8px;width:100%;}
-    .mobile-view-toggle .vbtn{flex:1;text-align:center;padding:12px;}
+    .mobile-view-toggle .vbtn{flex:1;text-align:center;padding:14px;font-size:15px;}
+    /* Gainers / Drops in drawer on mobile */
+    .mobile-trend-row{display:flex;gap:8px;width:100%;}
+    .mobile-trend-row .trend-btn{flex:1;text-align:center;padding:14px;font-size:15px;}
 
     /* Main padding */
     main{padding:16px 12px 80px;}
@@ -444,24 +462,48 @@
     /* Set overview — 1 column on mobile */
     .set-overview-grid{grid-template-columns:1fr;}
 
-    /* Detail card grid — 2 columns on mobile */
-    .detail-card-grid{grid-template-columns:repeat(2,1fr);}
+    /* Detail card grid — SINGLE column on mobile so nothing cuts off */
+    .detail-card-grid{grid-template-columns:1fr;}
 
-    /* Card rows — bigger touch targets */
-    .card-row{padding:8px 6px;}
-    .crow-name{font-size:12.5px;}
-    .crow-num{font-size:10px;}
-    .crow-thumb{width:30px;height:42px;}
-    .crow-thumb-empty{width:30px;height:42px;}
+    /* Card rows — single column, full width, no overflow */
+    .card-row{
+      padding:10px 10px;
+      flex-wrap:nowrap;
+      gap:8px;
+      width:100%;box-sizing:border-box;
+    }
+    .crow-name{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;}
+    .crow-num{font-size:11px;width:28px;flex-shrink:0;}
+    .crow-thumb{width:34px;height:48px;flex-shrink:0;}
+    .crow-thumb-empty{width:34px;height:48px;flex-shrink:0;}
+    /* Price + badge: column stack, fixed width, no overflow */
+    .crow-price-wrap{
+      flex-direction:column;align-items:flex-end;
+      gap:2px;flex-shrink:0;width:72px;
+    }
+    .crow-price{font-size:12.5px;}
+    .price-change{font-size:10px;padding:2px 5px;white-space:nowrap;}
+    .trend-rank{font-size:13px;min-width:18px;flex-shrink:0;}
+    .crow-set{max-width:100px;}
 
-    /* Modal — sheet from bottom on mobile */
+    /* Stats — prevent right cutoff */
+    .stats-row{overflow:hidden;}
+
+    /* Modal — compact sheet from bottom, no big empty dark area */
     .modal-backdrop{padding:0;align-items:flex-end;}
     .modal{
       max-width:100%;border-radius:20px 20px 0 0;
-      max-height:92vh;overflow-y:auto;
+      max-height:90vh;overflow-y:auto;
     }
-    .modal-imgwrap img{max-height:36vh;max-width:160px;}
-    .modal-body{padding:14px 16px 32px;}
+    .modal-imgwrap{
+      min-height:0;
+      padding:28px 16px 12px;
+      background:transparent;
+    }
+    .modal-imgwrap img{
+      max-height:240px;max-width:160px;
+    }
+    .modal-body{padding:12px 16px 36px;}
 
     /* Era headers */
     .era-title{font-size:18px;}
@@ -526,6 +568,10 @@
   <div class="mobile-view-toggle">
     <button class="vbtn" id="btnListM" onclick="setView('list')">☰ List</button>
     <button class="vbtn" id="btnGridM" onclick="setView('grid')">⊞ Grid</button>
+  </div>
+  <div class="mobile-trend-row">
+    <button class="vbtn trend-btn" id="btnGainersM" onclick="setTrend('gainers')">📈 Gainers</button>
+    <button class="vbtn trend-btn" id="btnDropsM" onclick="setTrend('drops')">📉 Drops</button>
   </div>
 </div>
 
@@ -852,19 +898,26 @@ let _trendMode = null; // 'gainers' | 'drops' | null
 
 function setTrend(mode) {
   if (_trendMode === mode) {
-    // Toggle off
     _trendMode = null;
-    ['btnGainers','btnDrops'].forEach(id => {
+    ['btnGainers','btnDrops','btnGainersM','btnDropsM'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.classList.remove('active-gainers','active-drops');
     });
   } else {
     _trendMode = mode;
     _activeSet = null;
-    const gainersBtn = document.getElementById('btnGainers');
-    const dropsBtn = document.getElementById('btnDrops');
-    if (gainersBtn) { gainersBtn.classList.toggle('active-gainers', mode==='gainers'); gainersBtn.classList.remove('active-drops'); }
-    if (dropsBtn) { dropsBtn.classList.toggle('active-drops', mode==='drops'); dropsBtn.classList.remove('active-gainers'); }
+    ['btnGainers','btnGainersM'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.toggle('active-gainers', mode==='gainers');
+      el.classList.remove('active-drops');
+    });
+    ['btnDrops','btnDropsM'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.toggle('active-drops', mode==='drops');
+      el.classList.remove('active-gainers');
+    });
   }
   render();
 }
@@ -1420,6 +1473,57 @@ async function tryAutoLoad() {
 }
 
 tryAutoLoad();
+
+// ─── NAVIGATION: swipe left→right (mobile) + mouse button 4 (desktop) ───────
+function navBack() {
+  if (_activeSet) {
+    // Set detail → back to set overview
+    _activeSet = null;
+    _trendMode = null;
+    render();
+  } else if (_trendMode) {
+    // Trend view → back to overview
+    _trendMode = null;
+    ['btnGainers','btnDrops','btnGainersM','btnDropsM'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('active-gainers','active-drops');
+    });
+    render();
+  }
+  // Already at overview — nowhere to go back to
+}
+
+// Mouse back button (button 3 = right, button 4 = back in most browsers)
+document.addEventListener('mouseup', e => {
+  if (e.button === 3) { e.preventDefault(); navBack(); }
+});
+document.addEventListener('mousedown', e => {
+  if (e.button === 3) e.preventDefault();
+});
+
+// Swipe right (mobile) — track touch start/end on the main content area
+(function() {
+  let _tx = null, _ty = null;
+  const SWIPE_MIN = 60;    // px horizontal travel
+  const SWIPE_RATIO = 1.5; // must be more horizontal than vertical
+
+  document.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1) { _tx = null; return; }
+    _tx = e.touches[0].clientX;
+    _ty = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', e => {
+    if (_tx === null) return;
+    const dx = e.changedTouches[0].clientX - _tx;
+    const dy = Math.abs(e.changedTouches[0].clientY - _ty);
+    _tx = null;
+    // Right swipe only, starting from left edge area (first 40% of screen or anywhere)
+    if (dx > SWIPE_MIN && Math.abs(dx) / (dy || 1) > SWIPE_RATIO) {
+      navBack();
+    }
+  }, { passive: true });
+})();
 </script>
 </body>
 </html>

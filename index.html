@@ -1080,14 +1080,14 @@ function renderSetOverview(cards, el) {
       }).join('');
 
       const eraEnc = encodeURIComponent(era), setEnc = encodeURIComponent(set);
-      const symbolUrl = setCards[0]?.setSymbol || '';
+      const symbolUrl = firstCard?.setSymbol || '';
       const symbolHtml = symbolUrl && symbolUrl !== 'N/A'
         ? `<img class="set-ov-symbol" src="${symbolUrl}" alt="" loading="lazy">`
         : '';
       html += `<div class="set-ov-card" onclick="openSetDetail('${eraEnc}','${setEnc}')">
         <div class="set-ov-top">
           <div class="set-ov-left">
-            <span class="set-ov-code">${(setCards[0]?.setCode || era.slice(0,4)).toUpperCase()}</span>
+            <span class="set-ov-code">${(firstCard?.setCode || era.slice(0,4)).toUpperCase()}</span>
             ${symbolHtml}
           </div>
           <span class="set-ov-year">${setYear}</span>
@@ -1521,7 +1521,8 @@ async function tryAutoLoad() {
   for (const name of candidates) {
     try {
       const resp = await fetch(name + bust);
-      if (resp.ok) {
+      const ct = resp.headers.get('content-type') || '';
+      if (resp.ok && !ct.includes('text/html')) {
         const text = await resp.text();
         const cards = parseCSV(text);
         if (cards.length > 0) {

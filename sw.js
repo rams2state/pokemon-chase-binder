@@ -1,5 +1,5 @@
-const CACHE_NAME = 'rarity-binder-v6';
-const ASSETS = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png', './cards.csv'];
+const CACHE_NAME = 'rarity-binder-v7';
+const ASSETS = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -18,6 +18,11 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  const url = event.request.url;
+  if (url.includes('.csv') || url.includes('.json')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
   event.respondWith(
     fetch(event.request).then((response) => {
       const copy = response.clone();

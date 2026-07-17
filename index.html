@@ -157,6 +157,10 @@
   /* top row: code badge + logo + year */
   .set-ov-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
   .set-ov-left{display:flex;align-items:center;gap:8px;}
+  .set-ov-symbol{
+    width:22px;height:22px;object-fit:contain;
+    filter:invert(1) brightness(2);opacity:0.85;
+  }
   .set-ov-code{
     background:var(--panel2);border:1px solid var(--line);border-radius:6px;
     font-size:9px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;
@@ -771,6 +775,7 @@ function normalizeCard(raw) {
   const name = raw.card_name || raw.name || '';
   const series = raw.series || raw.series_name || '';
   const set = raw.set_name || raw['set_name'] || '';
+  const setCode = raw.set_code || raw['set_code'] || '';
   const num = raw.card_number || raw['card_number'] || raw.number || '';
   const rarity = raw.rarity || '';
   const price = raw.price || 'N/A';
@@ -778,8 +783,9 @@ function normalizeCard(raw) {
   const cardId = raw.card_id || raw['card_id'] || '';
   const pic = raw.picture_url || raw['picture_url'] || raw.image || '';
   const setLogo = raw.set_logo || raw['set_logo'] || '';
+  const setSymbol = raw.set_symbol || raw['set_symbol'] || '';
   const date = raw.release_date || raw['release_date'] || '';
-  return { name, series, set, num, rarity, price, prevPrice, cardId, pic, setLogo, date };
+  return { name, series, set, setCode, num, rarity, price, prevPrice, cardId, pic, setLogo, setSymbol, date };
 }
 
 function priceVal(p) {
@@ -1066,11 +1072,15 @@ function renderSetOverview(cards, el) {
       }).join('');
 
       const eraEnc = encodeURIComponent(era), setEnc = encodeURIComponent(set);
+      const symbolUrl = setCards[0]?.setSymbol || '';
+      const symbolHtml = symbolUrl && symbolUrl !== 'N/A'
+        ? `<img class="set-ov-symbol" src="${symbolUrl}" alt="" loading="lazy">`
+        : '';
       html += `<div class="set-ov-card" onclick="openSetDetail('${eraEnc}','${setEnc}')">
         <div class="set-ov-top">
           <div class="set-ov-left">
-            <span class="set-ov-code">${era.slice(0,4).toUpperCase()}</span>
-            ${logoHtml}
+            <span class="set-ov-code">${(setCards[0]?.setCode || era.slice(0,4)).toUpperCase()}</span>
+            ${symbolHtml}
           </div>
           <span class="set-ov-year">${setYear}</span>
         </div>

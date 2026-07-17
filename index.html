@@ -5,6 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pokémon Rarity Binder — Chase Cards Across Every Era</title>
 <link rel="manifest" href="manifest.json">
+<script>
+// Unregister any stale service workers so they stop intercepting fetches
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(r => r.unregister());
+  });
+  // Re-register fresh SW after clearing
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+</script>
 <meta name="theme-color" content="#0e1016">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">

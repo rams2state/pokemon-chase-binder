@@ -325,7 +325,7 @@ if ('serviceWorker' in navigator) {
   }
   /* Close button — 44px tap target for iOS */
   .modal-close{
-    position:absolute;top:8px;right:8px;z-index:2;
+    position:absolute;top:8px;right:8px;z-index:4;
     background:rgba(14,16,22,0.7);border:1px solid var(--line);
     color:var(--dim);font-size:20px;cursor:pointer;line-height:1;
     width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;
@@ -333,28 +333,30 @@ if ('serviceWorker' in navigator) {
     touch-action:manipulation;
   }
   .modal-close:hover{background:var(--line);color:var(--text);}
-  /* Nav arrows */
+  /* Nav bar — top of modal, shared desktop+mobile */
+  .modal-nav-bar{
+    position:absolute;top:0;left:0;right:0;z-index:3;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:8px 56px 8px 8px;gap:4px;pointer-events:none;
+  }
   .modal-nav{
-    position:absolute;top:50%;transform:translateY(-50%);z-index:3;
     background:rgba(14,16,22,0.7);border:1px solid var(--line);
     color:var(--text);font-size:20px;cursor:pointer;line-height:1;
-    width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;
     transition:background .15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
-    user-select:none;
+    user-select:none;flex-shrink:0;pointer-events:all;
   }
   .modal-nav:hover{background:var(--line);}
   .modal-nav.disabled{opacity:0.2;pointer-events:none;}
-  .modal-nav-prev{left:-54px;}
-  .modal-nav-next{right:-54px;}
   .modal-nav-counter{
-    position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
     font-size:11px;color:var(--dim);letter-spacing:0.05em;white-space:nowrap;
+    flex:1;text-align:center;
   }
 
   /* Card image — full bleed top */
   .modal-imgwrap{
     background:linear-gradient(160deg,#1a1d2b,#0e1016);
-    padding:24px 24px 16px;
+    padding:56px 24px 16px;
     display:flex;align-items:center;justify-content:center;
     min-height:200px;
   }
@@ -543,14 +545,11 @@ if ('serviceWorker' in navigator) {
       max-height:90vh;overflow-y:scroll;
       -webkit-overflow-scrolling:touch;
     }
-    /* Hide side nav arrows on mobile — use swipe instead */
+    /* Hide arrows on mobile — swipe handles navigation */
     .modal-nav{display:none;}
-    .modal-nav-counter{
-      bottom:auto;top:12px;left:50%;transform:translateX(-50%);
-    }
     .modal-imgwrap{
       min-height:0;
-      padding:28px 16px 12px;
+      padding:52px 16px 12px;
       background:transparent;
     }
     .modal-imgwrap img{
@@ -653,10 +652,12 @@ if ('serviceWorker' in navigator) {
 
 <div class="modal-backdrop" id="modalBackdrop">
   <div class="modal">
+    <div class="modal-nav-bar">
+      <button class="modal-nav" id="mNavPrev" onclick="modalNav(-1)" aria-label="Previous">&#8249;</button>
+      <div class="modal-nav-counter" id="mNavCounter"></div>
+      <button class="modal-nav" id="mNavNext" onclick="modalNav(1)" aria-label="Next">&#8250;</button>
+    </div>
     <button class="modal-close" onclick="closeModal()" aria-label="Close">&times;</button>
-    <button class="modal-nav modal-nav-prev" id="mNavPrev" onclick="modalNav(-1)" aria-label="Previous">&#8249;</button>
-    <button class="modal-nav modal-nav-next" id="mNavNext" onclick="modalNav(1)" aria-label="Next">&#8250;</button>
-    <div class="modal-nav-counter" id="mNavCounter"></div>
     <div class="modal-imgwrap">
       <img id="mImg" src="" alt=""
         onerror="this.style.display='none';document.getElementById('mFallback').style.display='block'">

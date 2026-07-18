@@ -299,6 +299,7 @@ if ('serviceWorker' in navigator) {
   .pill-radiant{background:#fb923c29;color:#fb923c;}
   .pill-sr{background:#9d7cff29;color:#9d7cff;}
   .pill-tagteam{background:#f97d1629;color:#f97d16;}
+  .pill-fatagteam{background:#ff4d0029;color:#ff4d00;}
   .pill-fullart{background:#60a5fa29;color:#60a5fa;}
   .pill-gs{background:#5ce1e629;color:#5ce1e6;}
   .pill-shine{background:#b98aff29;color:#b98aff;}
@@ -736,16 +737,33 @@ function toggleOwnedFilter() {
 }
 
 // ─── RARITY HELPERS ─────────────────────────────────────────────────────────
-function rarityClass(r) {
+
+// Returns true if the card number exceeds the set total (e.g. 231/236 → false, 237/236 → true)
+function isBeyondSetTotal(num) {
+  if (!num) return false;
+  const parts = num.split('/');
+  if (parts.length !== 2) return false;
+  const n = parseInt(parts[0], 10);
+  const total = parseInt(parts[1], 10);
+  return !isNaN(n) && !isNaN(total) && n > total;
+}
+
+function rarityClass(r, name, num) {
   if (!r) return 'pill-default';
   const l = r.toLowerCase();
+  const isTagTeam = name && name.includes('&');
+  const isFull = isBeyondSetTotal(num);
   // Order matters — most specific matches first
   if (l.includes('mega attack')) return 'pill-mar';
   if (l.includes('mega hyper')) return 'pill-mhr';
   if (l.includes('special illustration')) return 'pill-sir';
   if (l === 'shiny ultra rare') return 'pill-shinyur';
   if (l.includes('hyper rare')) return 'pill-hr';
-  if (l.includes('rare rainbow') || l === 'rare rainbow') return 'pill-rainbow';
+  if (l.includes('rare rainbow') || l === 'rare rainbow') {
+    if (isTagTeam && isFull) return 'pill-fatagteam';
+    if (isTagTeam) return 'pill-tagteam';
+    return 'pill-rainbow';
+  }
   if (l.includes('trainer gallery')) return 'pill-tg';
   if (l.includes('ace spec')) return 'pill-acespec';
   if (l === 'classic collection') return 'pill-classic';
@@ -755,8 +773,12 @@ function rarityClass(r) {
   if (l.includes('amazing rare')) return 'pill-amazing';
   if (l.includes('radiant rare')) return 'pill-radiant';
   if (l.includes('rare secret') || l.includes('secret rare')) return 'pill-sr';
-  if (l === 'tag team') return 'pill-tagteam';
-  if (l.includes('rare ultra')) return 'pill-fullart';
+  if (l.includes('rare ultra')) {
+    if (isTagTeam && isFull) return 'pill-fatagteam';
+    if (isTagTeam) return 'pill-tagteam';
+    if (isFull) return 'pill-fullart';
+    return 'pill-default'; // standard non-full-art GX/EX
+  }
   if (l === 'illustration rare') return 'pill-ir';
   if (l === 'double rare') return 'pill-default';
   if (l.includes('gold star')) return 'pill-gs';
@@ -770,10 +792,16 @@ function rarityClass(r) {
   return 'pill-default';
 }
 
-function shortRarity(r, name) {
+function shortRarity(r, name, num) {
   if (!r) return '?';
-  // Tag Team GX cards share "Rare Ultra" rarity — split them out by name
-  if ((r === 'Rare Ultra' || r === 'Rare Rainbow') && name && name.includes('&')) return 'Tag Team';
+  const isTagTeam = name && name.includes('&');
+  const isFull = isBeyondSetTotal(num);
+  // Rare Ultra breakdown — standard, Full Art, Tag Team, Full Art Tag Team
+  if (r === 'Rare Ultra' || r === 'Rare Rainbow') {
+    if (isTagTeam && isFull) return 'FA Tag Team';
+    if (isTagTeam) return 'Tag Team';
+    if (isFull) return 'Full Art';
+  }
   const map = {
     'Mega Attack Rare':          'MAR',
     'Mega Hyper Rare':           'MHR',
@@ -980,8 +1008,13 @@ function rarityRank(r, subtypes) {
   return idx === -1 ? 99 : idx;
 }
 
-function rarityColor(r) {
+function rarityColor(r, name, num) {
   // Returns the CSS color var for the rarity label text
+  const isTagTeam = name && name.includes('&');
+  const isFull = isBeyondSetTotal(num);
+  if ((r === 'Rare Ultra' || r === 'Rare Rainbow') && isTagTeam && isFull) return '#ff4d00';
+  if ((r === 'Rare Ultra' || r === 'Rare Rainbow') && isTagTeam) return '#f97d16';
+  if (r === 'Rare Ultra' && isFull) return '#60a5fa';
   const map = {
     'Mega Attack Rare':          '#ff6a00',
     'Mega Hyper Rare':           '#ff4d6d',
@@ -998,7 +1031,7 @@ function rarityColor(r) {
     'Amazing Rare':              '#34d399',
     'Radiant Rare':              '#fb923c',
     'Rare Secret':               '#9d7cff',
-    'Rare Ultra':                '#60a5fa',
+    'Rare Ultra':                '#94a3b8',
     'Illustration Rare':         '#FFE066',
     'Double Rare':               '#94a3b8',
     'Gold Star':                 '#5ce1e6',
@@ -1276,8 +1309,8 @@ function renderGrid(cards, el) {
       </div>
       <div class="card-grid">`;
     for (const c of eraCards) {
-      const cls = rarityClass(c.rarity);
-      const short = shortRarity(c.rarity, c.name);
+      const cls = rarityClass(c.rarity, c.name, c.num);
+      const short = shortRarity(c.rarity, c.name, c.num);
       const owned = isOwned(c);
       const cdata = JSON.stringify(c).replace(/'/g, '&#39;');
       const key = cardKey(c).replace(/[^a-z0-9]/gi,'_');

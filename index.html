@@ -288,6 +288,7 @@ if ('serviceWorker' in navigator) {
   .pill-sir{background:#ff6fb829;color:#ff6fb8;}
   .pill-hr{background:#7c9bff29;color:#7c9bff;}
   .pill-mhr{background:#ff4d6d29;color:#ff4d6d;}
+  .pill-mar{background:#ff6a0029;color:#ff6a00;}
   .pill-shinyur{background:#e879f929;color:#e879f9;}
   .pill-rainbow{background:#a78bfa29;color:#a78bfa;}
   .pill-acespec{background:#f472b629;color:#f472b6;}
@@ -739,6 +740,7 @@ function rarityClass(r) {
   if (!r) return 'pill-default';
   const l = r.toLowerCase();
   // Order matters — most specific matches first
+  if (l.includes('mega attack')) return 'pill-mar';
   if (l.includes('mega hyper')) return 'pill-mhr';
   if (l.includes('special illustration')) return 'pill-sir';
   if (l === 'shiny ultra rare') return 'pill-shinyur';
@@ -773,6 +775,7 @@ function shortRarity(r, name) {
   // Tag Team GX cards share "Rare Ultra" rarity — split them out by name
   if ((r === 'Rare Ultra' || r === 'Rare Rainbow') && name && name.includes('&')) return 'Tag Team';
   const map = {
+    'Mega Attack Rare':          'MAR',
     'Mega Hyper Rare':           'MHR',
     'Special Illustration Rare': 'SIR',
     'Shiny Ultra Rare':          'Shiny UR',
@@ -945,8 +948,9 @@ function getFiltered() {
 const RARITY_ORDER = [
   'Mega Hyper Rare',           // SV apex
   'Special Illustration Rare', // SIR
-  'Shiny Ultra Rare',          // Paldean Fates shiny ex tier
+  'Mega Attack Rare',          // SV secret-numbered chase tier
   'Hyper Rare',                // SWSH Rainbow Rare
+  'Shiny Ultra Rare',          // Paldean Fates shiny ex tier
   'Rare Rainbow',              // SM Rainbow Rare
   'Trainer Gallery Rare Holo', // SWSH TG subset
   'ACE SPEC Rare',             // SV ACE SPEC
@@ -956,9 +960,9 @@ const RARITY_ORDER = [
   'Shiny Rare',                // Paldean Fates shiny non-ex tier
   'Amazing Rare',              // SWSH lightning art
   'Radiant Rare',              // SWSH 1-per-deck
+  'Illustration Rare',         // SV IR ~1:10-12
   'Rare Secret',               // Gold-border Secret Rares
   'Rare Ultra',                // Full Art EX/GX/V
-  'Illustration Rare',         // SV IR
   'Double Rare',               // SV Pokémon ex (specific IDs only)
   'Gold Star',                 // EX era Gold Star
   'LEGEND',                    // HGSS dual-card pairs
@@ -979,6 +983,7 @@ function rarityRank(r, subtypes) {
 function rarityColor(r) {
   // Returns the CSS color var for the rarity label text
   const map = {
+    'Mega Attack Rare':          '#ff6a00',
     'Mega Hyper Rare':           '#ff4d6d',
     'Special Illustration Rare': '#ff6fb8',
     'Shiny Ultra Rare':          '#e879f9',

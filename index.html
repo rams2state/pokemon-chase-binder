@@ -288,12 +288,16 @@ if ('serviceWorker' in navigator) {
   .pill-sir{background:#ff6fb829;color:#ff6fb8;}
   .pill-hr{background:#7c9bff29;color:#7c9bff;}
   .pill-mhr{background:#ff4d6d29;color:#ff4d6d;}
+  .pill-shinyur{background:#e879f929;color:#e879f9;}
   .pill-rainbow{background:#a78bfa29;color:#a78bfa;}
   .pill-acespec{background:#f472b629;color:#f472b6;}
+  .pill-classic{background:#f59e0b29;color:#f59e0b;}
   .pill-shiny{background:#fda4af29;color:#fda4af;}
+  .pill-shinyr{background:#c084fc29;color:#c084fc;}
   .pill-amazing{background:#34d39929;color:#34d399;}
   .pill-radiant{background:#fb923c29;color:#fb923c;}
   .pill-sr{background:#9d7cff29;color:#9d7cff;}
+  .pill-tagteam{background:#f97d1629;color:#f97d16;}
   .pill-fullart{background:#60a5fa29;color:#60a5fa;}
   .pill-gs{background:#5ce1e629;color:#5ce1e6;}
   .pill-shine{background:#b98aff29;color:#b98aff;}
@@ -311,7 +315,6 @@ if ('serviceWorker' in navigator) {
   .modal-backdrop{
     display:none;position:fixed;inset:0;background:rgba(6,7,12,0.88);
     z-index:90;align-items:center;justify-content:center;padding:24px;
-    backdrop-filter:blur(4px);
   }
   .modal-backdrop.active{display:flex;}
   .modal{
@@ -320,15 +323,33 @@ if ('serviceWorker' in navigator) {
     max-width:380px;width:100%;position:relative;
     box-shadow:0 32px 80px rgba(0,0,0,0.7);overflow:hidden;
   }
-  /* Close button */
+  /* Close button — 44px tap target for iOS */
   .modal-close{
-    position:absolute;top:12px;right:12px;z-index:2;
+    position:absolute;top:8px;right:8px;z-index:2;
     background:rgba(14,16,22,0.7);border:1px solid var(--line);
-    color:var(--dim);font-size:18px;cursor:pointer;line-height:1;
-    width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-    transition:all .15s;backdrop-filter:blur(6px);
+    color:var(--dim);font-size:20px;cursor:pointer;line-height:1;
+    width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    transition:background .15s,color .15s;-webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
   }
   .modal-close:hover{background:var(--line);color:var(--text);}
+  /* Nav arrows */
+  .modal-nav{
+    position:absolute;top:50%;transform:translateY(-50%);z-index:3;
+    background:rgba(14,16,22,0.7);border:1px solid var(--line);
+    color:var(--text);font-size:20px;cursor:pointer;line-height:1;
+    width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    transition:background .15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
+    user-select:none;
+  }
+  .modal-nav:hover{background:var(--line);}
+  .modal-nav.disabled{opacity:0.2;pointer-events:none;}
+  .modal-nav-prev{left:-54px;}
+  .modal-nav-next{right:-54px;}
+  .modal-nav-counter{
+    position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
+    font-size:11px;color:var(--dim);letter-spacing:0.05em;white-space:nowrap;
+  }
 
   /* Card image — full bleed top */
   .modal-imgwrap{
@@ -515,11 +536,17 @@ if ('serviceWorker' in navigator) {
     /* Stats — prevent right cutoff */
     .stats-row{overflow:hidden;}
 
-    /* Modal — compact sheet from bottom, no big empty dark area */
+    /* Modal — compact sheet from bottom */
     .modal-backdrop{padding:0;align-items:flex-end;}
     .modal{
       max-width:100%;border-radius:20px 20px 0 0;
-      max-height:90vh;overflow-y:auto;
+      max-height:90vh;overflow-y:scroll;
+      -webkit-overflow-scrolling:touch;
+    }
+    /* Hide side nav arrows on mobile — use swipe instead */
+    .modal-nav{display:none;}
+    .modal-nav-counter{
+      bottom:auto;top:12px;left:50%;transform:translateX(-50%);
     }
     .modal-imgwrap{
       min-height:0;
@@ -626,7 +653,10 @@ if ('serviceWorker' in navigator) {
 
 <div class="modal-backdrop" id="modalBackdrop">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal()">&times;</button>
+    <button class="modal-close" onclick="closeModal()" aria-label="Close">&times;</button>
+    <button class="modal-nav modal-nav-prev" id="mNavPrev" onclick="modalNav(-1)" aria-label="Previous">&#8249;</button>
+    <button class="modal-nav modal-nav-next" id="mNavNext" onclick="modalNav(1)" aria-label="Next">&#8250;</button>
+    <div class="modal-nav-counter" id="mNavCounter"></div>
     <div class="modal-imgwrap">
       <img id="mImg" src="" alt=""
         onerror="this.style.display='none';document.getElementById('mFallback').style.display='block'">
@@ -710,15 +740,19 @@ function rarityClass(r) {
   // Order matters — most specific matches first
   if (l.includes('mega hyper')) return 'pill-mhr';
   if (l.includes('special illustration')) return 'pill-sir';
+  if (l === 'shiny ultra rare') return 'pill-shinyur';
   if (l.includes('hyper rare')) return 'pill-hr';
   if (l.includes('rare rainbow') || l === 'rare rainbow') return 'pill-rainbow';
   if (l.includes('trainer gallery')) return 'pill-tg';
   if (l.includes('ace spec')) return 'pill-acespec';
+  if (l === 'classic collection') return 'pill-classic';
   if (l.includes('shiny gx')) return 'pill-shgx';
   if (l === 'rare shiny') return 'pill-shiny';
+  if (l === 'shiny rare') return 'pill-shinyr';
   if (l.includes('amazing rare')) return 'pill-amazing';
   if (l.includes('radiant rare')) return 'pill-radiant';
   if (l.includes('rare secret') || l.includes('secret rare')) return 'pill-sr';
+  if (l === 'tag team') return 'pill-tagteam';
   if (l.includes('rare ultra')) return 'pill-fullart';
   if (l === 'illustration rare') return 'pill-ir';
   if (l === 'double rare') return 'pill-default';
@@ -733,17 +767,22 @@ function rarityClass(r) {
   return 'pill-default';
 }
 
-function shortRarity(r) {
+function shortRarity(r, name) {
   if (!r) return '?';
+  // Tag Team GX cards share "Rare Ultra" rarity — split them out by name
+  if ((r === 'Rare Ultra' || r === 'Rare Rainbow') && name && name.includes('&')) return 'Tag Team';
   const map = {
     'Mega Hyper Rare':           'MHR',
     'Special Illustration Rare': 'SIR',
+    'Shiny Ultra Rare':          'Shiny UR',
     'Hyper Rare':                'HR',
     'Rare Rainbow':              'Rainbow',
     'Trainer Gallery Rare Holo': 'TG',
     'ACE SPEC Rare':             'ACE SPEC',
+    'Classic Collection':        'Classic',
     'Rare Shiny GX':             'Shiny GX',
     'Rare Shiny':                'Shiny',
+    'Shiny Rare':                'Shiny R',
     'Amazing Rare':              'Amazing',
     'Radiant Rare':              'Radiant',
     'Rare Secret':               'SR',
@@ -905,12 +944,15 @@ function getFiltered() {
 const RARITY_ORDER = [
   'Mega Hyper Rare',           // SV apex
   'Special Illustration Rare', // SIR
+  'Shiny Ultra Rare',          // Paldean Fates shiny ex tier
   'Hyper Rare',                // SWSH Rainbow Rare
   'Rare Rainbow',              // SM Rainbow Rare
   'Trainer Gallery Rare Holo', // SWSH TG subset
   'ACE SPEC Rare',             // SV ACE SPEC
+  'Classic Collection',        // Celebrations full-art reprints
   'Rare Shiny GX',             // Shiny Vault GX
   'Rare Shiny',                // Shiny Vault base
+  'Shiny Rare',                // Paldean Fates shiny non-ex tier
   'Amazing Rare',              // SWSH lightning art
   'Radiant Rare',              // SWSH 1-per-deck
   'Rare Secret',               // Gold-border Secret Rares
@@ -938,12 +980,15 @@ function rarityColor(r) {
   const map = {
     'Mega Hyper Rare':           '#ff4d6d',
     'Special Illustration Rare': '#ff6fb8',
+    'Shiny Ultra Rare':          '#e879f9',
     'Hyper Rare':                '#7c9bff',
     'Rare Rainbow':              '#a78bfa',
     'Trainer Gallery Rare Holo': '#FFCB05',
     'ACE SPEC Rare':             '#f472b6',
+    'Classic Collection':        '#f59e0b',
     'Rare Shiny GX':             '#ff7fc2',
     'Rare Shiny':                '#fda4af',
+    'Shiny Rare':                '#c084fc',
     'Amazing Rare':              '#34d399',
     'Radiant Rare':              '#fb923c',
     'Rare Secret':               '#9d7cff',
@@ -1226,7 +1271,7 @@ function renderGrid(cards, el) {
       <div class="card-grid">`;
     for (const c of eraCards) {
       const cls = rarityClass(c.rarity);
-      const short = shortRarity(c.rarity);
+      const short = shortRarity(c.rarity, c.name);
       const owned = isOwned(c);
       const cdata = JSON.stringify(c).replace(/'/g, '&#39;');
       const key = cardKey(c).replace(/[^a-z0-9]/gi,'_');
@@ -1277,8 +1322,37 @@ function handleToggle(c) {
 
 // ─── MODAL ───────────────────────────────────────────────────────────────────
 let _modalCard = null;
-function openModal(c) {
+let _modalList = [];   // current filtered card list for prev/next navigation
+let _modalIdx  = -1;   // index of open card within _modalList
+
+function modalNav(dir) {
+  const next = _modalIdx + dir;
+  if (next < 0 || next >= _modalList.length) return;
+  _modalIdx = next;
+  openModal(_modalList[_modalIdx], false);
+}
+
+function updateNavState() {
+  const prev = document.getElementById('mNavPrev');
+  const next = document.getElementById('mNavNext');
+  const counter = document.getElementById('mNavCounter');
+  if (prev) prev.classList.toggle('disabled', _modalIdx <= 0);
+  if (next) next.classList.toggle('disabled', _modalIdx >= _modalList.length - 1);
+  if (counter && _modalList.length > 1) {
+    counter.textContent = `${_modalIdx + 1} / ${_modalList.length}`;
+  } else if (counter) {
+    counter.textContent = '';
+  }
+}
+
+function openModal(c, updateList = true) {
   _modalCard = c;
+  if (updateList) {
+    _modalList = getFiltered();
+    _modalIdx = _modalList.findIndex(x => x.cardId === c.cardId && x.num === c.num && x.set === c.set);
+    if (_modalIdx === -1) _modalIdx = 0;
+  }
+  updateNavState();
   const nameStr = c.name || '(Unknown)';
   document.getElementById('mName').textContent = nameStr;
   document.getElementById('mMeta').innerHTML =
@@ -1378,7 +1452,34 @@ function closeModal() {
 document.getElementById('modalBackdrop').addEventListener('click', function(e) {
   if (e.target === this) closeModal();
 });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+document.addEventListener('keydown', e => {
+  const open = document.getElementById('modalBackdrop').classList.contains('active');
+  if (e.key === 'Escape') { closeModal(); return; }
+  if (open && e.key === 'ArrowRight') { e.preventDefault(); modalNav(1); }
+  if (open && e.key === 'ArrowLeft')  { e.preventDefault(); modalNav(-1); }
+});
+
+// Modal swipe left/right to navigate cards (separate from page-level back swipe)
+(function() {
+  const backdrop = document.getElementById('modalBackdrop');
+  let _mx = null, _my = null;
+  const SWIPE_MIN = 50, SWIPE_RATIO = 1.5;
+  backdrop.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1) { _mx = null; return; }
+    _mx = e.touches[0].clientX;
+    _my = e.touches[0].clientY;
+  }, { passive: true });
+  backdrop.addEventListener('touchend', e => {
+    if (_mx === null) return;
+    const dx = e.changedTouches[0].clientX - _mx;
+    const dy = Math.abs(e.changedTouches[0].clientY - _my);
+    _mx = null;
+    if (Math.abs(dx) < SWIPE_MIN || Math.abs(dx) / (dy || 1) < SWIPE_RATIO) return;
+    if (dx < 0) modalNav(1);   // swipe left → next card
+    else         modalNav(-1); // swipe right → prev card
+  }, { passive: true });
+})();
 
 // ─── SEARCH / FILTER EVENTS ──────────────────────────────────────────────────
 document.getElementById('search').addEventListener('input', function() {
@@ -1629,7 +1730,8 @@ document.addEventListener('mousedown', e => {
     const dx = e.changedTouches[0].clientX - _tx;
     const dy = Math.abs(e.changedTouches[0].clientY - _ty);
     _tx = null;
-    // Right swipe only, starting from left edge area (first 40% of screen or anywhere)
+    // Don't fire page-back swipe when modal is open — modal has its own swipe handler
+    if (document.getElementById('modalBackdrop').classList.contains('active')) return;
     if (dx > SWIPE_MIN && Math.abs(dx) / (dy || 1) > SWIPE_RATIO) {
       navBack();
     }

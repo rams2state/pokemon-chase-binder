@@ -787,8 +787,11 @@ function startFirestoreListener(uid) {
     if (!snap.exists()) return;
     const remote = snap.data().keys || [];
     localStorage.setItem('pokemon-rarity-binder-owned', JSON.stringify(remote));
+    // Only update UI if cards are already loaded — loadCards() will pick up
+    // the correct localStorage state on its own if it runs after this
     if (typeof updateCollectionValue === 'function') updateCollectionValue();
-    if (typeof render === 'function') render();
+    // Don't call render() here — it may run before ALL_CARDS is populated
+    // and wipe the visible list. The owned badges update via isOwned() on next render.
   });
 }
 

@@ -329,6 +329,7 @@ if ('serviceWorker' in navigator) {
   .pill-lv{background:#ffb3e029;color:#ffb3e0;}
   .pill-prime{background:#e0779c29;color:#e0779c;}
   .pill-tg{background:#FFCB0529;color:#FFCB05;}
+  .pill-gg{background:#38bdf829;color:#38bdf8;}
   .pill-break{background:#ff9d5c29;color:#ff9d5c;}
   .pill-shgx{background:#ff7fc229;color:#ff7fc2;}
   .pill-star{background:#5ce1e629;color:#5ce1e6;}
@@ -901,6 +902,7 @@ function rarityClass(r, name, num) {
   if (l.includes('hyper rare')) return 'pill-hr';
   if (l === 'tag team') return isFull ? 'pill-fatagteam' : 'pill-tagteam';
   if (l.includes('rare rainbow')) return 'pill-rainbow';
+  if (l === 'galarian gallery') return 'pill-gg';
   if (l.includes('trainer gallery')) return 'pill-tg';
   if (l.includes('ace spec')) return 'pill-acespec';
   if (l === 'classic collection') return 'pill-classic';
@@ -941,6 +943,7 @@ function shortRarity(r, name, num) {
     'Shiny Ultra Rare':          'Shiny UR',
     'Hyper Rare':                'HR',
     'Rare Rainbow':              'Rainbow',
+    'Galarian Gallery':          'GG',
     'Trainer Gallery Rare Holo': 'TG',
     'ACE SPEC Rare':             'ACE SPEC',
     'Classic Collection':        'Classic',
@@ -1024,6 +1027,11 @@ function normalizeCard(raw) {
   if (name.includes('&') && (rarity === 'Rare Ultra' || rarity === 'Rare Rainbow')) {
     rarity = 'Tag Team';
   }
+  // Synthetic "Galarian Gallery" rarity — Crown Zenith Galarian Gallery subset
+  // Set name is "Crown Zenith Galarian Gallery" (set code CRZ is shared with main Crown Zenith)
+  if (set === 'Crown Zenith Galarian Gallery' && (rarity === 'Trainer Gallery Rare Holo' || rarity === 'Rare Secret')) {
+    rarity = 'Galarian Gallery';
+  }
   return { name, series, set, setCode, num, rarity, price, prevPrice, cardId, pic, setLogo, setSymbol, date };
 }
 
@@ -1073,6 +1081,7 @@ const RARITY_DISPLAY = {
   'Shiny Rare':               'Shiny Rare',
   'Tag Team':                 'Tag Team GX',
   'Rare Rainbow':             'Rare Rainbow',
+  'Galarian Gallery':          'Galarian Gallery',
   'Trainer Gallery Rare Holo':'Trainer Gallery Rare Holo',
   'ACE SPEC Rare':            'ACE SPEC Rare',
   'Classic Collection':       'Classic Collection',
@@ -1184,6 +1193,7 @@ const RARITY_ORDER = [
   'Shiny Ultra Rare',          // Paldean Fates shiny ex tier
   'Tag Team',                  // SM Tag Team GX (synthetic — name contains &)
   'Rare Rainbow',              // SM Rainbow Rare
+  'Galarian Gallery',          // Crown Zenith Galarian Gallery (synthetic)
   'Trainer Gallery Rare Holo', // SWSH TG subset
   'ACE SPEC Rare',             // SV ACE SPEC
   'Classic Collection',        // Celebrations full-art reprints
@@ -1226,6 +1236,7 @@ function rarityColor(r, name, num) {
     'Hyper Rare':                '#7c9bff',
     'Tag Team':                  '#f97d16',
     'Rare Rainbow':              '#a78bfa',
+    'Galarian Gallery':          '#38bdf8',
     'Trainer Gallery Rare Holo': '#FFCB05',
     'ACE SPEC Rare':             '#f472b6',
     'Classic Collection':        '#f59e0b',

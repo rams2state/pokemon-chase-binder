@@ -100,6 +100,14 @@ if ('serviceWorker' in navigator) {
   }
   select:focus{outline:none;border-color:var(--gold);}
 
+  /* RESET BUTTON */
+  .reset-btn{
+    background:transparent;border:1px solid var(--line);color:var(--dim);
+    padding:10px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-family:inherit;
+    transition:all .15s;white-space:nowrap;
+  }
+  .reset-btn:hover{border-color:#f87171;color:#f87171;}
+
   /* VIEW TOGGLE */
   .view-toggle{display:flex;gap:6px;}
   .vbtn{
@@ -600,6 +608,7 @@ if ('serviceWorker' in navigator) {
     <option value="price-asc">Price: Low to High</option>
     <option value="name-asc">Name A–Z</option>
   </select>
+  <button class="reset-btn" id="resetBtn" onclick="resetFilters()" style="display:none;">✕ Reset filters</button>
   <div class="view-toggle">
     <button class="vbtn" id="btnList" onclick="setView('list')">☰ List</button>
     <button class="vbtn" id="btnGrid" onclick="setView('grid')">⊞ Grid</button>
@@ -627,6 +636,7 @@ if ('serviceWorker' in navigator) {
     <button class="vbtn trend-btn" id="btnGainersM" onclick="setTrend('gainers')">📈 Gainers</button>
     <button class="vbtn trend-btn" id="btnDropsM" onclick="setTrend('drops')">📉 Drops</button>
   </div>
+  <button class="reset-btn" id="resetBtnM" onclick="resetFilters()" style="display:none;">✕ Reset filters</button>
 </div>
 
 <main>
@@ -751,19 +761,14 @@ function isBeyondSetTotal(num) {
 function rarityClass(r, name, num) {
   if (!r) return 'pill-default';
   const l = r.toLowerCase();
-  const isTagTeam = name && name.includes('&');
   const isFull = isBeyondSetTotal(num);
-  // Order matters — most specific matches first
-  if (l.includes('mega attack')) return 'pill-mar';
+  if (r === 'MEGA_ATTACK_RARE' || l.includes('mega attack')) return 'pill-mar';
   if (l.includes('mega hyper')) return 'pill-mhr';
   if (l.includes('special illustration')) return 'pill-sir';
   if (l === 'shiny ultra rare') return 'pill-shinyur';
   if (l.includes('hyper rare')) return 'pill-hr';
-  if (l.includes('rare rainbow') || l === 'rare rainbow') {
-    if (isTagTeam && isFull) return 'pill-fatagteam';
-    if (isTagTeam) return 'pill-tagteam';
-    return 'pill-rainbow';
-  }
+  if (l === 'tag team') return isFull ? 'pill-fatagteam' : 'pill-tagteam';
+  if (l.includes('rare rainbow')) return 'pill-rainbow';
   if (l.includes('trainer gallery')) return 'pill-tg';
   if (l.includes('ace spec')) return 'pill-acespec';
   if (l === 'classic collection') return 'pill-classic';
@@ -773,12 +778,7 @@ function rarityClass(r, name, num) {
   if (l.includes('amazing rare')) return 'pill-amazing';
   if (l.includes('radiant rare')) return 'pill-radiant';
   if (l.includes('rare secret') || l.includes('secret rare')) return 'pill-sr';
-  if (l.includes('rare ultra')) {
-    if (isTagTeam && isFull) return 'pill-fatagteam';
-    if (isTagTeam) return 'pill-tagteam';
-    if (isFull) return 'pill-fullart';
-    return 'pill-default'; // standard non-full-art GX/EX
-  }
+  if (l.includes('rare ultra')) return isFull ? 'pill-fullart' : 'pill-default';
   if (l === 'illustration rare') return 'pill-ir';
   if (l === 'double rare') return 'pill-default';
   if (l.includes('gold star')) return 'pill-gs';
@@ -794,16 +794,15 @@ function rarityClass(r, name, num) {
 
 function shortRarity(r, name, num) {
   if (!r) return '?';
-  const isTagTeam = name && name.includes('&');
   const isFull = isBeyondSetTotal(num);
-  // Rare Ultra breakdown — standard, Full Art, Tag Team, Full Art Tag Team
+  // Tag Team synthetic rarity — already rewritten in normalizeCard
+  if (r === 'Tag Team') return isFull ? 'FA Tag Team' : 'Tag Team';
+  // Rare Ultra / Rare Rainbow: check for Full Art position
   if (r === 'Rare Ultra' || r === 'Rare Rainbow') {
-    if (isTagTeam && isFull) return 'FA Tag Team';
-    if (isTagTeam) return 'Tag Team';
     if (isFull) return 'Full Art';
   }
   const map = {
-    'Mega Attack Rare':          'MAR',
+    'MEGA_ATTACK_RARE':          'MAR',
     'Mega Attack Rare':          'MAR',
     'Mega Hyper Rare':           'MHR',
     'Special Illustration Rare': 'SIR',
@@ -820,6 +819,7 @@ function shortRarity(r, name, num) {
     'Radiant Rare':              'Radiant',
     'Rare Secret':               'SR',
     'Secret Rare':               'SR',
+    'Tag Team':                  'Tag Team',
     'Rare Ultra':                'ex/GX',
     'Illustration Rare':         'IR',
     'Double Rare':               'ex UR',
@@ -879,7 +879,7 @@ function normalizeCard(raw) {
   const set = raw.set_name || raw['set_name'] || '';
   const setCode = raw.set_code || raw['set_code'] || '';
   const num = raw.card_number || raw['card_number'] || raw.number || '';
-  const rarity = raw.rarity || '';
+  let rarity = raw.rarity || '';
   const price = raw.price || 'N/A';
   const prevPrice = raw.previous_price || raw['previous_price'] || 'N/A';
   const cardId = raw.card_id || raw['card_id'] || '';
@@ -887,6 +887,11 @@ function normalizeCard(raw) {
   const setLogo = raw.set_logo || raw['set_logo'] || '';
   const setSymbol = raw.set_symbol || raw['set_symbol'] || '';
   const date = raw.release_date || raw['release_date'] || '';
+  // Synthetic "Tag Team" rarity — all Tag Team GX cards have & in the name
+  // and are stored as Rare Ultra or Rare Rainbow in the API with no distinction
+  if (name.includes('&') && (rarity === 'Rare Ultra' || rarity === 'Rare Rainbow')) {
+    rarity = 'Tag Team';
+  }
   return { name, series, set, setCode, num, rarity, price, prevPrice, cardId, pic, setLogo, setSymbol, date };
 }
 
@@ -926,14 +931,79 @@ function updateStats() {
   document.getElementById('statCards').textContent = ALL_CARDS.length.toLocaleString();
 }
 
+const RARITY_DISPLAY = {
+  'Mega Hyper Rare':          'Mega Hyper Rare',
+  'MEGA_ATTACK_RARE':         'Mega Attack Rare',
+  'Special Illustration Rare':'Special Illustration Rare',
+  'Illustration Rare':        'Illustration Rare',
+  'Hyper Rare':               'Hyper Rare',
+  'Shiny Ultra Rare':         'Shiny Ultra Rare',
+  'Shiny Rare':               'Shiny Rare',
+  'Tag Team':                 'Tag Team GX',
+  'Rare Rainbow':             'Rare Rainbow',
+  'Trainer Gallery Rare Holo':'Trainer Gallery Rare Holo',
+  'ACE SPEC Rare':            'ACE SPEC Rare',
+  'Classic Collection':       'Classic Collection',
+  'Rare Shiny GX':            'Rare Shiny GX',
+  'Amazing Rare':             'Amazing Rare',
+  'Radiant Rare':             'Radiant Rare',
+  'Double Rare':              'Double Rare',
+  'Rare Secret':              'Rare Secret',
+  'Rare Ultra':               'Rare Ultra',
+  'Gold Star':                'Gold Star',
+  'LEGEND':                   'Legend',
+  'LV.X':                     'LV.X',
+  'Rare Prime':               'Rare Prime',
+  'Rare Holo Star':           'Rare Holo Star',
+  'Rare Shining':             'Rare Shining',
+  'Rare Holo':                'Rare Holo',
+  'Rare Holo VMAX':           'Rare Holo VMAX',
+  'Rare Holo V':              'Rare Holo V',
+};
+
 function populateFilters() {
   const eras = [...new Set(ALL_CARDS.map(c => c.series).filter(Boolean))].sort();
   const rarities = [...new Set(ALL_CARDS.map(c => c.rarity).filter(Boolean))].sort();
   const eraEl = document.getElementById('eraFilter');
   const rarEl = document.getElementById('rarityFilter');
   eraEl.innerHTML = '<option value="">All Eras</option>' + eras.map(e => `<option value="${e}">${e}</option>`).join('');
-  rarEl.innerHTML = '<option value="">All Rarities</option>' + rarities.map(r => `<option value="${r}">${r}</option>`).join('');
+  rarEl.innerHTML = '<option value="">All Rarities</option>' + rarities.map(r => {
+    const label = RARITY_DISPLAY[r] || r;
+    return `<option value="${r}">${label}</option>`;
+  }).join('');
   syncMobileFilters();
+}
+
+function isFiltersActive() {
+  const search = document.getElementById('search').value;
+  const era = document.getElementById('eraFilter').value;
+  const rarity = document.getElementById('rarityFilter').value;
+  const sort = document.getElementById('sortBy').value;
+  return search || era || rarity || sort !== 'date-asc' || showOwnedOnly;
+}
+
+function updateResetBtn() {
+  const show = isFiltersActive();
+  ['resetBtn','resetBtnM'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = show ? '' : 'none';
+  });
+}
+
+function resetFilters() {
+  document.getElementById('search').value = '';
+  document.getElementById('searchWrap').classList.remove('has-text');
+  document.getElementById('eraFilter').value = '';
+  document.getElementById('rarityFilter').value = '';
+  document.getElementById('sortBy').value = 'date-asc';
+  // Sync mobile
+  ['eraFilterM','rarityFilterM','sortByM'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = id === 'sortByM' ? 'date-asc' : '';
+  });
+  if (showOwnedOnly) toggleOwnedFilter();
+  updateResetBtn();
+  render();
 }
 
 // ─── FILTER + SORT ───────────────────────────────────────────────────────────
@@ -977,9 +1047,10 @@ function getFiltered() {
 const RARITY_ORDER = [
   'Mega Hyper Rare',           // SV apex
   'Special Illustration Rare', // SIR
-  'Mega Attack Rare',          // SV secret-numbered chase tier
+  'MEGA_ATTACK_RARE',          // SV secret-numbered chase tier (API string)
   'Hyper Rare',                // SWSH Rainbow Rare
   'Shiny Ultra Rare',          // Paldean Fates shiny ex tier
+  'Tag Team',                  // SM Tag Team GX (synthetic — name contains &)
   'Rare Rainbow',              // SM Rainbow Rare
   'Trainer Gallery Rare Holo', // SWSH TG subset
   'ACE SPEC Rare',             // SV ACE SPEC
@@ -1010,18 +1081,18 @@ function rarityRank(r, subtypes) {
 }
 
 function rarityColor(r, name, num) {
-  // Returns the CSS color var for the rarity label text
-  const isTagTeam = name && name.includes('&');
   const isFull = isBeyondSetTotal(num);
-  if ((r === 'Rare Ultra' || r === 'Rare Rainbow') && isTagTeam && isFull) return '#ff4d00';
-  if ((r === 'Rare Ultra' || r === 'Rare Rainbow') && isTagTeam) return '#f97d16';
+  // Tag Team synthetic rarity
+  if (r === 'Tag Team') return isFull ? '#ff4d00' : '#f97d16';
   if (r === 'Rare Ultra' && isFull) return '#60a5fa';
   const map = {
+    'MEGA_ATTACK_RARE':          '#ff6a00',
     'Mega Attack Rare':          '#ff6a00',
     'Mega Hyper Rare':           '#ff4d6d',
     'Special Illustration Rare': '#ff6fb8',
     'Shiny Ultra Rare':          '#e879f9',
     'Hyper Rare':                '#7c9bff',
+    'Tag Team':                  '#f97d16',
     'Rare Rainbow':              '#a78bfa',
     'Trainer Gallery Rare Holo': '#FFCB05',
     'ACE SPEC Rare':             '#f472b6',
@@ -1163,6 +1234,7 @@ function renderTrend(el) {
 }
 
 function render() {
+  updateResetBtn();
   const cards = getFiltered();
   const el = document.getElementById('cardView');
   if (cards.length === 0) {
@@ -1617,7 +1689,10 @@ function syncMobileFilters() {
   document.getElementById('eraFilterM').innerHTML =
     '<option value="">All Eras</option>' + eras.map(e => `<option value="${e}">${e}</option>`).join('');
   document.getElementById('rarityFilterM').innerHTML =
-    '<option value="">All Rarities</option>' + rarities.map(r => `<option value="${r}">${r}</option>`).join('');
+    '<option value="">All Rarities</option>' + rarities.map(r => {
+      const label = RARITY_DISPLAY[r] || r;
+      return `<option value="${r}">${label}</option>`;
+    }).join('');
 }
 
 // Mobile selects mirror desktop and vice versa

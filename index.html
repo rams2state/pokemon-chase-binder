@@ -1170,7 +1170,14 @@ function render() {
     _activeSet = null;
     return;
   }
-  if (currentView === 'grid') { _activeSet = null; renderGrid(cards, el); return; }
+  if (currentView === 'grid') {
+    // If inside a set, grid shows that set's cards; otherwise shows all filtered cards
+    const gridCards = _activeSet
+      ? cards.filter(c => c.series === _activeSet.era && c.set === _activeSet.set)
+      : cards;
+    renderGrid(gridCards.length > 0 ? gridCards : cards, el);
+    return;
+  }
   // Trend view takes priority over set detail / overview
   if (_trendMode) { renderTrend(el); return; }
   // If a set is active and still has cards in filtered result, show detail
@@ -1626,7 +1633,7 @@ function syncMobileFilters() {
 
 function setView(v) {
   currentView = v;
-  if (v === 'grid') _activeSet = null; // grid always shows era overview
+  // Don't clear _activeSet — grid should show the same set you were just in
   // Switching view clears trend mode
   _trendMode = null;
   const gEl = document.getElementById('btnGainers');

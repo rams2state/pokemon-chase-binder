@@ -808,8 +808,10 @@ async function pushOwnedToFirestore(ownedSet) {
   } catch(e) { console.warn('Firebase write failed', e); }
 }
 
-// ── Expose to global scope for the main script ──────────────────────────────
-window._fbPushOwned = pushOwnedToFirestore;
+// ── Listen for owned-changed events from the main script ────────────────────
+window.addEventListener('owned-changed', e => {
+  pushOwnedToFirestore(e.detail.owned);
+});
 
 // ── Auth button handler ─────────────────────────────────────────────────────
 window._fbSignIn = async () => {
@@ -848,8 +850,8 @@ function toggleOwned(c) {
   if (owned.has(key)) owned.delete(key);
   else owned.add(key);
   setOwned(owned);
-  // Sync to Firestore if signed in
-  if (window._fbPushOwned) window._fbPushOwned(owned);
+  // Sync to Firestore via event (module script listens for this)
+  window.dispatchEvent(new CustomEvent('owned-changed', { detail: { owned } }));
   updateCollectionValue();
 }
 function isOwned(c) {

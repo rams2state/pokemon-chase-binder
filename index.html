@@ -1077,17 +1077,18 @@ function setTrend(mode) {
 }
 
 function renderTrend(el) {
-  // Get all cards that have a valid previous price
+  // Require both prices to be real values, and a minimum price to filter out bulk noise
+  const MIN_PRICE = 2.00; // ignore cards under $2 — they create misleading % swings
   const withChange = ALL_CARDS
     .filter(c => {
       const cv = priceVal(c.price), pv = priceVal(c.prevPrice);
-      return cv >= 0 && pv > 0;
+      return cv > 0 && pv > 0 && Math.max(cv, pv) >= MIN_PRICE;
     })
     .map(c => {
       const cv = priceVal(c.price), pv = priceVal(c.prevPrice);
       const delta = cv - pv;
       const pct = (delta / pv) * 100;
-      return { ...c, _delta: delta, _pct: pct };
+      return { ...c, _delta: delta, _pct: pct, _cv: cv, _pv: pv };
     });
 
   if (withChange.length === 0) {
@@ -1099,15 +1100,28 @@ function renderTrend(el) {
   let sorted, title, titleColor, subtitle;
 
   if (_trendMode === 'gainers') {
-    sorted = [...withChange].sort((a,b) => b._pct - a._pct).slice(0, TOP_N);
+    // Sort by dollar gain first (meaningful moves), then break ties by %
+    sorted = [...withChange]
+      .filter(c => c._delta > 0)
+      .sort((a,b) => b._delta - a._delta || b._pct - a._pct)
+      .slice(0, TOP_N);
     title = '📈 Top Gainers';
     titleColor = '#4ade80';
-    subtitle = `Top ${Math.min(TOP_N, sorted.length)} biggest price increases`;
+    subtitle = `Top ${sorted.length} biggest price increases (min $${MIN_PRICE} card)`;
   } else {
-    sorted = [...withChange].sort((a,b) => a._pct - b._pct).slice(0, TOP_N);
+    // Sort by dollar drop first, then break ties by %
+    sorted = [...withChange]
+      .filter(c => c._delta < 0)
+      .sort((a,b) => a._delta - b._delta || a._pct - b._pct)
+      .slice(0, TOP_N);
     title = '📉 Top Drops';
     titleColor = '#f87171';
-    subtitle = `Top ${Math.min(TOP_N, sorted.length)} biggest price decreases`;
+    subtitle = `Top ${sorted.length} biggest price decreases (min $${MIN_PRICE} card)`;
+  }
+
+  if (sorted.length === 0) {
+    el.innerHTML = `<div class="empty"><div class="display">${_trendMode === 'gainers' ? 'No gainers yet' : 'No drops yet'}</div><p>Run the collector on two separate days to see price movement.</p></div>`;
+    return;
   }
 
   let html = `<div class="trend-section">
@@ -1123,7 +1137,7 @@ function renderTrend(el) {
     const sign = c._delta >= 0 ? '+' : '';
     const cls = c._delta >= 0 ? 'price-up' : 'price-down';
     const arrow = c._delta >= 0 ? '↑' : '↓';
-    const badge = `<span class="price-change ${cls}">${arrow} ${sign}${c._pct.toFixed(1)}%</span>`;
+    const badge = `<span class="price-change ${cls}">${arrow} ${sign}$${Math.abs(c._delta).toFixed(2)} (${sign}${c._pct.toFixed(1)}%)</span>`;
     const thumbHtml = c.pic && c.pic !== 'N/A'
       ? `<img class="crow-thumb" src="${c.pic}" alt="${c.name||''}" loading="lazy" onerror="this.style.display='none'">`
       : `<div class="crow-thumb-empty">?</div>`;
@@ -1137,7 +1151,9 @@ function renderTrend(el) {
         <div class="crow-set">${c.set}</div>
       </div>
       <div class="crow-price-wrap">
-        <span class="crow-price">${c.price!=='N/A'?c.price:'—'}</span>${badge}
+        <span class="crow-price">${c.price!=='N/A'?c.price:'—'}</span>
+        <div style="font-size:10px;color:var(--dim);text-align:right;">was ${c.prevPrice}</div>
+        ${badge}
       </div>
     </div>`;
   });

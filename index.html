@@ -1234,9 +1234,11 @@ function renderSetOverview(cards, el) {
 }
 
 function openSetDetail(eraEnc, setEnc) {
+  sessionStorage.setItem('binderScroll', window.scrollY);
+  history.pushState({ setDetail: true }, '');
   _activeSet = { era: decodeURIComponent(eraEnc), set: decodeURIComponent(setEnc) };
   render();
-  window.scrollTo(0,0);
+  window.scrollTo(0, 0);
 }
 
 function renderSetDetail(cards, el) {
@@ -1251,7 +1253,7 @@ function renderSetDetail(cards, el) {
   const rarities = Object.keys(setData).sort((a,b) => rarityRank(a)-rarityRank(b));
 
   let html = `<div class="set-detail-header">
-    <button class="set-detail-back" onclick="_activeSet=null;render()">← All Sets</button>
+    <button class="set-detail-back" onclick="history.back()">← All Sets</button>
     ${logoHtml}
     <div class="set-detail-info">
       <div class="set-detail-era">${era} · ${setYear}</div>
@@ -1503,11 +1505,28 @@ document.getElementById('modalBackdrop').addEventListener('click', function(e) {
   }
 });
 
-// Back button / mouse back button / swipe-back: close modal instead of leaving page
+// Back button / mouse button 4 / swipe-back: intercept and handle in-app
 window.addEventListener('popstate', function(e) {
-  const isOpen = document.getElementById('modalBackdrop').classList.contains('active');
-  if (isOpen) {
+  const isModalOpen = document.getElementById('modalBackdrop').classList.contains('active');
+  if (isModalOpen) {
     closeModal(true);
+    return;
+  }
+  if (_activeSet) {
+    _activeSet = null;
+    _trendMode = null;
+    render();
+    const y = parseInt(sessionStorage.getItem('binderScroll') || '0', 10);
+    window.scrollTo({ top: y, behavior: 'instant' });
+    return;
+  }
+  if (_trendMode) {
+    _trendMode = null;
+    ['btnGainers','btnGainersM','btnDrops','btnDropsM'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('active-gainers','active-drops');
+    });
+    render();
   }
 });
 
@@ -1750,28 +1769,10 @@ async function tryAutoLoad() {
 
 tryAutoLoad();
 
-// ─── NAVIGATION: swipe left→right (mobile) + mouse button 4 (desktop) ───────
-function navBack() {
-  if (_activeSet) {
-    // Set detail → back to set overview
-    _activeSet = null;
-    _trendMode = null;
-    render();
-  } else if (_trendMode) {
-    // Trend view → back to overview
-    _trendMode = null;
-    ['btnGainers','btnDrops','btnGainersM','btnDropsM'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.classList.remove('active-gainers','active-drops');
-    });
-    render();
-  }
-  // Already at overview — nowhere to go back to
-}
-
-// Mouse back button (button 3 = right, button 4 = back in most browsers)
+// ─── NAVIGATION: mouse button 4 (desktop back button) ────────────────────────
+// All back navigation flows through history.back() → popstate handler above
 document.addEventListener('mouseup', e => {
-  if (e.button === 3) { e.preventDefault(); navBack(); }
+  if (e.button === 3) { e.preventDefault(); history.back(); }
 });
 document.addEventListener('mousedown', e => {
   if (e.button === 3) e.preventDefault();

@@ -1798,7 +1798,7 @@ document.addEventListener('mousedown', e => {
     // Don't fire page-back swipe when modal is open — modal has its own swipe handler
     if (document.getElementById('modalBackdrop').classList.contains('active')) return;
     if (dx > SWIPE_MIN && Math.abs(dx) / (dy || 1) > SWIPE_RATIO) {
-      navBack();
+      history.back();
     }
   }, { passive: true });
 })();

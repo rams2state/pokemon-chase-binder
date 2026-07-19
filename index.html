@@ -771,14 +771,20 @@ function ownedDocRef(uid) {
 
 async function mergeFirestoreToLocal(uid) {
   try {
+    console.log('[Firebase] mergeFirestoreToLocal start, uid=', uid);
     const snap = await getDoc(ownedDocRef(uid));
+    console.log('[Firebase] snap.exists=', snap.exists());
     if (snap.exists()) {
       const remote = snap.data().keys || [];
+      console.log('[Firebase] remote keys count=', remote.length);
       const local = JSON.parse(localStorage.getItem('pokemon-rarity-binder-owned') || '[]');
       const merged = [...new Set([...local, ...remote])];
       localStorage.setItem('pokemon-rarity-binder-owned', JSON.stringify(merged));
+      console.log('[Firebase] merged count=', merged.length);
+    } else {
+      console.log('[Firebase] No Firestore doc found for this user');
     }
-  } catch(e) { console.warn('Firebase merge failed', e); }
+  } catch(e) { console.warn('[Firebase] merge failed', e); }
 }
 
 function startFirestoreListener(uid) {

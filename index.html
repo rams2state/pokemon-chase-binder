@@ -78,6 +78,20 @@ if ('serviceWorker' in navigator) {
   .stat-owned.active{background:#4ade8022;border-color:#4ade80;box-shadow:0 0 0 1px #4ade8060;}
   .stat-owned.active .l::after{content:' ✓';}
 
+  /* AUTH BUTTON */
+  .auth-btn {
+    position:absolute; top:16px; right:20px;
+    background:var(--panel); border:1px solid var(--line); color:var(--dim);
+    padding:8px 14px; border-radius:8px; font-size:13px; font-family:inherit;
+    cursor:pointer; transition:border-color .15s, color .15s;
+    z-index:10;
+  }
+  .auth-btn:hover { border-color:var(--gold); color:var(--text); }
+  .auth-btn.signed-in { border-color:#4ade80; color:#4ade80; }
+  @media (max-width:600px) {
+    .auth-btn { top:10px; right:10px; padding:6px 10px; font-size:12px; }
+  }
+
   /* TOOLBAR */
   .toolbar{max-width:1280px;margin:22px auto 0;padding:0 28px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
   .search-wrap{position:relative;flex:1;min-width:220px;}
@@ -581,6 +595,7 @@ if ('serviceWorker' in navigator) {
     <div class="eyebrow">Pokémon TCG · Chase Card Archive</div>
     <h1 class="display">Rarity <span>Binder</span></h1>
     <p class="sub">The era-defining chase pulls from Base Set to Scarlet & Violet — Gold Stars, SIRs, Mega Hyper Rares, LEGEND cards, and every era's hardest hit.</p>
+    <button id="authBtn" class="auth-btn" onclick="window._fbSignIn && window._fbSignIn()">⬡ Sign in</button>
     <div class="stats-row">
       <div class="stat"><div class="n" id="statCards">—</div><div class="l">Total Cards</div></div>
       <div class="stat stat-owned" id="statOwnedBox" onclick="toggleOwnedFilter()" title="Click to show only owned cards">
@@ -694,6 +709,110 @@ if ('serviceWorker' in navigator) {
 
 <footer>Pokémon TCG Rarity Binder v2.0 · Data from Pokémon TCG API & TCGplayer</footer>
 
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { getFirestore, doc, setDoc, getDoc, onSnapshot }
+  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDH73IiryicsIWJ56KUa9RLvNozQKg5wfA",
+  authDomain: "pokemon-rarity-binder.firebaseapp.com",
+  projectId: "pokemon-rarity-binder",
+  storageBucket: "pokemon-rarity-binder.firebasestorage.app",
+  messagingSenderId: "491998939309",
+  appId: "1:491998939309:web:0d1f4bf43694cd29dd1e24"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
+let _firestoreUnsub = null;
+let _currentUid = null;
+
+// ── Auth state ──────────────────────────────────────────────────────────────
+onAuthStateChanged(auth, async user => {
+  _currentUid = user ? user.uid : null;
+  updateAuthUI(user);
+  if (user) {
+    // Pull Firestore data, merge with localStorage, start live listener
+    await mergeFirestoreToLocal(user.uid);
+    startFirestoreListener(user.uid);
+  } else {
+    if (_firestoreUnsub) { _firestoreUnsub(); _firestoreUnsub = null; }
+  }
+  // Re-render so owned badges reflect current state
+  if (typeof updateCollectionValue === 'function') updateCollectionValue();
+  if (typeof render === 'function') render();
+});
+
+function updateAuthUI(user) {
+  const btn = document.getElementById('authBtn');
+  if (!btn) return;
+  if (user) {
+    btn.textContent = '⬡ ' + (user.displayName ? user.displayName.split(' ')[0] : 'Signed in');
+    btn.title = 'Click to sign out (' + user.email + ')';
+    btn.classList.add('signed-in');
+  } else {
+    btn.textContent = '⬡ Sign in';
+    btn.title = 'Sign in with Google to sync across devices';
+    btn.classList.remove('signed-in');
+  }
+}
+
+// ── Firestore read/write ────────────────────────────────────────────────────
+function ownedDocRef(uid) {
+  return doc(db, 'users', uid, 'data', 'owned');
+}
+
+async function mergeFirestoreToLocal(uid) {
+  try {
+    const snap = await getDoc(ownedDocRef(uid));
+    if (snap.exists()) {
+      const remote = snap.data().keys || [];
+      const local = JSON.parse(localStorage.getItem('pokemon-rarity-binder-owned') || '[]');
+      const merged = [...new Set([...local, ...remote])];
+      localStorage.setItem('pokemon-rarity-binder-owned', JSON.stringify(merged));
+    }
+  } catch(e) { console.warn('Firebase merge failed', e); }
+}
+
+function startFirestoreListener(uid) {
+  if (_firestoreUnsub) _firestoreUnsub();
+  _firestoreUnsub = onSnapshot(ownedDocRef(uid), snap => {
+    if (!snap.exists()) return;
+    const remote = snap.data().keys || [];
+    localStorage.setItem('pokemon-rarity-binder-owned', JSON.stringify(remote));
+    if (typeof updateCollectionValue === 'function') updateCollectionValue();
+    if (typeof render === 'function') render();
+  });
+}
+
+async function pushOwnedToFirestore(ownedSet) {
+  if (!_currentUid) return;
+  try {
+    await setDoc(ownedDocRef(_currentUid), { keys: [...ownedSet] });
+  } catch(e) { console.warn('Firebase write failed', e); }
+}
+
+// ── Expose to global scope for the main script ──────────────────────────────
+window._fbPushOwned = pushOwnedToFirestore;
+
+// ── Auth button handler ─────────────────────────────────────────────────────
+window._fbSignIn = async () => {
+  if (_currentUid) {
+    await signOut(auth);
+  } else {
+    try { await signInWithPopup(auth, provider); }
+    catch(e) { console.warn('Sign-in failed', e); }
+  }
+};
+</script>
+
 <script>
 // ─── DATA ────────────────────────────────────────────────────────────────────
 let ALL_CARDS = [];
@@ -720,6 +839,8 @@ function toggleOwned(c) {
   if (owned.has(key)) owned.delete(key);
   else owned.add(key);
   setOwned(owned);
+  // Sync to Firestore if signed in
+  if (window._fbPushOwned) window._fbPushOwned(owned);
   updateCollectionValue();
 }
 function isOwned(c) {

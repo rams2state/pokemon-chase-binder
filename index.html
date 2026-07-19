@@ -1391,6 +1391,9 @@ function openModal(c, updateList = true) {
     _modalList = getFiltered();
     _modalIdx = _modalList.findIndex(x => x.cardId === c.cardId && x.num === c.num && x.set === c.set);
     if (_modalIdx === -1) _modalIdx = 0;
+    // Save scroll position and push a history entry so back button closes modal
+    sessionStorage.setItem('binderScroll', window.scrollY);
+    history.pushState({ modal: true }, '');
   }
   updateNavState();
   const nameStr = c.name || '(Unknown)';
@@ -1483,19 +1486,40 @@ function toggleFromModal() {
   ownBtn.classList.toggle('owned', owned);
 }
 
-function closeModal() {
+function closeModal(restoreScroll = true) {
   document.getElementById('modalBackdrop').classList.remove('active');
   document.body.style.overflow = '';
   if (_priceChart) { _priceChart.destroy(); _priceChart = null; }
+  if (restoreScroll) {
+    const y = parseInt(sessionStorage.getItem('binderScroll') || '0', 10);
+    window.scrollTo({ top: y, behavior: 'instant' });
+  }
 }
 
 document.getElementById('modalBackdrop').addEventListener('click', function(e) {
-  if (e.target === this) closeModal();
+  if (e.target === this) {
+    // User clicked backdrop — go back in history (which triggers popstate → closeModal)
+    history.back();
+  }
+});
+
+// Back button / mouse back button / swipe-back: close modal instead of leaving page
+window.addEventListener('popstate', function(e) {
+  const isOpen = document.getElementById('modalBackdrop').classList.contains('active');
+  if (isOpen) {
+    closeModal(true);
+  }
+});
+
+// Restore scroll position when returning to page (e.g. after following TCGplayer link)
+window.addEventListener('pageshow', function() {
+  const y = parseInt(sessionStorage.getItem('binderScroll') || '0', 10);
+  if (y > 0) window.scrollTo({ top: y, behavior: 'instant' });
 });
 
 document.addEventListener('keydown', e => {
   const open = document.getElementById('modalBackdrop').classList.contains('active');
-  if (e.key === 'Escape') { closeModal(); return; }
+  if (e.key === 'Escape') { history.back(); return; }
   if (open && e.key === 'ArrowRight') { e.preventDefault(); modalNav(1); }
   if (open && e.key === 'ArrowLeft')  { e.preventDefault(); modalNav(-1); }
 });

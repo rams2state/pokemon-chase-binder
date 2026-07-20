@@ -478,11 +478,12 @@ if ('serviceWorker' in navigator) {
   .filter-toggle-btn.active{border-color:var(--gold);color:var(--gold);}
 
   @media(max-width:700px){
-    /* Header — compact on mobile, keep h1 to push auth button right */
-    header.hero{padding:10px 16px 12px;overflow:hidden;}
+    /* Header — compact on mobile */
+    header.hero{padding:8px 16px 12px;overflow:hidden;}
     .eyebrow{display:none;}
-    h1.display{font-size:22px;margin:0 120px 0 0;line-height:1;} /* leave room for auth btn */
+    h1.display{font-size:22px;margin:0 0 10px 0;line-height:1;}
     .sub{display:none;}
+    .auth-btn{top:8px;right:12px;padding:5px 10px;font-size:12px;}
 
     /* Prevent horizontal scroll on body */
     body{overflow-x:hidden;}
@@ -582,41 +583,34 @@ if ('serviceWorker' in navigator) {
     /* Stats — prevent right cutoff */
     .stats-row{overflow:hidden;}
 
-    /* Modal — true full-screen on mobile, no background showing */
+    /* Modal — bottom sheet with slight backdrop transparency */
     .modal-backdrop{padding:0;align-items:flex-end;}
     .modal{
-      max-width:100%;width:100%;
-      border-radius:0;         /* no rounded corners — fills edge to edge */
-      height:100vh;max-height:100vh;
-      overflow-y:auto;
+      max-width:100%;border-radius:20px 20px 0 0;
+      max-height:88vh;overflow-y:auto;
       -webkit-overflow-scrolling:touch;
-      display:flex;flex-direction:column;
     }
     /* Hide arrows on mobile — swipe handles navigation */
     .modal-nav{display:none;}
-    /* Nav counter + close row */
-    .modal-nav-bar{padding:12px 52px 0 16px;}
-    .modal-nav-counter{text-align:left;font-size:13px;}
-    .modal-close{top:10px;right:10px;width:36px;height:36px;font-size:18px;}
-    /* Image: side-by-side layout on small screens */
+    .modal-nav-bar{padding:10px 52px 0 16px;}
+    .modal-nav-counter{text-align:left;font-size:12px;}
     .modal-imgwrap{
-      min-height:0;flex-shrink:0;
-      padding:8px 16px;
+      min-height:0;
+      padding:8px 16px 8px;
       background:transparent;
-      justify-content:flex-start;
     }
     .modal-imgwrap img{
-      max-height:180px;max-width:130px;
+      max-height:220px;max-width:160px;
       box-shadow:0 8px 32px rgba(0,0,0,0.5);
     }
-    .modal-body{padding:6px 16px 16px;text-align:left;}
+    .modal-body{padding:8px 16px 28px;text-align:left;}
     .modal-name{font-size:21px;}
     .modal-meta{font-size:12px;line-height:1.6;margin-top:4px;}
     .modal-price{font-size:21px;margin-top:8px;justify-content:flex-start;}
-    .modal-chart-wrap{margin-top:12px;padding:10px;}
-    #priceChart{height:100px!important;}
+    .modal-chart-wrap{margin-top:12px;}
+    #priceChart{height:110px!important;}
     .modal-actions{margin-top:12px;gap:8px;}
-    .modal-own,.modal-buy{padding:13px 16px;font-size:14px;border-radius:14px;}
+    .modal-own,.modal-buy{padding:13px 16px;font-size:14px;}
 
     /* Era headers */
     .era-title{font-size:18px;}

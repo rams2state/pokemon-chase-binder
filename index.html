@@ -572,12 +572,12 @@ if ('serviceWorker' in navigator) {
     .crow-name{font-size:15px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;}
     .crow-thumb{width:40px;height:56px;flex-shrink:0;}
     .crow-thumb-empty{width:40px;height:56px;flex-shrink:0;}
-    /* Price + badge: column stack, fixed width, no overflow */
+    /* Price + badge: column stack, no clipping */
     .crow-price-wrap{
       flex-direction:column;align-items:flex-end;
-      gap:2px;flex-shrink:0;min-width:76px;max-width:110px;
+      gap:2px;flex-shrink:0;min-width:68px;
     }
-    .crow-price{font-size:15px;}
+    .crow-price{font-size:14px;white-space:nowrap;}
     .price-change{font-size:10px;padding:2px 5px;white-space:nowrap;}
     .trend-rank{font-size:13px;min-width:18px;flex-shrink:0;}
     .crow-set{max-width:100px;}

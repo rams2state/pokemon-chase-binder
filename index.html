@@ -566,19 +566,19 @@ if ('serviceWorker' in navigator) {
       flex-wrap:nowrap;
       gap:8px;
       width:100%;box-sizing:border-box;
+      overflow:hidden;
     }
-    /* Number + name: keep number pinned left, name fills remaining space */
-    .crow-num{font-size:13px;width:40px;flex-shrink:0;text-align:right;white-space:nowrap;}
-    .crow-name{font-size:15px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;}
+    .crow-num{font-size:13px;width:36px;flex-shrink:0;text-align:right;white-space:nowrap;}
     .crow-thumb{width:40px;height:56px;flex-shrink:0;}
     .crow-thumb-empty{width:40px;height:56px;flex-shrink:0;}
-    /* Price + badge: fixed width so flex never squishes it */
+    /* Name: takes remaining space, always truncates before touching price */
+    .crow-name{font-size:14px;flex:1 1 0;min-width:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;}
+    /* Price: absolutely fixed — never shrinks, never grows */
     .crow-price-wrap{
-      flex-direction:column;align-items:flex-end;
-      gap:2px;flex-shrink:0;flex-grow:0;width:72px;
+      flex:0 0 68px;width:68px;
+      flex-direction:column;align-items:flex-end;gap:2px;
     }
-    .crow-price{font-size:13px;white-space:nowrap;}
-    .crow-name{font-size:14px;}
+    .crow-price{font-size:13px;white-space:nowrap;overflow:hidden;}
     .price-change{font-size:10px;padding:2px 5px;white-space:nowrap;}
     .trend-rank{font-size:13px;min-width:18px;flex-shrink:0;}
     .crow-set{max-width:100px;}

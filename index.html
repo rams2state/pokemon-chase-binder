@@ -42,10 +42,7 @@ if ('serviceWorker' in navigator) {
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
-    background:
-      radial-gradient(circle at 15% -10%, rgba(255,203,5,0.12), transparent 40%),
-      radial-gradient(circle at 100% 0%, rgba(59,76,202,0.16), transparent 35%),
-      var(--ink);
+    background:var(--ink);
     color:var(--text);
     font-family:'Manrope', sans-serif;
     min-height:100vh;
@@ -135,14 +132,8 @@ if ('serviceWorker' in navigator) {
   }
   .vbtn.active{background:var(--gold);color:#231a00;border-color:var(--gold);font-weight:700;}
 
-  /* QUICK ACTION ROW (below filters on mobile) */
-  .quick-row{
-    display:none;max-width:1280px;margin:0 auto;padding:0 16px 10px;
-    gap:8px;
-  }
-  .quick-row.visible{display:flex;}
-  .quick-row .vbtn{flex:1;text-align:center;padding:13px 8px;font-size:14px;}
-  .quick-row .reset-btn{flex:1;text-align:center;}
+  /* QUICK ACTION ROW (mobile only — hidden on desktop) */
+  .quick-row{display:none;}
 
   /* MAIN */
   main{max-width:1280px;margin:0 auto;padding:26px 28px 80px;}
@@ -201,7 +192,7 @@ if ('serviceWorker' in navigator) {
   .set-ov-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
   .set-ov-left{display:flex;align-items:center;gap:8px;}
   .set-ov-symbol{
-    width:22px;height:22px;object-fit:contain;
+    width:36px;height:36px;object-fit:contain;
     filter:invert(1) brightness(2);opacity:0.85;
   }
   .set-ov-code{
@@ -238,7 +229,7 @@ if ('serviceWorker' in navigator) {
     padding:8px 14px;transition:all .15s;white-space:nowrap;
   }
   .set-detail-back:hover{border-color:var(--gold);color:var(--gold);}
-  .set-detail-logo{width:40px;height:40px;object-fit:contain;opacity:0.9;}
+  .set-detail-logo{width:52px;height:52px;object-fit:contain;opacity:0.9;}
   .set-detail-info{flex:1;}
   .set-detail-era{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:0.1em;font-weight:700;}
   .set-detail-name{font-family:'Luckiest Guy','Bebas Neue';font-size:24px;color:var(--text);letter-spacing:0.01em;line-height:1;}
@@ -540,6 +531,15 @@ if ('serviceWorker' in navigator) {
     .mobile-view-toggle{display:none;}
     .mobile-trend-row{display:none;}
 
+    /* Quick action row — mobile only */
+    .quick-row{
+      display:none;max-width:1280px;margin:0 auto;padding:0 16px 10px;
+      gap:8px;
+    }
+    .quick-row.visible{display:flex;}
+    .quick-row .vbtn{flex:1;text-align:center;padding:13px 8px;font-size:14px;}
+    .quick-row .reset-btn{flex:1;text-align:center;}
+
     /* Main padding */
     main{padding:16px 12px 80px;}
 
@@ -606,7 +606,6 @@ if ('serviceWorker' in navigator) {
   <div class="hero-inner">
     <div class="eyebrow">Pokémon TCG · Chase Card Archive</div>
     <h1 class="display">Rarity <span>Binder</span></h1>
-    <p class="sub">The era-defining chase pulls from Base Set to Scarlet & Violet — Gold Stars, SIRs, Mega Hyper Rares, LEGEND cards, and every era's hardest hit.</p>
     <button id="authBtn" class="auth-btn" onclick="window._fbSignIn && window._fbSignIn()">⬡ Sign in</button>
     <div class="stats-row">
       <div class="stat"><div class="n" id="statCards">—</div><div class="l">Total Cards</div></div>

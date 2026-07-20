@@ -363,35 +363,33 @@ if ('serviceWorker' in navigator) {
     touch-action:manipulation;
   }
   .modal-close:hover{background:var(--line);color:var(--text);}
-  /* Nav bar — top of modal, shared desktop+mobile */
-  .modal-nav-bar{
-    position:absolute;top:0;left:0;right:0;z-index:3;
-    display:flex;align-items:center;justify-content:space-between;
-    padding:8px 56px 8px 8px;gap:4px;pointer-events:none;
-  }
+  /* Nav bar — top of modal (now only holds the counter, hidden) */
+  .modal-nav-bar{ display:none; }
+  .modal-nav-counter{ display:none; }
+
+  /* Nav arrows flanking the card image */
   .modal-nav{
     background:rgba(14,16,22,0.7);border:1px solid var(--line);
-    color:var(--text);font-size:20px;cursor:pointer;line-height:1;
-    width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    color:var(--text);font-size:24px;cursor:pointer;line-height:1;
+    width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;
     transition:background .15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
-    user-select:none;flex-shrink:0;pointer-events:all;
+    user-select:none;flex-shrink:0;
   }
   .modal-nav:hover{background:var(--line);}
   .modal-nav.disabled{opacity:0.2;pointer-events:none;}
-  .modal-nav-counter{
-    font-size:11px;color:var(--dim);letter-spacing:0.05em;white-space:nowrap;
-    flex:1;text-align:center;
-  }
 
-  /* Card image */
+  /* Card image area — arrows on each side */
   .modal-imgwrap{
     background:linear-gradient(160deg,#1a1d2b,#0e1016);
-    padding:52px 24px 16px;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;
-    min-height:280px;
+    padding:48px 12px 16px;
+    display:flex;flex-direction:row;align-items:center;justify-content:center;
+    gap:10px;min-height:260px;
+  }
+  .modal-img-center{
+    display:flex;flex-direction:column;align-items:center;
   }
   .modal-imgwrap img{
-    width:280px;max-width:90%;max-height:54vh;border-radius:14px;display:block;
+    width:260px;max-width:100%;max-height:52vh;border-radius:14px;display:block;
     box-shadow:0 24px 64px rgba(0,0,0,0.8);
   }
   .modal-card-num{
@@ -594,16 +592,14 @@ if ('serviceWorker' in navigator) {
       max-height:95vh;overflow-y:auto;
       -webkit-overflow-scrolling:touch;
     }
-    .modal-nav{display:none;}
-    .modal-nav-bar{padding:10px 52px 0 16px;}
-    .modal-nav-counter{text-align:left;font-size:12px;}
+    .modal-nav{width:34px;height:34px;font-size:20px;}
     .modal-imgwrap{
       min-height:0;
-      padding:8px 16px 16px;
-      background:transparent;
+      padding:48px 8px 16px;
+      gap:6px;
     }
     .modal-imgwrap img{
-      width:100%;max-width:280px;max-height:none;
+      width:200px;max-width:100%;max-height:46vh;
     }
     .modal-body{padding:10px 20px 32px;text-align:left;}
     .modal-name{font-size:22px;}
@@ -720,16 +716,18 @@ if ('serviceWorker' in navigator) {
 <div class="modal-backdrop" id="modalBackdrop">
   <div class="modal">
     <div class="modal-nav-bar">
-      <button class="modal-nav" id="mNavPrev" onclick="modalNav(-1)" aria-label="Previous">&#8249;</button>
       <div class="modal-nav-counter" id="mNavCounter"></div>
-      <button class="modal-nav" id="mNavNext" onclick="modalNav(1)" aria-label="Next">&#8250;</button>
     </div>
     <button class="modal-close" onclick="closeModal()" aria-label="Close">&times;</button>
     <div class="modal-imgwrap">
-      <img id="mImg" src="" alt=""
-        onerror="this.style.display='none';document.getElementById('mFallback').style.display='block'">
-      <div class="modal-fallback" id="mFallback">Image unavailable</div>
-      <div class="modal-card-num" id="mCardNum"></div>
+      <button class="modal-nav" id="mNavPrev" onclick="modalNav(-1)" aria-label="Previous">&#8249;</button>
+      <div class="modal-img-center">
+        <img id="mImg" src="" alt=""
+          onerror="this.style.display='none';document.getElementById('mFallback').style.display='block'">
+        <div class="modal-fallback" id="mFallback">Image unavailable</div>
+        <div class="modal-card-num" id="mCardNum"></div>
+      </div>
+      <button class="modal-nav" id="mNavNext" onclick="modalNav(1)" aria-label="Next">&#8250;</button>
     </div>
     <div class="modal-body">
       <div class="modal-name" id="mName"></div>
@@ -985,10 +983,12 @@ function shortRarity(r, name, num) {
   const isTrainer = isTrainerCard(name);
   // Tag Team synthetic rarity — already rewritten in normalizeCard
   if (r === 'Tag Team') return isFull ? 'FA Tag Team' : 'Tag Team';
-  // Rare Ultra: Full Art if beyond set total; Trainer FA if trainer name; otherwise ex/GX
+  // Rare Ultra: Full Art if beyond set total; Trainer FA if trainer name; otherwise ex or GX
   if (r === 'Rare Ultra') {
     if (isFull) return 'Full Art';
     if (isTrainer) return 'FA Trainer';
+    if (name && /\bex\b/i.test(name)) return 'ex';
+    if (name && /GX\b/.test(name)) return 'GX';
     return 'ex/GX';
   }
   // Rare Rainbow: Full Art if beyond set total
@@ -1075,6 +1075,7 @@ function normalizeCard(raw) {
   let set = (raw.set_name || raw['set_name'] || '').replace(/^HS-/, '');
   const setCode = raw.set_code || raw['set_code'] || '';
   const num = raw.card_number || raw['card_number'] || raw.number || '';
+  const setTotal = raw['Set Total'] || raw.set_total || raw.setTotal || '';
   let rarity = raw.rarity || '';
   const price = raw.price || 'N/A';
   const prevPrice = raw.previous_price || raw['previous_price'] || 'N/A';
@@ -1093,7 +1094,12 @@ function normalizeCard(raw) {
   if (set === 'Crown Zenith Galarian Gallery') {
     rarity = 'Galarian Gallery';
   }
-  return { name, series, set, setCode, num, rarity, price, prevPrice, cardId, pic, setLogo, setSymbol, date };
+  // "Hyper Rare" in the API is the gold secret-rare numbered beyond set total —
+  // these are the same tier as Mega Hyper Rare. Normalize to MHR.
+  if (rarity === 'Hyper Rare') {
+    rarity = 'Mega Hyper Rare';
+  }
+  return { name, series, set, setCode, num, setTotal, rarity, price, prevPrice, cardId, pic, setLogo, setSymbol, date };
 }
 
 function priceVal(p) {
@@ -1138,13 +1144,12 @@ const RARITY_DISPLAY = {
   'MEGA_ATTACK_RARE':         'Mega Attack Rare',
   'Special Illustration Rare':'Special Illustration Rare',
   'Illustration Rare':        'Illustration Rare',
-  'Hyper Rare':               'Hyper Rare',
   'Shiny Ultra Rare':         'Shiny Ultra Rare',
   'Shiny Rare':               'Shiny Rare',
   'Tag Team':                 'Tag Team GX',
   'Rare Rainbow':             'Rare Rainbow',
   'Galarian Gallery':          'Galarian Gallery',
-  'Trainer Gallery Rare Holo':'Trainer Gallery Rare Holo',
+  'Trainer Gallery Rare Holo':'Trainer Gallery',
   'ACE SPEC Rare':            'ACE SPEC Rare',
   'Classic Collection':       'Classic Collection',
   'Rare Shiny GX':            'Rare Shiny GX',
@@ -1152,7 +1157,7 @@ const RARITY_DISPLAY = {
   'Radiant Rare':             'Radiant Rare',
   'Double Rare':              'Double Rare',
   'Rare Secret':              'Rare Secret',
-  'Rare Ultra':               'Rare Ultra',
+  'Rare Ultra':               'Full Art (ex / GX)',
   'Gold Star':                'Gold Star',
   'LEGEND':                   'Legend',
   'LV.X':                     'LV.X',
@@ -1160,20 +1165,33 @@ const RARITY_DISPLAY = {
   'Rare Holo Star':           'Rare Holo Star',
   'Rare Shining':             'Rare Shining',
   'Rare Holo':                'Rare Holo',
-  'Rare Holo VMAX':           'Rare Holo VMAX',
-  'Rare Holo V':              'Rare Holo V',
 };
+
+// All TG rarity strings that map to the single "Trainer Gallery" filter option
+const TG_RARITY_STRINGS = new Set(['Trainer Gallery Rare Holo','Rare Holo V','Rare Holo VMAX','Rare Holo VSTAR']);
 
 function populateFilters() {
   const eras = [...new Set(ALL_CARDS.map(c => c.series).filter(Boolean))].sort();
-  const rarities = [...new Set(ALL_CARDS.map(c => c.rarity).filter(Boolean))].sort();
   const eraEl = document.getElementById('eraFilter');
   const rarEl = document.getElementById('rarityFilter');
   eraEl.innerHTML = '<option value="">All Eras</option>' + eras.map(e => `<option value="${e}">${e}</option>`).join('');
-  rarEl.innerHTML = '<option value="">All Rarities</option>' + rarities.map(r => {
-    const label = RARITY_DISPLAY[r] || r;
-    return `<option value="${r}">${label}</option>`;
-  }).join('');
+
+  // Collapse all TG sub-rarities into one "Trainer Gallery" option
+  const seenLabels = new Set();
+  const rarityOptions = [];
+  const rawRarities = [...new Set(ALL_CARDS.map(c => c.rarity).filter(Boolean))].sort();
+  for (const r of rawRarities) {
+    if (TG_RARITY_STRINGS.has(r)) {
+      if (!seenLabels.has('__TG__')) {
+        seenLabels.add('__TG__');
+        rarityOptions.push(`<option value="__TG__">Trainer Gallery</option>`);
+      }
+    } else {
+      const label = RARITY_DISPLAY[r] || r;
+      rarityOptions.push(`<option value="${r}">${label}</option>`);
+    }
+  }
+  rarEl.innerHTML = '<option value="">All Rarities</option>' + rarityOptions.join('');
   syncMobileFilters();
 }
 
@@ -1237,7 +1255,10 @@ function getFiltered() {
   let cards = ALL_CARDS.filter(c => {
     if (showOwnedOnly && !isOwned(c)) return false;
     if (era && c.series !== era) return false;
-    if (rarity && c.rarity !== rarity) return false;
+    if (rarity) {
+      if (rarity === '__TG__') { if (!TG_RARITY_STRINGS.has(c.rarity)) return false; }
+      else if (c.rarity !== rarity) return false;
+    }
     if (q) {
       const haystack = `${c.name} ${c.set} ${c.series} ${c.rarity}`.toLowerCase();
       if (!haystack.includes(q)) return false;
@@ -1266,41 +1287,41 @@ function getFiltered() {
 // ─── Rarity sort priority — rarest first within each set ─────────────────────
 const RARITY_ORDER = [
   // ── Scarlet & Violet era (rarest first) ──────────────────────────────────
-  'Mega Hyper Rare',           // SV apex (MHR)
-  'Special Illustration Rare', // SIR — full-art supporter
-  'MEGA_ATTACK_RARE',          // MAR — secret-numbered SV chase tier
+  'Mega Hyper Rare',           // SV apex (~1:1260)
+  'MEGA_ATTACK_RARE',          // MAR — secret-numbered beyond set total; scarcer than most SIRs
+  'Special Illustration Rare', // SIR — full-art painterly chase tier
   'Hyper Rare',                // HR — Gold card (Rainbow-equivalent in SV)
-  'ACE SPEC Rare',             // ACE SPEC
+  'ACE SPEC Rare',             // ACE SPEC — 1-per-deck mechanic
   'Shiny Ultra Rare',          // Paldean Fates shiny ex
-  'Shiny Rare',                // Paldean Fates shiny non-ex
   'Illustration Rare',         // IR ~1:10-12
   'Double Rare',               // SV Pokémon ex
   // ── Sword & Shield era ───────────────────────────────────────────────────
-  'Galarian Gallery',          // Crown Zenith GG (synthetic)
-  'Trainer Gallery Rare Holo', // SWSH TG subset
-  'Rare Rainbow',              // SM/SWSH Rainbow Rare
-  'Rare Shiny GX',             // Shiny Vault GX
-  'Rare Shiny',                // Shiny Vault base Pokémon
+  'Galarian Gallery',          // Crown Zenith GG (synthetic rarity)
+  'Rare Holo VMAX',            // TG VMAX sub-tier
+  'Rare Holo VSTAR',           // TG VSTAR sub-tier
+  'Rare Holo V',               // TG V sub-tier
+  'Trainer Gallery Rare Holo', // TG base holo sub-tier
+  'Rare Rainbow',              // SWSH Rainbow / Hyper Rare
+  'Rare Shiny GX',             // Shiny Vault GX (Hidden/Shining Fates)
+  'Rare Shiny',                // Shiny Vault base (Hidden/Shining Fates)
   'Amazing Rare',              // SWSH Amazing Rare
-  'Radiant Rare',              // SWSH Radiant
   // ── Sun & Moon era ───────────────────────────────────────────────────────
   'Tag Team',                  // SM Tag Team GX (synthetic)
-  'Classic Collection',        // Celebrations classic reprints
   'Rare Secret',               // Gold-border Secret Rares (SM+)
-  'Rare Ultra',                // Full Art EX/GX/V
-  // ── X&Y / Black & White era ──────────────────────────────────────────────
-  'Rare BREAK',                // XY BREAK evolution
+  'Radiant Rare',              // SWSH Radiant — 1-per-deck
+  'Rare Ultra',                // Full Art GX / Supporter FA
+  // ── EX era ───────────────────────────────────────────────────────────────
+  'Gold Star',                 // EX Gold Star ★ (~1:72 packs) — rarest EX era card
+  // ── Neo / E-Card era ─────────────────────────────────────────────────────
+  'Rare Shining',              // Neo Shining Pokémon (Charizard, Mewtwo, Tyranitar tier)
   // ── HGSS era ─────────────────────────────────────────────────────────────
   'LEGEND',                    // HGSS dual-card pairs
   'Rare Prime',                // HGSS Prime
   // ── Diamond & Pearl / Platinum ───────────────────────────────────────────
   'LV.X',                      // DP/Platinum LV.X
-  'Rare Holo Star',            // DP Holo Star + CoL SL
-  // ── EX era ───────────────────────────────────────────────────────────────
-  'Gold Star',                 // EX era Gold Star ★
-  // ── Neo / E-Card era ─────────────────────────────────────────────────────
-  'Rare Shining',              // Neo Shining Pokémon
+  'Rare Holo Star',            // DP Holo Star
   // ── Vintage / Base-WOTC era ──────────────────────────────────────────────
+  'Promo',                     // WOTC Black Star Promos
   'Rare Holo',                 // Standard Rare Holo (vintage & modern)
 ];
 function rarityRank(r, subtypes) {
@@ -1569,13 +1590,26 @@ function renderSetOverview(cards, el) {
       const logoHtml = firstCard.setLogo && firstCard.setLogo !== 'N/A'
         ? `<img class="set-ov-logo" src="${firstCard.setLogo}" alt="" onerror="this.style.display='none'">`
         : '';
-      const rarities = Object.keys(setData).sort((a,b) => rarityRank(a)-rarityRank(b));
+      // Re-bucket by number prefix for accurate pill counts
+      const ovBuckets = {};
+      for (const [r, cards] of Object.entries(setData)) {
+        for (const c of cards) {
+          const prefix = (c.num || '').match(/^([A-Z]+)/)?.[1] || '';
+          const bucket = prefix === 'TG' ? '__TG__' : r;
+          if (!ovBuckets[bucket]) ovBuckets[bucket] = 0;
+          ovBuckets[bucket]++;
+        }
+      }
+      const rarities = Object.keys(ovBuckets).sort((a,b) => {
+        const ra = a === '__TG__' ? rarityRank('Trainer Gallery Rare Holo') : rarityRank(a);
+        const rb = b === '__TG__' ? rarityRank('Trainer Gallery Rare Holo') : rarityRank(b);
+        return ra - rb;
+      });
       const pillsHtml = rarities.map(r => {
-        const cnt = setData[r].length;
-        const color = rarityColor(r);
-        const bg = color + '22';
-        const label = shortRarity(r);
-        return `<span class="set-ov-pill" style="background:${bg};color:${color};">${cnt} ${label}</span>`;
+        const cnt = ovBuckets[r];
+        const label = r === '__TG__' ? 'TG' : shortRarity(r);
+        const color = r === '__TG__' ? rarityColor('Trainer Gallery Rare Holo') : rarityColor(r);
+        return `<span class="set-ov-pill" style="background:${color}22;color:${color};">${cnt} ${label}</span>`;
       }).join('');
 
       const eraEnc = encodeURIComponent(era), setEnc = encodeURIComponent(set);
@@ -1617,7 +1651,32 @@ function renderSetDetail(cards, el) {
     ? `<img class="set-detail-logo" src="${firstCard.setLogo}" alt="" onerror="this.style.display='none'">`
     : '';
   const setYear = firstCard.date ? firstCard.date.slice(0,4) : '';
-  const rarities = Object.keys(setData).sort((a,b) => rarityRank(a)-rarityRank(b));
+  // Sort helper: parse prefixed card numbers like TG01, GG30, SWSH123 numerically
+  function cardNumSort(a, b) {
+    const parse = n => { const m = (n||'').match(/(\d+)$/); return m ? parseInt(m[1], 10) : 0; };
+    return parse(a.num) - parse(b.num);
+  }
+
+  // Re-bucket all cards in this set by number-prefix group first, rarity second.
+  // Any card whose number starts with "TG" → synthetic rarity '__TG__'
+  // Any card whose number starts with "GG" → keep as 'Galarian Gallery' (already normalized)
+  // Everything else → keep original rarity string
+  const rebucketed = {}; // rarity key → cards[]
+  for (const [r, cards] of Object.entries(setData)) {
+    for (const c of cards) {
+      const prefix = (c.num || '').match(/^([A-Z]+)/)?.[1] || '';
+      const bucket = prefix === 'TG' ? '__TG__' : r;
+      if (!rebucketed[bucket]) rebucketed[bucket] = [];
+      rebucketed[bucket].push(c);
+    }
+  }
+
+  // Sort bucket keys: TG__ sorts by rarityRank of 'Trainer Gallery Rare Holo', others by their own rank
+  const bucketOrder = Object.keys(rebucketed).sort((a, b) => {
+    const rankA = a === '__TG__' ? rarityRank('Trainer Gallery Rare Holo') : rarityRank(a);
+    const rankB = b === '__TG__' ? rarityRank('Trainer Gallery Rare Holo') : rarityRank(b);
+    return rankA - rankB;
+  });
 
   let html = `<div class="set-detail-header">
     <button class="set-detail-back" onclick="history.back()">← All Sets</button>
@@ -1628,12 +1687,14 @@ function renderSetDetail(cards, el) {
     </div>
   </div>`;
 
-  for (const rarity of rarities) {
-    const rarCards = [...setData[rarity]].sort((a,b) => (parseInt(a.num)||0)-(parseInt(b.num)||0));
-    const color = rarityColor(rarity);
+  for (const bucket of bucketOrder) {
+    const rarCards = [...rebucketed[bucket]].sort(cardNumSort);
+    const displayLabel = bucket === '__TG__' ? 'TG' : shortRarity(bucket);
+    const color = bucket === '__TG__' ? rarityColor('Trainer Gallery Rare Holo') : rarityColor(bucket);
+
     html += `<div class="rarity-group">
       <div class="rarity-group-header">
-        <span class="rarity-group-label" style="color:${color};">${shortRarity(rarity)}</span>
+        <span class="rarity-group-label" style="color:${color};">${displayLabel}</span>
         <span class="rarity-group-count">(${rarCards.length})</span>
       </div>
       <div class="detail-card-grid">`;
@@ -1775,9 +1836,15 @@ function openModal(c, updateList = true) {
     rarityPill.className = `pill ${pillCls}`;
     rarityPill.textContent = pillLabel;
   }
-  // Card number under image
+  // Card number under image — show as #num/total if total available
   const cardNumEl = document.getElementById('mCardNum');
-  if (cardNumEl) cardNumEl.textContent = c.num ? `#${c.num}` : '';
+  if (cardNumEl) {
+    if (c.num) {
+      cardNumEl.textContent = c.setTotal ? `#${c.num} / ${c.setTotal}` : `#${c.num}`;
+    } else {
+      cardNumEl.textContent = '';
+    }
+  }
   document.getElementById('mMeta').innerHTML =
     `${c.set}<br>${c.series || ''}<br>${c.date || ''}`;
   // Price with change indicator in modal
@@ -1975,14 +2042,11 @@ function toggleFilterDrawer() {
 // Sync mobile selects ↔ desktop selects
 function syncMobileFilters() {
   const eras = [...new Set(ALL_CARDS.map(c => c.series).filter(Boolean))].sort();
-  const rarities = [...new Set(ALL_CARDS.map(c => c.rarity).filter(Boolean))].sort();
   document.getElementById('eraFilterM').innerHTML =
     '<option value="">All Eras</option>' + eras.map(e => `<option value="${e}">${e}</option>`).join('');
-  document.getElementById('rarityFilterM').innerHTML =
-    '<option value="">All Rarities</option>' + rarities.map(r => {
-      const label = RARITY_DISPLAY[r] || r;
-      return `<option value="${r}">${label}</option>`;
-    }).join('');
+  // Mirror the desktop rarity dropdown (already built with TG collapsing)
+  const desktopRar = document.getElementById('rarityFilter');
+  document.getElementById('rarityFilterM').innerHTML = desktopRar ? desktopRar.innerHTML : '';
 }
 
 // Mobile selects mirror desktop and vice versa

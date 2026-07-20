@@ -51,7 +51,7 @@ if ('serviceWorker' in navigator) {
 
   /* HEADER */
   header.hero{
-    padding:36px 28px 24px;
+    padding:20px 28px 20px;
     border-bottom:1px solid var(--line);
     position:relative; overflow:hidden;
   }
@@ -62,7 +62,7 @@ if ('serviceWorker' in navigator) {
     pointer-events:none;
   }
   .hero-inner{max-width:1280px;margin:0 auto;position:relative;z-index:1;}
-  .eyebrow{font-size:12px;letter-spacing:0.22em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:6px;}
+  .eyebrow{display:none;}
   h1.display{font-size:44px;margin:0 0 6px;color:var(--text);line-height:0.95;}
   h1.display span{color:var(--gold-bright);}
   .sub{color:var(--dim);font-size:15px;max-width:640px;line-height:1.5;}
@@ -349,8 +349,9 @@ if ('serviceWorker' in navigator) {
   .modal{
     background:linear-gradient(170deg,#1e2235,#13161f);
     border:1px solid var(--line);border-radius:20px;padding:0;
-    max-width:380px;width:100%;position:relative;
+    max-width:420px;width:100%;position:relative;
     box-shadow:0 32px 80px rgba(0,0,0,0.7);overflow:hidden;
+    max-height:92vh;overflow-y:auto;
   }
   /* Close button — 44px tap target for iOS */
   .modal-close{
@@ -382,24 +383,24 @@ if ('serviceWorker' in navigator) {
     flex:1;text-align:center;
   }
 
-  /* Card image — full bleed top */
+  /* Card image */
   .modal-imgwrap{
     background:linear-gradient(160deg,#1a1d2b,#0e1016);
-    padding:56px 24px 16px;
+    padding:52px 24px 20px;
     display:flex;align-items:center;justify-content:center;
-    min-height:200px;
+    min-height:240px;
   }
   .modal-imgwrap img{
-    max-width:200px;max-height:46vh;border-radius:10px;display:block;
-    box-shadow:0 16px 48px rgba(0,0,0,0.6);
+    max-width:240px;max-height:52vh;border-radius:12px;display:block;
+    box-shadow:0 20px 56px rgba(0,0,0,0.7);
   }
   .modal-fallback{color:var(--dim);font-size:13px;padding:60px 10px;display:none;text-align:center;}
 
   /* Content area */
-  .modal-body{padding:16px 20px 24px;text-align:center;}
-  .modal-name{font-family:'Luckiest Guy','Bebas Neue';font-size:22px;letter-spacing:0.01em;line-height:1.1;}
-  .modal-meta{color:var(--dim);font-size:12px;margin-top:5px;line-height:1.7;}
-  .modal-price{font-size:22px;font-weight:800;color:var(--gold-bright);margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;}
+  .modal-body{padding:18px 22px 28px;text-align:center;}
+  .modal-name{font-family:'Luckiest Guy','Bebas Neue';font-size:24px;letter-spacing:0.01em;line-height:1.1;}
+  .modal-meta{color:var(--dim);font-size:13px;margin-top:6px;line-height:1.7;}
+  .modal-price{font-size:24px;font-weight:800;color:var(--gold-bright);margin-top:12px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;}
 
   /* Action buttons */
   .modal-actions{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
@@ -479,11 +480,11 @@ if ('serviceWorker' in navigator) {
 
   @media(max-width:700px){
     /* Header — compact on mobile */
-    header.hero{padding:8px 16px 12px;overflow:hidden;}
+    header.hero{padding:10px 16px 14px;overflow:hidden;}
     .eyebrow{display:none;}
-    h1.display{font-size:22px;margin:0 0 10px 0;line-height:1;}
+    h1.display{font-size:22px;margin:0 0 16px 0;line-height:1;}
     .sub{display:none;}
-    .auth-btn{top:8px;right:12px;padding:5px 10px;font-size:12px;}
+    .auth-btn{top:6px;right:12px;padding:5px 10px;font-size:12px;}
 
     /* Prevent horizontal scroll on body */
     body{overflow-x:hidden;}
@@ -520,7 +521,7 @@ if ('serviceWorker' in navigator) {
     .toolbar select{display:none;}
     .toolbar .view-toggle{display:none;}
     .toolbar .trend-btn{display:none;}
-    #resetBtn{display:none!important;} /* mobile uses red resetBtnM in quick-row */
+    #resetBtn{display:none!important;} /* always hidden on mobile — quick-row has resetBtnM */
 
     /* Filter drawer */
     .filter-drawer{padding:0 16px 16px;}
@@ -583,34 +584,32 @@ if ('serviceWorker' in navigator) {
     /* Stats — prevent right cutoff */
     .stats-row{overflow:hidden;}
 
-    /* Modal — bottom sheet with slight backdrop transparency */
+    /* Modal — tall bottom sheet */
     .modal-backdrop{padding:0;align-items:flex-end;}
     .modal{
       max-width:100%;border-radius:20px 20px 0 0;
-      max-height:88vh;overflow-y:auto;
+      max-height:95vh;overflow-y:auto;
       -webkit-overflow-scrolling:touch;
     }
-    /* Hide arrows on mobile — swipe handles navigation */
     .modal-nav{display:none;}
     .modal-nav-bar{padding:10px 52px 0 16px;}
     .modal-nav-counter{text-align:left;font-size:12px;}
     .modal-imgwrap{
       min-height:0;
-      padding:8px 16px 8px;
+      padding:8px 20px 12px;
       background:transparent;
     }
     .modal-imgwrap img{
-      max-height:220px;max-width:160px;
-      box-shadow:0 8px 32px rgba(0,0,0,0.5);
+      max-height:260px;max-width:190px;
     }
-    .modal-body{padding:8px 16px 28px;text-align:left;}
-    .modal-name{font-size:21px;}
+    .modal-body{padding:10px 20px 32px;text-align:left;}
+    .modal-name{font-size:22px;}
     .modal-meta{font-size:12px;line-height:1.6;margin-top:4px;}
-    .modal-price{font-size:21px;margin-top:8px;justify-content:flex-start;}
+    .modal-price{font-size:22px;margin-top:8px;justify-content:flex-start;}
     .modal-chart-wrap{margin-top:12px;}
     #priceChart{height:110px!important;}
-    .modal-actions{margin-top:12px;gap:8px;}
-    .modal-own,.modal-buy{padding:13px 16px;font-size:14px;}
+    .modal-actions{margin-top:14px;gap:8px;}
+    .modal-own,.modal-buy{padding:14px 16px;font-size:14px;}
 
     /* Era headers */
     .era-title{font-size:18px;}
@@ -623,7 +622,6 @@ if ('serviceWorker' in navigator) {
 
 <header class="hero">
   <div class="hero-inner">
-    <div class="eyebrow">Pokémon TCG · Chase Card Archive</div>
     <h1 class="display">Rarity <span>Binder</span></h1>
     <button id="authBtn" class="auth-btn" onclick="window._fbSignIn && window._fbSignIn()">⬡ Sign in</button>
     <div class="stats-row">
@@ -653,14 +651,14 @@ if ('serviceWorker' in navigator) {
     <option value="price-asc">Price: Low to High</option>
     <option value="name-asc">Name A–Z</option>
   </select>
-  <button class="reset-btn" id="resetBtn" onclick="resetFilters()" style="display:none;">✕ Reset</button>
   <div class="view-toggle">
     <button class="vbtn" id="btnList" onclick="setView('list')">☰ List</button>
     <button class="vbtn" id="btnGrid" onclick="setView('grid')">⊞ Grid</button>
   </div>
   <button class="vbtn trend-btn" id="btnGainers" onclick="setTrend('gainers')">📈 Gainers</button>
   <button class="vbtn trend-btn" id="btnDrops" onclick="setTrend('drops')">📉 Losers</button>
-  <button class="vbtn trend-btn" id="btnNowDesktop" onclick="toggleNow()" style="display:none;">⚡ Now</button>
+  <button class="vbtn trend-btn" id="btnNowDesktop" onclick="toggleNow()">⚡ Now</button>
+  <button class="reset-btn" id="resetBtn" onclick="resetFilters()" style="opacity:0.4;">✕ Reset</button>
 </div>
 
 <!-- Mobile filter drawer (cloned selects, synced via JS) -->
@@ -1185,12 +1183,11 @@ function isFiltersActive() {
 
 function updateResetBtn() {
   const show = isFiltersActive();
-  // Desktop reset — show/hide based on filter state
-  const desktopBtn = document.getElementById('resetBtn');
-  if (desktopBtn) desktopBtn.style.display = show ? '' : 'none';
-  // Mobile reset — always visible in quick-row, just dim it when nothing to reset
-  const mobileBtn = document.getElementById('resetBtnM');
-  if (mobileBtn) mobileBtn.style.opacity = show ? '1' : '0.4';
+  // Both reset buttons: always visible, dim when nothing to reset
+  ['resetBtn','resetBtnM'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.opacity = show ? '1' : '0.4';
+  });
 }
 
 function showQuickRow() {
@@ -1363,20 +1360,22 @@ function toggleNow() {
 }
 
 function updateNowBtn() {
-  const btn = document.getElementById('btnNow');
-  if (!btn) return;
-  if (_trendMode === 'gainers') {
-    btn.textContent = '📈 Gainers';
-    btn.classList.add('active-gainers');
-    btn.classList.remove('active-drops');
-  } else if (_trendMode === 'drops') {
-    btn.textContent = '📉 Losers';
-    btn.classList.add('active-drops');
-    btn.classList.remove('active-gainers');
-  } else {
-    btn.textContent = '⚡ Now';
-    btn.classList.remove('active-gainers','active-drops');
-  }
+  ['btnNow','btnNowDesktop'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    if (_trendMode === 'gainers') {
+      btn.textContent = '📈 Gainers';
+      btn.classList.add('active-gainers');
+      btn.classList.remove('active-drops');
+    } else if (_trendMode === 'drops') {
+      btn.textContent = '📉 Losers';
+      btn.classList.add('active-drops');
+      btn.classList.remove('active-gainers');
+    } else {
+      btn.textContent = '⚡ Now';
+      btn.classList.remove('active-gainers','active-drops');
+    }
+  });
 }
 
 function setTrend(mode) {

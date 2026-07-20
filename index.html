@@ -575,7 +575,7 @@ if ('serviceWorker' in navigator) {
     .crow-name{font-size:14px;flex:1 1 0;min-width:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;}
     /* Price: absolutely fixed — never shrinks, never grows */
     .crow-price-wrap{
-      flex:0 0 80px;width:80px;
+      flex:0 0 92px;width:92px;
       flex-direction:column;align-items:flex-end;gap:2px;
     }
     .crow-price{font-size:13px;white-space:nowrap;overflow:hidden;}
@@ -586,11 +586,11 @@ if ('serviceWorker' in navigator) {
     /* Stats — prevent right cutoff */
     .stats-row{overflow:hidden;}
 
-    /* Modal — full-height bottom sheet, no scrolling needed */
+    /* Modal — full-height bottom sheet, stretches north */
     .modal-backdrop{padding:0;align-items:flex-end;}
     .modal{
       max-width:100%;border-radius:20px 20px 0 0;
-      max-height:100vh;overflow-y:auto;
+      height:100vh;max-height:100vh;overflow-y:auto;
       -webkit-overflow-scrolling:touch;
     }
     .modal-nav{width:34px;height:34px;font-size:20px;}
@@ -600,16 +600,16 @@ if ('serviceWorker' in navigator) {
       gap:6px;
     }
     .modal-imgwrap img{
-      width:170px;max-width:100%;max-height:36vh;
+      width:220px;max-width:100%;max-height:46vh;
     }
-    .modal-body{padding:8px 20px 24px;text-align:left;}
+    .modal-body{padding:8px 20px 20px;text-align:left;}
     .modal-name{font-size:20px;}
     .modal-meta{font-size:11px;line-height:1.5;margin-top:3px;}
     .modal-price{font-size:20px;margin-top:6px;justify-content:flex-start;}
-    .modal-chart-wrap{margin-top:8px;}
-    #priceChart{height:70px!important;}
+    .modal-chart-wrap{margin-top:10px;}
+    #priceChart{height:100px!important;}
     .modal-chart-label{font-size:9px;}
-    .modal-actions{margin-top:10px;gap:6px;}
+    .modal-actions{margin-top:12px;gap:6px;}
     .modal-own,.modal-buy{padding:12px 16px;font-size:14px;}
 
     /* Era headers */

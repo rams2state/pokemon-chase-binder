@@ -121,6 +121,10 @@ if ('serviceWorker' in navigator) {
     transition:all .15s;white-space:nowrap;
   }
   .reset-btn:hover{border-color:#f87171;color:#f87171;}
+  .reset-btn.prominent{
+    border-color:#f87171;color:#f87171;background:#f8717112;
+    font-size:14px;padding:13px 18px;font-weight:700;
+  }
 
   /* VIEW TOGGLE */
   .view-toggle{display:flex;gap:6px;}
@@ -130,6 +134,15 @@ if ('serviceWorker' in navigator) {
     transition:all .15s;
   }
   .vbtn.active{background:var(--gold);color:#231a00;border-color:var(--gold);font-weight:700;}
+
+  /* QUICK ACTION ROW (below filters on mobile) */
+  .quick-row{
+    display:none;max-width:1280px;margin:0 auto;padding:0 16px 10px;
+    gap:8px;
+  }
+  .quick-row.visible{display:flex;}
+  .quick-row .vbtn{flex:1;text-align:center;padding:13px 8px;font-size:14px;}
+  .quick-row .reset-btn{flex:1;text-align:center;}
 
   /* MAIN */
   main{max-width:1280px;margin:0 auto;padding:26px 28px 80px;}
@@ -262,7 +275,7 @@ if ('serviceWorker' in navigator) {
   .crow-check:hover{border-color:#4ade80;}
   .crow-thumb{width:36px;height:50px;flex-shrink:0;border-radius:4px;object-fit:cover;background:var(--panel2);display:block;}
   .crow-thumb-empty{width:36px;height:50px;flex-shrink:0;border-radius:4px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--line);}
-  .crow-num{font-size:11px;color:var(--dim);width:32px;flex-shrink:0;text-align:right;}
+  .crow-num{font-size:11px;color:var(--dim);width:32px;flex-shrink:0;text-align:right;white-space:nowrap;}
   .crow-name{flex:1;font-size:13.5px;font-weight:700;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .crow-price-wrap{display:flex;align-items:center;gap:4px;flex-shrink:0;}
   .crow-price{font-size:13px;font-weight:800;color:var(--gold-bright);}
@@ -523,12 +536,9 @@ if ('serviceWorker' in navigator) {
       padding:14px 12px;font-size:15px;
       border-radius:10px;
     }
-    /* Show grid toggle inside drawer on mobile */
-    .mobile-view-toggle{display:flex;gap:8px;width:100%;}
-    .mobile-view-toggle .vbtn{flex:1;text-align:center;padding:14px;font-size:15px;}
-    /* Gainers / Drops in drawer on mobile */
-    .mobile-trend-row{display:flex;gap:8px;width:100%;}
-    .mobile-trend-row .trend-btn{flex:1;text-align:center;padding:14px;font-size:15px;}
+    /* mobile-view-toggle and mobile-trend-row now live in quick-row, not the drawer */
+    .mobile-view-toggle{display:none;}
+    .mobile-trend-row{display:none;}
 
     /* Main padding */
     main{padding:16px 12px 80px;}
@@ -546,8 +556,9 @@ if ('serviceWorker' in navigator) {
       gap:8px;
       width:100%;box-sizing:border-box;
     }
-    .crow-name{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;}
-    .crow-num{font-size:11px;width:28px;flex-shrink:0;}
+    /* Number + name: keep number pinned left, name fills remaining space */
+    .crow-num{font-size:11px;width:36px;flex-shrink:0;text-align:right;white-space:nowrap;}
+    .crow-name{font-size:13px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;}
     .crow-thumb{width:34px;height:48px;flex-shrink:0;}
     .crow-thumb-empty{width:34px;height:48px;flex-shrink:0;}
     /* Price + badge: column stack, fixed width, no overflow */
@@ -618,8 +629,8 @@ if ('serviceWorker' in navigator) {
   <select id="eraFilter"><option value="">All Eras</option></select>
   <select id="rarityFilter"><option value="">All Rarities</option></select>
   <select id="sortBy">
-    <option value="date-asc">Oldest First</option>
     <option value="date-desc">Newest First</option>
+    <option value="date-asc">Oldest First</option>
     <option value="price-desc">Price: High to Low</option>
     <option value="price-asc">Price: Low to High</option>
     <option value="name-asc">Name A–Z</option>
@@ -631,6 +642,7 @@ if ('serviceWorker' in navigator) {
   </div>
   <button class="vbtn trend-btn" id="btnGainers" onclick="setTrend('gainers')">📈 Gainers</button>
   <button class="vbtn trend-btn" id="btnDrops" onclick="setTrend('drops')">📉 Drops</button>
+  <button class="vbtn trend-btn" id="btnNowDesktop" onclick="toggleNow()" style="display:none;">⚡ Now</button>
 </div>
 
 <!-- Mobile filter drawer (cloned selects, synced via JS) -->
@@ -638,21 +650,29 @@ if ('serviceWorker' in navigator) {
   <select id="eraFilterM"><option value="">All Eras</option></select>
   <select id="rarityFilterM"><option value="">All Rarities</option></select>
   <select id="sortByM">
-    <option value="date-asc">Oldest First</option>
     <option value="date-desc">Newest First</option>
+    <option value="date-asc">Oldest First</option>
     <option value="price-desc">Price: High to Low</option>
     <option value="price-asc">Price: Low to High</option>
     <option value="name-asc">Name A–Z</option>
   </select>
-  <div class="mobile-view-toggle">
+  <!-- Hidden stubs so JS sync still works -->
+  <div class="mobile-view-toggle" style="display:none;">
     <button class="vbtn" id="btnListM" onclick="setView('list')">☰ List</button>
     <button class="vbtn" id="btnGridM" onclick="setView('grid')">⊞ Grid</button>
   </div>
-  <div class="mobile-trend-row">
+  <div class="mobile-trend-row" style="display:none;">
     <button class="vbtn trend-btn" id="btnGainersM" onclick="setTrend('gainers')">📈 Gainers</button>
     <button class="vbtn trend-btn" id="btnDropsM" onclick="setTrend('drops')">📉 Drops</button>
   </div>
-  <button class="reset-btn" id="resetBtnM" onclick="resetFilters()" style="display:none;">✕ Reset filters</button>
+</div>
+
+<!-- Quick action row: List/Grid + Now (Gainers/Drops) + Reset — always visible on mobile -->
+<div class="quick-row" id="quickRow">
+  <button class="vbtn" id="btnListQ" onclick="setView('list')">☰ List</button>
+  <button class="vbtn" id="btnGridQ" onclick="setView('grid')">⊞ Grid</button>
+  <button class="vbtn trend-btn" id="btnNow" onclick="toggleNow()">⚡ Now</button>
+  <button class="reset-btn prominent" id="resetBtnM" onclick="resetFilters()" style="display:none;">✕ Reset</button>
 </div>
 
 <main>
@@ -926,13 +946,32 @@ function rarityClass(r, name, num) {
   return 'pill-default';
 }
 
+// Returns true if the card name looks like a Trainer/Supporter/Stadium
+function isTrainerCard(name) {
+  if (!name) return false;
+  // Common trainer card suffixes / patterns in Pokémon TCG
+  const trainerPatterns = [
+    /\bSupporter\b/i, /\bStadium\b/i, /\bItem\b/i, /\bTool\b/i,
+    /\'s\b/,           // Cynthia's Ambition, Marnie's Pride, etc.
+    /\bBall\b/i, /\bPotion\b/i, /\bEnergy\b/i,
+  ];
+  return trainerPatterns.some(p => p.test(name));
+}
+
 function shortRarity(r, name, num) {
   if (!r) return '?';
   const isFull = isBeyondSetTotal(num);
+  const isTrainer = isTrainerCard(name);
   // Tag Team synthetic rarity — already rewritten in normalizeCard
   if (r === 'Tag Team') return isFull ? 'FA Tag Team' : 'Tag Team';
-  // Rare Ultra / Rare Rainbow: check for Full Art position
-  if (r === 'Rare Ultra' || r === 'Rare Rainbow') {
+  // Rare Ultra: Full Art if beyond set total; Trainer FA if trainer name; otherwise ex/GX
+  if (r === 'Rare Ultra') {
+    if (isFull) return 'Full Art';
+    if (isTrainer) return 'FA Trainer';
+    return 'ex/GX';
+  }
+  // Rare Rainbow: Full Art if beyond set total
+  if (r === 'Rare Rainbow') {
     if (isFull) return 'Full Art';
   }
   const map = {
@@ -1011,7 +1050,8 @@ function parseCSVLine(line) {
 function normalizeCard(raw) {
   const name = raw.card_name || raw.name || '';
   const series = raw.series || raw.series_name || '';
-  const set = raw.set_name || raw['set_name'] || '';
+  // Strip "HS-" prefix from HG&SS set names (e.g. "HS-Unleashed" → "Unleashed")
+  let set = (raw.set_name || raw['set_name'] || '').replace(/^HS-/, '');
   const setCode = raw.set_code || raw['set_code'] || '';
   const num = raw.card_number || raw['card_number'] || raw.number || '';
   let rarity = raw.rarity || '';
@@ -1028,8 +1068,8 @@ function normalizeCard(raw) {
     rarity = 'Tag Team';
   }
   // Synthetic "Galarian Gallery" rarity — Crown Zenith Galarian Gallery subset
-  // Set name is "Crown Zenith Galarian Gallery" (set code CRZ is shared with main Crown Zenith)
-  if (set === 'Crown Zenith Galarian Gallery' && (rarity === 'Trainer Gallery Rare Holo' || rarity === 'Rare Secret')) {
+  // The GG set uses several rarity strings; normalize them all to "Galarian Gallery"
+  if (set === 'Crown Zenith Galarian Gallery') {
     rarity = 'Galarian Gallery';
   }
   return { name, series, set, setCode, num, rarity, price, prevPrice, cardId, pic, setLogo, setSymbol, date };
@@ -1064,6 +1104,7 @@ function loadCards(rawCards) {
   document.getElementById('loadingState').style.display = 'none';
   document.getElementById('cardView').style.display = '';
   updateCollectionValue();
+  showQuickRow();
   setView('list'); // default to list view on load
 }
 
@@ -1120,7 +1161,7 @@ function isFiltersActive() {
   const era = document.getElementById('eraFilter').value;
   const rarity = document.getElementById('rarityFilter').value;
   const sort = document.getElementById('sortBy').value;
-  return search || era || rarity || sort !== 'date-asc' || showOwnedOnly;
+  return search || era || rarity || sort !== 'date-desc' || showOwnedOnly;
 }
 
 function updateResetBtn() {
@@ -1131,16 +1172,21 @@ function updateResetBtn() {
   });
 }
 
+function showQuickRow() {
+  const qr = document.getElementById('quickRow');
+  if (qr) qr.classList.add('visible');
+}
+
 function resetFilters() {
   document.getElementById('search').value = '';
   document.getElementById('searchWrap').classList.remove('has-text');
   document.getElementById('eraFilter').value = '';
   document.getElementById('rarityFilter').value = '';
-  document.getElementById('sortBy').value = 'date-asc';
+  document.getElementById('sortBy').value = 'date-desc';
   // Sync mobile
   ['eraFilterM','rarityFilterM','sortByM'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.value = id === 'sortByM' ? 'date-asc' : '';
+    if (el) el.value = id === 'sortByM' ? 'date-desc' : '';
   });
   if (showOwnedOnly) toggleOwnedFilter();
   updateResetBtn();
@@ -1183,36 +1229,45 @@ function getFiltered() {
   return cards;
 }
 
-// ─── RENDER ──────────────────────────────────────────────────────────────────
-// Rarity sort priority — rarest first within each set
+// ─── Rarity sort priority — rarest first within each set ─────────────────────
 const RARITY_ORDER = [
-  'Mega Hyper Rare',           // SV apex
-  'Special Illustration Rare', // SIR
-  'MEGA_ATTACK_RARE',          // SV secret-numbered chase tier (API string)
-  'Hyper Rare',                // SWSH Rainbow Rare
-  'Shiny Ultra Rare',          // Paldean Fates shiny ex tier
-  'Tag Team',                  // SM Tag Team GX (synthetic — name contains &)
-  'Rare Rainbow',              // SM Rainbow Rare
-  'Galarian Gallery',          // Crown Zenith Galarian Gallery (synthetic)
+  // ── Scarlet & Violet era (rarest first) ──────────────────────────────────
+  'Mega Hyper Rare',           // SV apex (MHR)
+  'Special Illustration Rare', // SIR — full-art supporter
+  'MEGA_ATTACK_RARE',          // MAR — secret-numbered SV chase tier
+  'Hyper Rare',                // HR — Gold card (Rainbow-equivalent in SV)
+  'ACE SPEC Rare',             // ACE SPEC
+  'Shiny Ultra Rare',          // Paldean Fates shiny ex
+  'Shiny Rare',                // Paldean Fates shiny non-ex
+  'Illustration Rare',         // IR ~1:10-12
+  'Double Rare',               // SV Pokémon ex
+  // ── Sword & Shield era ───────────────────────────────────────────────────
+  'Galarian Gallery',          // Crown Zenith GG (synthetic)
   'Trainer Gallery Rare Holo', // SWSH TG subset
-  'ACE SPEC Rare',             // SV ACE SPEC
-  'Classic Collection',        // Celebrations full-art reprints
+  'Rare Rainbow',              // SM/SWSH Rainbow Rare
   'Rare Shiny GX',             // Shiny Vault GX
-  'Rare Shiny',                // Shiny Vault base
-  'Shiny Rare',                // Paldean Fates shiny non-ex tier
-  'Amazing Rare',              // SWSH lightning art
-  'Radiant Rare',              // SWSH 1-per-deck
-  'Illustration Rare',         // SV IR ~1:10-12
-  'Rare Secret',               // Gold-border Secret Rares
+  'Rare Shiny',                // Shiny Vault base Pokémon
+  'Amazing Rare',              // SWSH Amazing Rare
+  'Radiant Rare',              // SWSH Radiant
+  // ── Sun & Moon era ───────────────────────────────────────────────────────
+  'Tag Team',                  // SM Tag Team GX (synthetic)
+  'Classic Collection',        // Celebrations classic reprints
+  'Rare Secret',               // Gold-border Secret Rares (SM+)
   'Rare Ultra',                // Full Art EX/GX/V
-  'Double Rare',               // SV Pokémon ex (specific IDs only)
-  'Gold Star',                 // EX era Gold Star
+  // ── X&Y / Black & White era ──────────────────────────────────────────────
+  'Rare BREAK',                // XY BREAK evolution
+  // ── HGSS era ─────────────────────────────────────────────────────────────
   'LEGEND',                    // HGSS dual-card pairs
-  'LV.X',                      // DP/Platinum LV.X
   'Rare Prime',                // HGSS Prime
-  'Rare Holo Star',            // DP shiny star + CoL SL
-  'Rare Shining',              // Neo Shining
-  'Rare Holo',                 // Vintage era holos
+  // ── Diamond & Pearl / Platinum ───────────────────────────────────────────
+  'LV.X',                      // DP/Platinum LV.X
+  'Rare Holo Star',            // DP Holo Star + CoL SL
+  // ── EX era ───────────────────────────────────────────────────────────────
+  'Gold Star',                 // EX era Gold Star ★
+  // ── Neo / E-Card era ─────────────────────────────────────────────────────
+  'Rare Shining',              // Neo Shining Pokémon
+  // ── Vintage / Base-WOTC era ──────────────────────────────────────────────
+  'Rare Holo',                 // Standard Rare Holo (vintage & modern)
 ];
 function rarityRank(r, subtypes) {
   if (subtypes && subtypes.includes && subtypes.includes('Gold Star')) return RARITY_ORDER.indexOf('Gold Star');
@@ -1264,8 +1319,38 @@ function rarityColor(r, name, num) {
 let _activeSet = null; // { era, set } or null
 let _trendMode = null; // 'gainers' | 'drops' | null
 
+// "Now" button on mobile — toggles gainers panel (shows both gainers and drops as a combined view)
+// On desktop the dedicated Gainers/Drops buttons are used instead
+function toggleNow() {
+  // On mobile "Now" cycles: off → gainers → drops → off
+  if (!_trendMode) {
+    setTrend('gainers');
+  } else if (_trendMode === 'gainers') {
+    setTrend('drops');
+  } else {
+    setTrend(null);
+  }
+}
+
+function updateNowBtn() {
+  const btn = document.getElementById('btnNow');
+  if (!btn) return;
+  if (_trendMode === 'gainers') {
+    btn.textContent = '📈 Gainers';
+    btn.classList.add('active-gainers');
+    btn.classList.remove('active-drops');
+  } else if (_trendMode === 'drops') {
+    btn.textContent = '📉 Drops';
+    btn.classList.add('active-drops');
+    btn.classList.remove('active-gainers');
+  } else {
+    btn.textContent = '⚡ Now';
+    btn.classList.remove('active-gainers','active-drops');
+  }
+}
+
 function setTrend(mode) {
-  if (_trendMode === mode) {
+  if (mode === null || _trendMode === mode) {
     _trendMode = null;
     ['btnGainers','btnDrops','btnGainersM','btnDropsM'].forEach(id => {
       const el = document.getElementById(id);
@@ -1287,6 +1372,7 @@ function setTrend(mode) {
       el.classList.remove('active-gainers');
     });
   }
+  updateNowBtn();
   render();
 }
 
@@ -1376,7 +1462,14 @@ function renderTrend(el) {
   el.innerHTML = html;
 }
 
+let _renderPending = false;
 function render() {
+  if (_renderPending) return;
+  _renderPending = true;
+  requestAnimationFrame(_doRender);
+}
+function _doRender() {
+  _renderPending = false;
   updateResetBtn();
   const cards = getFiltered();
   const el = document.getElementById('cardView');
@@ -1402,7 +1495,7 @@ function render() {
     else _activeSet = null; // set filtered out, fall through to overview
   }
   renderSetOverview(cards, el);
-}
+} // end _doRender
 
 function buildSetGroups(cards) {
   // Returns { eraOrder, setOrderByEra, byEra }
@@ -1781,11 +1874,12 @@ document.addEventListener('keydown', e => {
   if (open && e.key === 'ArrowLeft')  { e.preventDefault(); modalNav(-1); }
 });
 
-// Modal swipe left/right to navigate cards (separate from page-level back swipe)
+// Modal swipe left/right to navigate cards; swipe DOWN to close modal
 (function() {
   const backdrop = document.getElementById('modalBackdrop');
   let _mx = null, _my = null;
   const SWIPE_MIN = 50, SWIPE_RATIO = 1.5;
+  const SWIPE_DOWN_MIN = 80; // px downward to dismiss
   backdrop.addEventListener('touchstart', e => {
     if (e.touches.length !== 1) { _mx = null; return; }
     _mx = e.touches[0].clientX;
@@ -1794,9 +1888,15 @@ document.addEventListener('keydown', e => {
   backdrop.addEventListener('touchend', e => {
     if (_mx === null) return;
     const dx = e.changedTouches[0].clientX - _mx;
-    const dy = Math.abs(e.changedTouches[0].clientY - _my);
+    const dy = e.changedTouches[0].clientY - _my;
     _mx = null;
-    if (Math.abs(dx) < SWIPE_MIN || Math.abs(dx) / (dy || 1) < SWIPE_RATIO) return;
+    // Swipe down to dismiss modal
+    if (dy > SWIPE_DOWN_MIN && Math.abs(dy) > Math.abs(dx)) {
+      history.back(); // triggers popstate → closeModal
+      return;
+    }
+    // Swipe left/right to navigate cards
+    if (Math.abs(dx) < SWIPE_MIN || Math.abs(dx) / (Math.abs(dy) || 1) < SWIPE_RATIO) return;
     if (dx < 0) modalNav(1);   // swipe left → next card
     else         modalNav(-1); // swipe right → prev card
   }, { passive: true });
@@ -1854,11 +1954,12 @@ function setView(v) {
   // Don't clear _activeSet — grid should show the same set you were just in
   // Switching view clears trend mode
   _trendMode = null;
+  updateNowBtn();
   const gEl = document.getElementById('btnGainers');
   const dEl = document.getElementById('btnDrops');
   if (gEl) gEl.classList.remove('active-gainers');
   if (dEl) dEl.classList.remove('active-drops');
-  ['btnList','btnGrid','btnListM','btnGridM'].forEach(id => {
+  ['btnList','btnGrid','btnListM','btnGridM','btnListQ','btnGridQ'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.toggle('active', id.startsWith(v === 'list' ? 'btnList' : 'btnGrid'));
   });
@@ -2022,11 +2123,21 @@ document.addEventListener('mousedown', e => {
 // Swipe right (mobile) — track touch start/end on the main content area
 (function() {
   let _tx = null, _ty = null;
+  let _lastModalClose = 0; // timestamp of last modal close, to prevent accidental back swipe
   const SWIPE_MIN = 60;    // px horizontal travel
   const SWIPE_RATIO = 1.5; // must be more horizontal than vertical
+  const EDGE_MAX = 40;     // px from left edge — require edge start to avoid false triggers
+  const MODAL_COOLDOWN = 400; // ms to ignore swipe after modal closes
+
+  // Track when modal closes so we can ignore the next swipe
+  const origClose = window.closeModal;
+  // Hook into popstate to track modal-close timing
+  const origPopstate = window.onpopstate;
 
   document.addEventListener('touchstart', e => {
     if (e.touches.length !== 1) { _tx = null; return; }
+    // Only register swipe if it starts near the left edge (like iOS back gesture)
+    if (e.touches[0].clientX > EDGE_MAX) { _tx = null; return; }
     _tx = e.touches[0].clientX;
     _ty = e.touches[0].clientY;
   }, { passive: true });
@@ -2038,10 +2149,25 @@ document.addEventListener('mousedown', e => {
     _tx = null;
     // Don't fire page-back swipe when modal is open — modal has its own swipe handler
     if (document.getElementById('modalBackdrop').classList.contains('active')) return;
+    // Ignore swipe briefly after modal closed (prevents double-back)
+    if (Date.now() - _lastModalClose < MODAL_COOLDOWN) return;
     if (dx > SWIPE_MIN && Math.abs(dx) / (dy || 1) > SWIPE_RATIO) {
       history.back();
     }
   }, { passive: true });
+
+  // Set cooldown timestamp when modal closes via popstate
+  window.addEventListener('popstate', () => {
+    const wasModalOpen = document.getElementById('modalBackdrop').classList.contains('active');
+    // If popstate fires while modal was active, record the close time
+    // (closeModal runs synchronously before this, so check after a tick)
+    if (wasModalOpen) _lastModalClose = Date.now();
+    else setTimeout(() => {
+      if (!document.getElementById('modalBackdrop').classList.contains('active')) {
+        _lastModalClose = Date.now();
+      }
+    }, 0);
+  }, { capture: true }); // capture phase so this fires before the main popstate handler
 })();
 </script>
 </body>

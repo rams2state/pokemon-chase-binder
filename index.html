@@ -478,10 +478,10 @@ if ('serviceWorker' in navigator) {
   .filter-toggle-btn.active{border-color:var(--gold);color:var(--gold);}
 
   @media(max-width:700px){
-    /* Header — hide title on mobile, show only stats */
-    header.hero{padding:12px 16px 14px;overflow:hidden;}
+    /* Header — compact on mobile, keep h1 to push auth button right */
+    header.hero{padding:10px 16px 12px;overflow:hidden;}
     .eyebrow{display:none;}
-    h1.display{display:none;}
+    h1.display{font-size:22px;margin:0 120px 0 0;line-height:1;} /* leave room for auth btn */
     .sub{display:none;}
 
     /* Prevent horizontal scroll on body */
@@ -532,14 +532,21 @@ if ('serviceWorker' in navigator) {
     .mobile-view-toggle{display:none;}
     .mobile-trend-row{display:none;}
 
-    /* Quick action row — mobile only */
+    /* Quick action row — mobile only, always shows Reset */
     .quick-row{
-      display:none;max-width:1280px;margin:0 auto;padding:0 16px 10px;
+      display:none;max-width:1280px;margin:10px auto 0;padding:0 16px 10px;
       gap:8px;
     }
     .quick-row.visible{display:flex;}
     .quick-row .vbtn{flex:1;text-align:center;padding:13px 8px;font-size:14px;}
-    .quick-row .reset-btn{flex:1;text-align:center;}
+    /* Reset always visible in quick-row on mobile */
+    .quick-row .reset-btn{
+      flex:1;text-align:center;
+      display:flex!important;
+      border-color:#f87171;color:#f87171;background:#f8717112;
+      font-size:14px;padding:13px 8px;font-weight:700;border-radius:8px;
+      align-items:center;justify-content:center;
+    }
 
     /* Main padding */
     main{padding:16px 12px 80px;}
@@ -558,16 +565,16 @@ if ('serviceWorker' in navigator) {
       width:100%;box-sizing:border-box;
     }
     /* Number + name: keep number pinned left, name fills remaining space */
-    .crow-num{font-size:11px;width:36px;flex-shrink:0;text-align:right;white-space:nowrap;}
-    .crow-name{font-size:13px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;}
-    .crow-thumb{width:34px;height:48px;flex-shrink:0;}
-    .crow-thumb-empty{width:34px;height:48px;flex-shrink:0;}
+    .crow-num{font-size:13px;width:40px;flex-shrink:0;text-align:right;white-space:nowrap;}
+    .crow-name{font-size:15px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;}
+    .crow-thumb{width:40px;height:56px;flex-shrink:0;}
+    .crow-thumb-empty{width:40px;height:56px;flex-shrink:0;}
     /* Price + badge: column stack, fixed width, no overflow */
     .crow-price-wrap{
       flex-direction:column;align-items:flex-end;
-      gap:2px;flex-shrink:0;width:72px;
+      gap:2px;flex-shrink:0;width:76px;
     }
-    .crow-price{font-size:12.5px;}
+    .crow-price{font-size:15px;}
     .price-change{font-size:10px;padding:2px 5px;white-space:nowrap;}
     .trend-rank{font-size:13px;min-width:18px;flex-shrink:0;}
     .crow-set{max-width:100px;}
@@ -575,36 +582,41 @@ if ('serviceWorker' in navigator) {
     /* Stats — prevent right cutoff */
     .stats-row{overflow:hidden;}
 
-    /* Modal — full-screen sheet, no background clutter */
+    /* Modal — true full-screen on mobile, no background showing */
     .modal-backdrop{padding:0;align-items:flex-end;}
     .modal{
-      max-width:100%;border-radius:20px 20px 0 0;
-      max-height:96vh;overflow-y:auto;
+      max-width:100%;width:100%;
+      border-radius:0;         /* no rounded corners — fills edge to edge */
+      height:100vh;max-height:100vh;
+      overflow-y:auto;
       -webkit-overflow-scrolling:touch;
       display:flex;flex-direction:column;
     }
     /* Hide arrows on mobile — swipe handles navigation */
     .modal-nav{display:none;}
-    /* Nav counter stays visible at top */
-    .modal-nav-bar{padding:10px 52px 0 16px;}
-    .modal-nav-counter{text-align:left;font-size:12px;}
+    /* Nav counter + close row */
+    .modal-nav-bar{padding:12px 52px 0 16px;}
+    .modal-nav-counter{text-align:left;font-size:13px;}
+    .modal-close{top:10px;right:10px;width:36px;height:36px;font-size:18px;}
+    /* Image: side-by-side layout on small screens */
     .modal-imgwrap{
       min-height:0;flex-shrink:0;
-      padding:8px 16px 8px;
+      padding:8px 16px;
       background:transparent;
+      justify-content:flex-start;
     }
     .modal-imgwrap img{
-      max-height:200px;max-width:140px;
+      max-height:180px;max-width:130px;
       box-shadow:0 8px 32px rgba(0,0,0,0.5);
     }
-    .modal-body{padding:8px 16px 20px;text-align:left;}
-    .modal-name{font-size:20px;}
-    .modal-meta{font-size:11px;line-height:1.5;margin-top:3px;}
-    .modal-price{font-size:20px;margin-top:6px;justify-content:flex-start;}
-    .modal-chart-wrap{margin-top:10px;}
-    #priceChart{height:90px!important;}
-    .modal-actions{margin-top:10px;gap:6px;}
-    .modal-own,.modal-buy{padding:11px 16px;font-size:13px;}
+    .modal-body{padding:6px 16px 16px;text-align:left;}
+    .modal-name{font-size:21px;}
+    .modal-meta{font-size:12px;line-height:1.6;margin-top:4px;}
+    .modal-price{font-size:21px;margin-top:8px;justify-content:flex-start;}
+    .modal-chart-wrap{margin-top:12px;padding:10px;}
+    #priceChart{height:100px!important;}
+    .modal-actions{margin-top:12px;gap:8px;}
+    .modal-own,.modal-buy{padding:13px 16px;font-size:14px;border-radius:14px;}
 
     /* Era headers */
     .era-title{font-size:18px;}
@@ -684,7 +696,7 @@ if ('serviceWorker' in navigator) {
   <button class="vbtn" id="btnListQ" onclick="setView('list')">☰ List</button>
   <button class="vbtn" id="btnGridQ" onclick="setView('grid')">⊞ Grid</button>
   <button class="vbtn trend-btn" id="btnNow" onclick="toggleNow()">⚡ Now</button>
-  <button class="reset-btn prominent" id="resetBtnM" onclick="resetFilters()" style="display:none;">✕ Reset</button>
+  <button class="reset-btn" id="resetBtnM" onclick="resetFilters()">✕ Reset</button>
 </div>
 
 <main>
@@ -1179,10 +1191,12 @@ function isFiltersActive() {
 
 function updateResetBtn() {
   const show = isFiltersActive();
-  ['resetBtn','resetBtnM'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = show ? '' : 'none';
-  });
+  // Desktop reset — show/hide based on filter state
+  const desktopBtn = document.getElementById('resetBtn');
+  if (desktopBtn) desktopBtn.style.display = show ? '' : 'none';
+  // Mobile reset — always visible in quick-row, just dim it when nothing to reset
+  const mobileBtn = document.getElementById('resetBtnM');
+  if (mobileBtn) mobileBtn.style.opacity = show ? '1' : '0.4';
 }
 
 function showQuickRow() {

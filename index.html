@@ -268,8 +268,8 @@ if ('serviceWorker' in navigator) {
   .crow-thumb-empty{width:36px;height:50px;flex-shrink:0;border-radius:4px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--line);}
   .crow-num{font-size:11px;color:var(--dim);width:32px;flex-shrink:0;text-align:right;white-space:nowrap;}
   .crow-name{flex:1;font-size:13.5px;font-weight:700;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .crow-price-wrap{display:flex;align-items:center;gap:4px;flex-shrink:0;}
-  .crow-price{font-size:13px;font-weight:800;color:var(--gold-bright);}
+  .crow-price-wrap{display:flex;align-items:center;gap:4px;flex-shrink:0;white-space:nowrap;}
+  .crow-price{font-size:13px;font-weight:800;color:var(--gold-bright);white-space:nowrap;}
 
   /* ── SET DETAIL CARD GRID (4 columns like screenshot) ───────────── */
   .detail-card-grid{
@@ -386,13 +386,16 @@ if ('serviceWorker' in navigator) {
   /* Card image */
   .modal-imgwrap{
     background:linear-gradient(160deg,#1a1d2b,#0e1016);
-    padding:52px 24px 24px;
-    display:flex;align-items:center;justify-content:center;
-    min-height:320px;
+    padding:52px 24px 16px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    min-height:280px;
   }
   .modal-imgwrap img{
-    width:300px;max-width:90%;max-height:62vh;border-radius:14px;display:block;
+    width:280px;max-width:90%;max-height:54vh;border-radius:14px;display:block;
     box-shadow:0 24px 64px rgba(0,0,0,0.8);
+  }
+  .modal-card-num{
+    font-size:12px;color:var(--dim);margin-top:10px;letter-spacing:0.04em;font-weight:600;
   }
   .modal-fallback{color:var(--dim);font-size:13px;padding:60px 10px;display:none;text-align:center;}
 
@@ -449,7 +452,7 @@ if ('serviceWorker' in navigator) {
   /* PRICE CHANGE BADGES */
   .price-change{font-size:10.5px;font-weight:700;padding:1px 5px;border-radius:4px;display:inline-block;margin-left:4px;white-space:nowrap;}
   .price-up{background:#4ade8022;color:#4ade80;}
-  .price-down{background:#f87171 22;color:#f87171;}
+  .price-down{background:#f8717122;color:#f87171;}
   .price-flat{color:var(--dim);}
   .tile-price-row{display:flex;align-items:center;flex-wrap:wrap;gap:2px;}
   /* List view change column */
@@ -461,7 +464,7 @@ if ('serviceWorker' in navigator) {
     border-radius:10px;padding:10px 12px;
   }
   .modal-chart-label{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;}
-  #priceChart{width:100%!important;height:110px!important;}
+  #priceChart{width:100%!important;height:90px!important;}
   .modal-chart-empty{font-size:12px;color:var(--dim);text-align:center;padding:18px 0;}
 
   /* MOBILE FILTER DRAWER */
@@ -574,7 +577,7 @@ if ('serviceWorker' in navigator) {
     /* Price + badge: column stack, fixed width, no overflow */
     .crow-price-wrap{
       flex-direction:column;align-items:flex-end;
-      gap:2px;flex-shrink:0;width:76px;
+      gap:2px;flex-shrink:0;min-width:76px;max-width:110px;
     }
     .crow-price{font-size:15px;}
     .price-change{font-size:10px;padding:2px 5px;white-space:nowrap;}
@@ -726,6 +729,7 @@ if ('serviceWorker' in navigator) {
       <img id="mImg" src="" alt=""
         onerror="this.style.display='none';document.getElementById('mFallback').style.display='block'">
       <div class="modal-fallback" id="mFallback">Image unavailable</div>
+      <div class="modal-card-num" id="mCardNum"></div>
     </div>
     <div class="modal-body">
       <div class="modal-name" id="mName"></div>
@@ -1771,8 +1775,11 @@ function openModal(c, updateList = true) {
     rarityPill.className = `pill ${pillCls}`;
     rarityPill.textContent = pillLabel;
   }
+  // Card number under image
+  const cardNumEl = document.getElementById('mCardNum');
+  if (cardNumEl) cardNumEl.textContent = c.num ? `#${c.num}` : '';
   document.getElementById('mMeta').innerHTML =
-    `${c.set}${c.num ? ` &nbsp;·&nbsp; #${c.num}` : ''}<br>${c.series || ''}<br>${c.date || ''}`;
+    `${c.set}<br>${c.series || ''}<br>${c.date || ''}`;
   // Price with change indicator in modal
   const cv = priceVal(c.price), pv = priceVal(c.prevPrice);
   let priceHtml = c.price && c.price !== 'N/A' ? c.price : 'Price N/A';

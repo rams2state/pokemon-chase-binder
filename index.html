@@ -349,9 +349,9 @@ if ('serviceWorker' in navigator) {
   .modal{
     background:linear-gradient(170deg,#1e2235,#13161f);
     border:1px solid var(--line);border-radius:20px;padding:0;
-    max-width:420px;width:100%;position:relative;
-    box-shadow:0 32px 80px rgba(0,0,0,0.7);overflow:hidden;
-    max-height:92vh;overflow-y:auto;
+    max-width:460px;width:100%;position:relative;
+    box-shadow:0 32px 80px rgba(0,0,0,0.7);
+    max-height:94vh;overflow-y:auto;
   }
   /* Close button — 44px tap target for iOS */
   .modal-close{
@@ -386,13 +386,13 @@ if ('serviceWorker' in navigator) {
   /* Card image */
   .modal-imgwrap{
     background:linear-gradient(160deg,#1a1d2b,#0e1016);
-    padding:52px 24px 20px;
+    padding:52px 24px 24px;
     display:flex;align-items:center;justify-content:center;
-    min-height:240px;
+    min-height:320px;
   }
   .modal-imgwrap img{
-    max-width:240px;max-height:52vh;border-radius:12px;display:block;
-    box-shadow:0 20px 56px rgba(0,0,0,0.7);
+    width:300px;max-width:90%;max-height:62vh;border-radius:14px;display:block;
+    box-shadow:0 24px 64px rgba(0,0,0,0.8);
   }
   .modal-fallback{color:var(--dim);font-size:13px;padding:60px 10px;display:none;text-align:center;}
 
@@ -484,7 +484,7 @@ if ('serviceWorker' in navigator) {
     .eyebrow{display:none;}
     h1.display{font-size:22px;margin:0 0 16px 0;line-height:1;}
     .sub{display:none;}
-    .auth-btn{top:6px;right:12px;padding:5px 10px;font-size:12px;}
+    .auth-btn{position:fixed;top:8px;right:10px;padding:5px 10px;font-size:11px;z-index:100;}
 
     /* Prevent horizontal scroll on body */
     body{overflow-x:hidden;}
@@ -596,11 +596,11 @@ if ('serviceWorker' in navigator) {
     .modal-nav-counter{text-align:left;font-size:12px;}
     .modal-imgwrap{
       min-height:0;
-      padding:8px 20px 12px;
+      padding:8px 16px 16px;
       background:transparent;
     }
     .modal-imgwrap img{
-      max-height:260px;max-width:190px;
+      width:100%;max-width:280px;max-height:none;
     }
     .modal-body{padding:10px 20px 32px;text-align:left;}
     .modal-name{font-size:22px;}
@@ -655,8 +655,8 @@ if ('serviceWorker' in navigator) {
     <button class="vbtn" id="btnList" onclick="setView('list')">☰ List</button>
     <button class="vbtn" id="btnGrid" onclick="setView('grid')">⊞ Grid</button>
   </div>
-  <button class="vbtn trend-btn" id="btnGainers" onclick="setTrend('gainers')">📈 Gainers</button>
-  <button class="vbtn trend-btn" id="btnDrops" onclick="setTrend('drops')">📉 Losers</button>
+  <button class="vbtn trend-btn" id="btnGainers" style="display:none;" onclick="setTrend('gainers')">📈 Gainers</button>
+  <button class="vbtn trend-btn" id="btnDrops" style="display:none;" onclick="setTrend('drops')">📉 Losers</button>
   <button class="vbtn trend-btn" id="btnNowDesktop" onclick="toggleNow()">⚡ Now</button>
   <button class="reset-btn" id="resetBtn" onclick="resetFilters()" style="opacity:0.4;">✕ Reset</button>
 </div>
@@ -1178,15 +1178,18 @@ function isFiltersActive() {
   const era = document.getElementById('eraFilter').value;
   const rarity = document.getElementById('rarityFilter').value;
   const sort = document.getElementById('sortBy').value;
-  return search || era || rarity || sort !== 'date-desc' || showOwnedOnly;
+  return search || era || rarity || sort !== 'date-desc' || showOwnedOnly || !!_trendMode;
 }
 
 function updateResetBtn() {
   const show = isFiltersActive();
-  // Both reset buttons: always visible, dim when nothing to reset
   ['resetBtn','resetBtnM'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.style.opacity = show ? '1' : '0.4';
+    if (!el) return;
+    el.style.opacity = show ? '1' : '0.4';
+    el.style.borderColor = show ? '#f87171' : '';
+    el.style.color = show ? '#f87171' : '';
+    el.style.background = show ? '#f8717112' : '';
   });
 }
 

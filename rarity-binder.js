@@ -343,27 +343,62 @@ const RARITY_DISPLAY = {
 // All TG rarity strings that map to the single "Trainer Gallery" filter option
 const TG_RARITY_STRINGS = new Set(['Trainer Gallery Rare Holo','Rare Holo V','Rare Holo VMAX','Rare Holo VSTAR']);
 
+// Classify a "Rare Ultra" card into one of three real sub-types by name,
+// same rule the grid/set-detail view already uses to visually separate them.
+// Tag Team cards (name has "&") are normalized to 'Tag Team' upstream already
+// and never reach this function with rarity === 'Rare Ultra'.
+function rareUltraBucket(c) {
+  if (/GX\b/.test(c.name)) return '__GX__';
+  if (/-EX\b|\bEX\b/i.test(c.name)) return '__EX__';
+  return '__FA_TRAINER__';
+}
+
 function populateFilters() {
   const eras = [...new Set(ALL_CARDS.map(c => c.series).filter(Boolean))].sort();
   const eraEl = document.getElementById('eraFilter');
   const rarEl = document.getElementById('rarityFilter');
   eraEl.innerHTML = '<option value="">All Eras</option>' + eras.map(e => `<option value="${e}">${e}</option>`).join('');
 
-  // Collapse all TG sub-rarities into one "Trainer Gallery" option
-  const seenLabels = new Set();
-  const rarityOptions = [];
-  const rawRarities = [...new Set(ALL_CARDS.map(c => c.rarity).filter(Boolean))].sort();
-  for (const r of rawRarities) {
+  // Build filter options keyed by DISPLAY LABEL, not raw rarity string, so
+  // raw values that mean the same thing (e.g. "Rare Rainbow" + "Rainbow Rare")
+  // collapse into a single selectable option instead of showing twice.
+  // value format: "label::raw1|raw2|..." — getFiltered() matches against the
+  // pipe-separated raw value list.
+  const seenLabels = new Map(); // label -> Set of raw rarity strings it covers
+  const seenUltraBuckets = new Set(); // which __GX__/__EX__/__FA_TRAINER__ actually occur
+
+  for (const c of ALL_CARDS) {
+    const r = c.rarity;
+    if (!r) continue;
     if (TG_RARITY_STRINGS.has(r)) {
-      if (!seenLabels.has('__TG__')) {
-        seenLabels.add('__TG__');
-        rarityOptions.push(`<option value="__TG__">Trainer Gallery</option>`);
-      }
-    } else {
-      const label = RARITY_DISPLAY[r] || r;
-      rarityOptions.push(`<option value="${r}">${label}</option>`);
+      if (!seenLabels.has('Trainer Gallery')) seenLabels.set('Trainer Gallery', new Set());
+      seenLabels.get('Trainer Gallery').add('__TG__');
+      continue;
+    }
+    if (r === 'Rare Ultra') {
+      seenUltraBuckets.add(rareUltraBucket(c));
+      continue;
+    }
+    const label = RARITY_DISPLAY[r] || r;
+    if (!seenLabels.has(label)) seenLabels.set(label, new Set());
+    seenLabels.get(label).add(r);
+  }
+
+  const ULTRA_LABELS = {
+    '__GX__':         'Full Art GX',
+    '__EX__':         'Full Art ex/EX',
+    '__FA_TRAINER__': 'Full Art Trainer',
+  };
+  for (const bucket of ['__GX__', '__EX__', '__FA_TRAINER__']) {
+    if (seenUltraBuckets.has(bucket)) {
+      seenLabels.set(ULTRA_LABELS[bucket], new Set([bucket]));
     }
   }
+
+  const rarityOptions = [...seenLabels.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([label, rawSet]) => `<option value="${[...rawSet].join('|')}">${label}</option>`);
+
   rarEl.innerHTML = '<option value="">All Rarities</option>' + rarityOptions.join('');
   syncMobileFilters();
 }
@@ -425,12 +460,22 @@ function getFiltered() {
   const rarity = document.getElementById('rarityFilter').value;
   const sort = document.getElementById('sortBy').value;
 
+  // Rarity filter value is a pipe-separated set of raw-rarity/bucket tokens
+  // (see populateFilters) — a card matches if any token applies to it.
+  const rarityTokens = rarity ? rarity.split('|') : null;
+
   let cards = ALL_CARDS.filter(c => {
     if (showOwnedOnly && !isOwned(c)) return false;
     if (era && c.series !== era) return false;
-    if (rarity) {
-      if (rarity === '__TG__') { if (!TG_RARITY_STRINGS.has(c.rarity)) return false; }
-      else if (c.rarity !== rarity) return false;
+    if (rarityTokens) {
+      const matches = rarityTokens.some(tok => {
+        if (tok === '__TG__') return TG_RARITY_STRINGS.has(c.rarity);
+        if (tok === '__GX__' || tok === '__EX__' || tok === '__FA_TRAINER__') {
+          return c.rarity === 'Rare Ultra' && rareUltraBucket(c) === tok;
+        }
+        return c.rarity === tok;
+      });
+      if (!matches) return false;
     }
     if (q) {
       const haystack = `${c.name} ${c.set} ${c.series} ${c.rarity}`.toLowerCase();

@@ -131,11 +131,11 @@ function shortRarity(r, name, num) {
   const map = {
     'MEGA_ATTACK_RARE':          'MAR',
     'Mega Attack Rare':          'MAR',
-    'Mega Hyper Rare':           'MHR',
+    'Hyper Rare':                'Hyper Rare',
     'Special Illustration Rare': 'SIR',
     'Shiny Ultra Rare':          'Shiny UR',
-    'Hyper Rare':                'HR',
-    'Rare Rainbow':              'Rainbow',
+    'Rainbow Rare':              'Rainbow Rare',
+    'Rare Rainbow':              'Rainbow Rare',
     'Galarian Gallery':          'GG',
     'Trainer Gallery Rare Holo': 'TG',
     'ACE SPEC Rare':             'ACE SPEC',
@@ -143,14 +143,14 @@ function shortRarity(r, name, num) {
     'Rare Shiny GX':             'Shiny GX',
     'Rare Shiny':                'Shiny',
     'Shiny Rare':                'Shiny R',
-    'Amazing Rare':              'Amazing',
-    'Radiant Rare':              'Radiant',
-    'Rare Secret':               'SR',
-    'Secret Rare':               'SR',
-    'Tag Team':                  'Tag Team',
+    'Amazing Rare':              'Amazing Rare',
+    'Radiant Rare':              'Radiant Rare',
+    'Rare Secret':               'Secret Rare',
+    'Secret Rare':               'Secret Rare',
+    'Tag Team':                  'Tag Team GX',
     'Rare Ultra':                'ex/GX',
     'Illustration Rare':         'IR',
-    'Double Rare':               'ex UR',
+    'Double Rare':               'Double Rare',
     'Gold Star':                 '★',
     'Rare Shining':              'Shining',
     'LEGEND':                    'LEGEND',
@@ -227,10 +227,18 @@ function normalizeCard(raw) {
   if (set === 'Crown Zenith Galarian Gallery') {
     rarity = 'Galarian Gallery';
   }
-  // "Hyper Rare" in the API is the gold secret-rare numbered beyond set total —
-  // these are the same tier as Mega Hyper Rare. Normalize to MHR.
+  // "Hyper Rare" in the API means SWSH Rainbow Rare (gold rainbow treatment).
+  // Normalize to "Rainbow Rare" so it's distinct from SV's gold "Hyper Rare" cards.
   if (rarity === 'Hyper Rare') {
-    rarity = 'Mega Hyper Rare';
+    rarity = 'Rainbow Rare';
+  }
+  // SV "Mega Hyper Rare" (our old internal name) → "Hyper Rare" (community name for SV gold cards)
+  if (rarity === 'Mega Hyper Rare') {
+    rarity = 'Hyper Rare';
+  }
+  // API stores LV.X as "Rare Holo LV.X" — normalize to "LV.X" for display/sorting
+  if (rarity === 'Rare Holo LV.X') {
+    rarity = 'LV.X';
   }
   return { name, series, set, setCode, num, setTotal, rarity, price, prevPrice, cardId, pic, setLogo, setSymbol, date };
 }
@@ -273,15 +281,16 @@ function updateStats() {
 }
 
 const RARITY_DISPLAY = {
-  'Mega Hyper Rare':          'Mega Hyper Rare',
+  'Hyper Rare':               'Hyper Rare',
   'MEGA_ATTACK_RARE':         'Mega Attack Rare',
   'Special Illustration Rare':'Special Illustration Rare',
   'Illustration Rare':        'Illustration Rare',
   'Shiny Ultra Rare':         'Shiny Ultra Rare',
   'Shiny Rare':               'Shiny Rare',
   'Tag Team':                 'Tag Team GX',
-  'Rare Rainbow':             'Rare Rainbow',
-  'Galarian Gallery':          'Galarian Gallery',
+  'Rainbow Rare':             'Rainbow Rare',
+  'Rare Rainbow':             'Rainbow Rare',
+  'Galarian Gallery':         'Galarian Gallery',
   'Trainer Gallery Rare Holo':'Trainer Gallery',
   'ACE SPEC Rare':            'ACE SPEC Rare',
   'Classic Collection':       'Classic Collection',
@@ -289,7 +298,7 @@ const RARITY_DISPLAY = {
   'Amazing Rare':             'Amazing Rare',
   'Radiant Rare':             'Radiant Rare',
   'Double Rare':              'Double Rare',
-  'Rare Secret':              'Rare Secret',
+  'Rare Secret':              'Secret Rare',
   'Rare Ultra':               'Full Art (ex / GX)',
   'Gold Star':                'Gold Star',
   'LEGEND':                   'Legend',
@@ -420,10 +429,9 @@ function getFiltered() {
 // ─── Rarity sort priority — rarest first within each set ─────────────────────
 const RARITY_ORDER = [
   // ── Scarlet & Violet era (rarest first) ──────────────────────────────────
-  'Mega Hyper Rare',           // SV apex (~1:1260)
+  'Hyper Rare',                // SV gold card apex (~1:1260)
   'MEGA_ATTACK_RARE',          // MAR — secret-numbered beyond set total; scarcer than most SIRs
   'Special Illustration Rare', // SIR — full-art painterly chase tier
-  'Hyper Rare',                // HR — Gold card (Rainbow-equivalent in SV)
   'ACE SPEC Rare',             // ACE SPEC — 1-per-deck mechanic
   'Shiny Ultra Rare',          // Paldean Fates shiny ex
   'Illustration Rare',         // IR ~1:10-12
@@ -434,7 +442,8 @@ const RARITY_ORDER = [
   'Rare Holo VSTAR',           // TG VSTAR sub-tier
   'Rare Holo V',               // TG V sub-tier
   'Trainer Gallery Rare Holo', // TG base holo sub-tier
-  'Rare Rainbow',              // SWSH Rainbow / Hyper Rare
+  'Rainbow Rare',              // SWSH Rainbow Rare
+  'Rare Rainbow',              // SM Rainbow Rare
   'Rare Shiny GX',             // Shiny Vault GX (Hidden/Shining Fates)
   'Rare Shiny',                // Shiny Vault base (Hidden/Shining Fates)
   'Amazing Rare',              // SWSH Amazing Rare
@@ -473,10 +482,10 @@ function rarityColor(r, name, num) {
   const map = {
     'MEGA_ATTACK_RARE':          '#ff6a00',
     'Mega Attack Rare':          '#ff6a00',
-    'Mega Hyper Rare':           '#ff4d6d',
+    'Hyper Rare':                '#ff4d6d',
     'Special Illustration Rare': '#ff6fb8',
     'Shiny Ultra Rare':          '#e879f9',
-    'Hyper Rare':                '#7c9bff',
+    'Rainbow Rare':              '#a78bfa',
     'Tag Team':                  '#f97d16',
     'Rare Rainbow':              '#a78bfa',
     'Galarian Gallery':          '#38bdf8',

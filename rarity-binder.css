@@ -19,6 +19,7 @@
     background:var(--ink);
     color:var(--text);
     font-family:'Manrope', sans-serif;
+    font-size:18px;
     min-height:100vh;
   }
   .display{font-family:'Luckiest Guy','Bebas Neue',sans-serif;letter-spacing:0.01em;}

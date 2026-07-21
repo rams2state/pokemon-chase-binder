@@ -171,31 +171,33 @@
      give them a small light patch of their own to sit on. */
   .symbol-chip{
     display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
-    width:36px;height:36px;border-radius:9px;
+    width:44px;height:44px;border-radius:10px;
     background:rgba(255,255,255,0.92);
   }
   .symbol-chip-lg{width:44px;height:44px;border-radius:10px;}
   .set-ov-symbol{
-    width:24px;height:24px;object-fit:contain;
+    width:30px;height:30px;object-fit:contain;
   }
   .set-ov-code{
     background:var(--panel2);border:1px solid var(--line);border-radius:6px;
     font-size:9px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;
     color:var(--dim);padding:3px 6px;
   }
-  .set-ov-logo{height:40px;max-width:120px;width:auto;object-fit:contain;opacity:0.95;}
+  .set-ov-logo{height:52px;max-width:150px;width:auto;object-fit:contain;opacity:0.95;}
   .set-ov-year{font-size:11px;color:var(--dim);font-weight:600;}
 
   /* set name */
   .set-ov-name{
-    font-family:'Luckiest Guy','Bebas Neue';font-size:20px;color:var(--text);
+    font-family:'Luckiest Guy','Bebas Neue';font-size:25px;color:var(--text);
     letter-spacing:0.01em;line-height:1.05;margin-bottom:4px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
-  .set-ov-total{font-size:11px;color:var(--dim);margin-bottom:10px;}
+  /* Card count + rarity pills right-aligned to free up left-side room for the
+     bigger symbol/logo/name above */
+  .set-ov-total{font-size:11px;color:var(--dim);margin-bottom:10px;text-align:right;}
 
   /* rarity pill badges on set overview card */
-  .set-ov-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  .set-ov-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;justify-content:flex-end;}
   .set-ov-pill{
     font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px;
     letter-spacing:0.02em;display:inline-flex;align-items:center;gap:4px;

@@ -1222,7 +1222,13 @@ let _searchDebounce = null;
 document.getElementById('search').addEventListener('input', function() {
   document.getElementById('searchWrap').classList.toggle('has-text', !!this.value);
   clearTimeout(_searchDebounce);
-  _searchDebounce = setTimeout(render, 1000);
+  // Yield to browser paint so the typed character appears instantly,
+  // then start the debounce timer
+  const val = this.value;
+  setTimeout(() => {
+    clearTimeout(_searchDebounce);
+    _searchDebounce = setTimeout(render, 1000);
+  }, 0);
 });
 document.getElementById('clearSearch').addEventListener('click', function() {
   document.getElementById('search').value = '';

@@ -98,31 +98,20 @@ function rarityClass(r, name, num) {
   return 'pill-default';
 }
 
-// Returns true if the card name looks like a Trainer/Supporter/Stadium
-function isTrainerCard(name) {
-  if (!name) return false;
-  // Common trainer card suffixes / patterns in Pokémon TCG
-  const trainerPatterns = [
-    /\bSupporter\b/i, /\bStadium\b/i, /\bItem\b/i, /\bTool\b/i,
-    /\'s\b/,           // Cynthia's Ambition, Marnie's Pride, etc.
-    /\bBall\b/i, /\bPotion\b/i, /\bEnergy\b/i,
-  ];
-  return trainerPatterns.some(p => p.test(name));
-}
-
 function shortRarity(r, name, num) {
   if (!r) return '?';
   const isFull = isBeyondSetTotal(num);
-  const isTrainer = isTrainerCard(name);
   // Tag Team synthetic rarity — already rewritten in normalizeCard
   if (r === 'Tag Team') return isFull ? 'FA Tag Team' : 'Tag Team';
-  // Rare Ultra: Full Art if beyond set total; Trainer FA if trainer name; otherwise ex or GX
+  // Rare Ultra: Full Art if beyond set total; otherwise defer to rareUltraBucket()
+  // — the SAME classifier the rarity filter dropdown uses — so the pill shown
+  // on a card always agrees with which filter bucket it falls into.
   if (r === 'Rare Ultra') {
     if (isFull) return 'Full Art';
-    if (isTrainer) return 'FA Trainer';
-    if (name && /\bex\b/i.test(name)) return 'ex';
-    if (name && /GX\b/.test(name)) return 'GX';
-    return 'ex/GX';
+    const bucket = rareUltraBucket({ name });
+    if (bucket === '__GX__') return 'GX';
+    if (bucket === '__EX__') return 'EX';
+    return 'FA Trainer';
   }
   // Rare Rainbow: Full Art if beyond set total
   if (r === 'Rare Rainbow') {
@@ -148,7 +137,7 @@ function shortRarity(r, name, num) {
     'Rare Secret':               'Secret Rare',
     'Secret Rare':               'Secret Rare',
     'Tag Team':                  'Tag Team GX',
-    'Rare Ultra':                'ex/GX',
+    'Rare Ultra':                'EX/GX',
     'Illustration Rare':         'IR',
     'Double Rare':               'Double Rare',
     'Gold Star':                 '★',
@@ -386,7 +375,7 @@ function populateFilters() {
 
   const ULTRA_LABELS = {
     '__GX__':         'Full Art GX',
-    '__EX__':         'Full Art ex/EX',
+    '__EX__':         'Full Art EX',
     '__FA_TRAINER__': 'Full Art Trainer',
   };
   for (const bucket of ['__GX__', '__EX__', '__FA_TRAINER__']) {

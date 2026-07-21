@@ -1,0 +1,593 @@
+  :root{
+    --ink:#0e1016;
+    --panel:#171a24;
+    --panel2:#1f2330;
+    --line:#2b2f3d;
+    --text:#eae7dd;
+    --dim:#8b8fa3;
+    --gold:#FFCB05;
+    --gold-bright:#FFE066;
+    --foil:#5E7CE2;
+    --sir:#ff8fd6;
+    --mar:#ff9d5c;
+    --mhr:#7c9bff;
+    --green:#4ade80;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--ink);
+    color:var(--text);
+    font-family:'Manrope', sans-serif;
+    min-height:100vh;
+  }
+  .display{font-family:'Luckiest Guy','Bebas Neue',sans-serif;letter-spacing:0.01em;}
+
+  /* HEADER */
+  header.hero{
+    padding:20px 28px 20px;
+    border-bottom:1px solid var(--line);
+    position:relative; overflow:hidden;
+  }
+  header.hero::before{
+    content:"";
+    position:absolute; inset:0;
+    background:repeating-linear-gradient(115deg,transparent 0 38px,rgba(212,175,55,0.035) 38px 40px);
+    pointer-events:none;
+  }
+  .hero-inner{max-width:1280px;margin:0 auto;position:relative;z-index:1;}
+  .eyebrow{display:none;}
+  h1.display{font-size:44px;margin:0 0 6px;color:var(--text);line-height:0.95;}
+  h1.display span{color:var(--gold-bright);}
+  .sub{color:var(--dim);font-size:15px;max-width:640px;line-height:1.5;}
+  .stats-row{display:flex;gap:16px;margin-top:20px;flex-wrap:wrap;}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 16px;min-width:110px;}
+  .stat .n{font-family:'Luckiest Guy','Bebas Neue';font-size:26px;color:var(--gold-bright);line-height:1;}
+  .stat .l{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:0.08em;margin-top:3px;}
+  .stat-owned{border-color:var(--green);cursor:pointer;transition:background .15s,transform .15s;user-select:none;}
+  .stat-owned:hover{background:#4ade8015;transform:translateY(-1px);}
+  .stat-owned.active{background:#4ade8022;border-color:#4ade80;box-shadow:0 0 0 1px #4ade8060;}
+  .stat-owned.active .l::after{content:' ✓';}
+
+  /* AUTH BUTTON */
+  .auth-btn {
+    position:absolute; top:16px; right:20px;
+    background:var(--panel); border:1px solid var(--line); color:var(--dim);
+    padding:8px 14px; border-radius:8px; font-size:13px; font-family:inherit;
+    cursor:pointer; transition:border-color .15s, color .15s;
+    z-index:10;
+  }
+  .auth-btn:hover { border-color:var(--gold); color:var(--text); }
+  .auth-btn.signed-in { border-color:#4ade80; color:#4ade80; }
+  @media (max-width:600px) {
+    .auth-btn { top:10px; right:10px; padding:6px 10px; font-size:12px; }
+  }
+
+  /* TOOLBAR */
+  .toolbar{max-width:1280px;margin:22px auto 0;padding:0 28px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+  .search-wrap{position:relative;flex:1;min-width:220px;}
+  input#search{
+    width:100%;background:var(--panel);border:1px solid var(--line);color:var(--text);
+    padding:11px 36px 11px 14px;border-radius:8px;font-size:14px;font-family:inherit;
+  }
+  input#search:focus{outline:none;border-color:var(--gold);}
+  #clearSearch{
+    position:absolute;right:8px;top:50%;transform:translateY(-50%);
+    width:22px;height:22px;border:none;border-radius:50%;cursor:pointer;
+    background:transparent;color:var(--dim);font-size:16px;line-height:1;
+    display:none;align-items:center;justify-content:center;
+  }
+  #clearSearch:hover{background:var(--line);color:var(--text);}
+  .search-wrap.has-text #clearSearch{display:flex;}
+  select{
+    background:var(--panel);border:1px solid var(--line);color:var(--text);
+    padding:11px 12px;border-radius:8px;font-size:13px;font-family:inherit;cursor:pointer;
+  }
+  select:focus{outline:none;border-color:var(--gold);}
+
+  /* RESET BUTTON */
+  .reset-btn{
+    background:transparent;border:1px solid var(--line);color:var(--dim);
+    padding:10px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-family:inherit;
+    transition:all .15s;white-space:nowrap;
+  }
+  .reset-btn:hover{border-color:#f87171;color:#f87171;}
+  .reset-btn.prominent{
+    border-color:#f87171;color:#f87171;background:#f8717112;
+    font-size:14px;padding:13px 18px;font-weight:700;
+  }
+
+  /* VIEW TOGGLE */
+  .view-toggle{display:flex;gap:6px;}
+  .vbtn{
+    background:var(--panel);border:1px solid var(--line);color:var(--dim);
+    padding:10px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit;
+    transition:all .15s;
+  }
+  .vbtn.active{background:var(--gold);color:#231a00;border-color:var(--gold);font-weight:700;}
+
+  /* QUICK ACTION ROW (mobile only — hidden on desktop) */
+  .quick-row{display:none;}
+
+  /* MAIN */
+  main{max-width:1280px;margin:0 auto;padding:26px 28px 80px;}
+
+  /* LOADING */
+  #loadingState{text-align:center;padding:80px 20px;color:var(--dim);}
+  #loadingState .spinner{
+    width:40px;height:40px;border:3px solid var(--line);border-top-color:var(--gold);
+    border-radius:50%;margin:0 auto 16px;animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  #loadingState p{font-size:15px;}
+
+  /* NO-CSV STATE */
+  #noDataState{display:none;text-align:center;padding:60px 20px;}
+  #noDataState .display{font-size:28px;color:var(--text);margin-bottom:12px;}
+  #noDataState p{color:var(--dim);font-size:14px;line-height:1.6;max-width:520px;margin:0 auto 24px;}
+  .upload-zone{
+    border:2px dashed var(--line);border-radius:14px;padding:32px;max-width:480px;
+    margin:0 auto;cursor:pointer;transition:border-color .15s;
+  }
+  .upload-zone:hover{border-color:var(--gold);}
+  .upload-zone input{display:none;}
+  .upload-zone label{cursor:pointer;display:block;}
+  .upload-btn{
+    display:inline-block;margin-top:12px;padding:12px 24px;background:var(--gold);
+    color:#231a00;border-radius:9px;font-weight:800;font-size:14px;cursor:pointer;
+  }
+
+  /* ── ERA SECTION (set overview) ─────────────────────────────────── */
+  .era-section{margin-bottom:48px;}
+  .era-header{
+    display:flex;align-items:center;gap:12px;
+    border-bottom:2px solid var(--line);padding-bottom:10px;margin-bottom:18px;
+  }
+  .era-title{font-family:'Luckiest Guy','Bebas Neue';font-size:22px;color:var(--foil);letter-spacing:0.04em;text-transform:uppercase;}
+  .era-count{font-size:12px;color:var(--dim);font-weight:600;}
+
+  /* ── SET OVERVIEW GRID ───────────────────────────────────────────── */
+  .set-overview-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+    gap:14px;
+  }
+
+  /* SET OVERVIEW CARD — matches screenshot style */
+  .set-ov-card{
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:14px 16px 14px;cursor:pointer;
+    transition:border-color .2s,box-shadow .2s,transform .15s;
+    position:relative;
+  }
+  .set-ov-card:hover{border-color:var(--gold);box-shadow:0 8px 28px rgba(0,0,0,0.4);transform:translateY(-2px);}
+
+  /* top row: code badge + logo + year */
+  .set-ov-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
+  .set-ov-left{display:flex;align-items:center;gap:8px;}
+  .set-ov-symbol{
+    width:36px;height:36px;object-fit:contain;
+    filter:invert(1) brightness(2);opacity:0.85;
+  }
+  .set-ov-code{
+    background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+    font-size:9px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;
+    color:var(--dim);padding:3px 6px;
+  }
+  .set-ov-logo{width:28px;height:28px;object-fit:contain;opacity:0.9;}
+  .set-ov-year{font-size:11px;color:var(--dim);font-weight:600;}
+
+  /* set name */
+  .set-ov-name{
+    font-family:'Luckiest Guy','Bebas Neue';font-size:20px;color:var(--text);
+    letter-spacing:0.01em;line-height:1.05;margin-bottom:4px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .set-ov-total{font-size:11px;color:var(--dim);margin-bottom:10px;}
+
+  /* rarity pill badges on set overview card */
+  .set-ov-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  .set-ov-pill{
+    font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px;
+    letter-spacing:0.02em;display:inline-flex;align-items:center;gap:4px;
+  }
+
+  /* ── SET DETAIL VIEW (card rows) ────────────────────────────────── */
+  .set-detail-header{
+    display:flex;align-items:center;gap:14px;margin-bottom:22px;
+    padding-bottom:14px;border-bottom:1px solid var(--line);
+  }
+  .set-detail-back{
+    background:var(--panel);border:1px solid var(--line);border-radius:8px;
+    color:var(--dim);font-size:13px;font-family:inherit;cursor:pointer;
+    padding:8px 14px;transition:all .15s;white-space:nowrap;
+  }
+  .set-detail-back:hover{border-color:var(--gold);color:var(--gold);}
+  .set-detail-logo{width:52px;height:52px;object-fit:contain;opacity:0.9;}
+  .set-detail-info{flex:1;}
+  .set-detail-era{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:0.1em;font-weight:700;}
+  .set-detail-name{font-family:'Luckiest Guy','Bebas Neue';font-size:24px;color:var(--text);letter-spacing:0.01em;line-height:1;}
+
+  /* rarity group inside set detail */
+  .rarity-group{margin-bottom:24px;}
+  .rarity-group-header{
+    display:flex;align-items:center;gap:8px;
+    padding-bottom:8px;margin-bottom:4px;
+    border-bottom:1px solid var(--line);
+  }
+  .rarity-group-label{font-size:12px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;}
+  .rarity-group-count{font-size:12px;color:var(--dim);font-weight:600;}
+
+  /* ── CARD ROWS ───────────────────────────────────────────────────── */
+  .card-row{
+    display:flex;align-items:center;gap:10px;
+    padding:6px 8px;border-bottom:1px solid rgba(43,47,61,0.4);
+    cursor:pointer;transition:background .1s;border-radius:7px;margin:0 -8px;
+  }
+  .card-row:last-child{border-bottom:none;}
+  .card-row:hover{background:var(--panel2);}
+  .card-row.owned{opacity:0.6;}
+  .card-row.owned .crow-name{text-decoration:line-through;color:var(--dim);}
+  .card-row.owned .crow-check{background:#4ade80;border-color:#4ade80;color:#0e1016;}
+
+  .crow-check{
+    width:20px;height:20px;flex-shrink:0;border:2px solid var(--line);border-radius:5px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:11px;font-weight:800;transition:all .15s;color:transparent;
+    background:transparent;cursor:pointer;
+  }
+  .crow-check.owned{background:#4ade80;border-color:#4ade80;color:#0e1016;}
+  .crow-check:hover{border-color:#4ade80;}
+  .crow-thumb{width:36px;height:50px;flex-shrink:0;border-radius:4px;object-fit:cover;background:var(--panel2);display:block;}
+  .crow-thumb-empty{width:36px;height:50px;flex-shrink:0;border-radius:4px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--line);}
+  .crow-num{font-size:11px;color:var(--dim);width:32px;flex-shrink:0;text-align:right;white-space:nowrap;}
+  .crow-name{flex:1;font-size:13.5px;font-weight:700;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .crow-price-wrap{display:flex;align-items:center;gap:4px;flex-shrink:0;white-space:nowrap;}
+  .crow-price{font-size:13px;font-weight:800;color:var(--gold-bright);white-space:nowrap;}
+
+  /* ── SET DETAIL CARD GRID (4 columns like screenshot) ───────────── */
+  .detail-card-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:4px 8px;
+  }
+  .detail-card-grid .card-row{margin:0;border-radius:6px;}
+
+  /* ── GRID VIEW (image tiles) ─────────────────────────────────────── */
+  .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;}
+  .card-tile{
+    background:linear-gradient(160deg,var(--panel2),var(--panel));
+    border:1px solid var(--line);border-radius:12px;overflow:hidden;
+    cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s;position:relative;
+  }
+  .card-tile:hover{transform:translateY(-4px);border-color:var(--gold);box-shadow:0 10px 28px rgba(0,0,0,0.4);}
+  .card-tile.owned{border-color:#4ade80;box-shadow:0 0 0 1px #4ade8040;}
+  .card-tile.owned img{opacity:0.5;}
+  .card-tile.owned .tile-name{color:var(--dim);text-decoration:line-through;}
+  .card-tile img{width:100%;display:block;aspect-ratio:2.5/3.5;object-fit:cover;background:var(--panel);}
+  .tile-info{padding:9px 11px;}
+  .tile-name{font-size:13px;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .tile-set{font-size:10.5px;color:var(--dim);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .tile-footer{display:flex;justify-content:space-between;align-items:center;}
+  .tile-price-row{display:flex;align-items:center;flex-wrap:wrap;gap:2px;}
+  .tile-price{font-size:12px;font-weight:800;color:var(--gold-bright);}
+  .tile-check{
+    position:absolute;top:7px;right:7px;width:28px;height:28px;
+    background:rgba(14,16,22,0.75);border:2px solid var(--line);border-radius:6px;
+    display:flex;align-items:center;justify-content:center;font-size:14px;
+    transition:all .15s;backdrop-filter:blur(4px);cursor:pointer;
+  }
+  .card-tile.owned .tile-check{background:#4ade80;border-color:#4ade80;color:#0e1016;}
+
+  /* RARITY PILLS */
+  .pill{
+    font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;
+    letter-spacing:0.03em;display:inline-block;
+  }
+  .pill-ir{background:#FFE06629;color:#FFE066;}
+  .pill-sir{background:#ff6fb829;color:#ff6fb8;}
+  .pill-hr{background:#7c9bff29;color:#7c9bff;}
+  .pill-mhr{background:#ff4d6d29;color:#ff4d6d;}
+  .pill-mar{background:#ff6a0029;color:#ff6a00;}
+  .pill-shinyur{background:#e879f929;color:#e879f9;}
+  .pill-rainbow{background:#a78bfa29;color:#a78bfa;}
+  .pill-acespec{background:#f472b629;color:#f472b6;}
+  .pill-classic{background:#f59e0b29;color:#f59e0b;}
+  .pill-shiny{background:#fda4af29;color:#fda4af;}
+  .pill-shinyr{background:#c084fc29;color:#c084fc;}
+  .pill-amazing{background:#34d39929;color:#34d399;}
+  .pill-radiant{background:#fb923c29;color:#fb923c;}
+  .pill-sr{background:#9d7cff29;color:#9d7cff;}
+  .pill-tagteam{background:#f97d1629;color:#f97d16;}
+  .pill-fatagteam{background:#ff4d0029;color:#ff4d00;}
+  .pill-fullart{background:#60a5fa29;color:#60a5fa;}
+  .pill-gs{background:#5ce1e629;color:#5ce1e6;}
+  .pill-shine{background:#b98aff29;color:#b98aff;}
+  .pill-legend{background:#ffd70029;color:#ffd700;}
+  .pill-lv{background:#ffb3e029;color:#ffb3e0;}
+  .pill-prime{background:#e0779c29;color:#e0779c;}
+  .pill-tg{background:#FFCB0529;color:#FFCB05;}
+  .pill-gg{background:#38bdf829;color:#38bdf8;}
+  .pill-break{background:#ff9d5c29;color:#ff9d5c;}
+  .pill-shgx{background:#ff7fc229;color:#ff7fc2;}
+  .pill-star{background:#5ce1e629;color:#5ce1e6;}
+  .pill-holo{background:#E8B91429;color:#E8B914;}
+  .pill-default{background:rgba(139,143,163,0.14);color:var(--dim);}
+
+  /* MODAL */
+  .modal-backdrop{
+    display:none;position:fixed;inset:0;background:rgba(6,7,12,0.88);
+    z-index:90;align-items:center;justify-content:center;padding:24px;
+  }
+  .modal-backdrop.active{display:flex;}
+  .modal{
+    background:linear-gradient(170deg,#1e2235,#13161f);
+    border:1px solid var(--line);border-radius:20px;padding:0;
+    max-width:460px;width:100%;position:relative;
+    box-shadow:0 32px 80px rgba(0,0,0,0.7);
+    max-height:94vh;overflow-y:auto;
+  }
+  /* Close button — 44px tap target for iOS */
+  .modal-close{
+    position:absolute;top:8px;right:8px;z-index:4;
+    background:rgba(14,16,22,0.7);border:1px solid var(--line);
+    color:var(--dim);font-size:20px;cursor:pointer;line-height:1;
+    width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    transition:background .15s,color .15s;-webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+  }
+  .modal-close:hover{background:var(--line);color:var(--text);}
+  /* Nav bar — top of modal (now only holds the counter, hidden) */
+  .modal-nav-bar{ display:none; }
+  .modal-nav-counter{ display:none; }
+
+  /* Nav arrows flanking the card image */
+  .modal-nav{
+    background:rgba(14,16,22,0.7);border:1px solid var(--line);
+    color:var(--text);font-size:24px;cursor:pointer;line-height:1;
+    width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    transition:background .15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
+    user-select:none;flex-shrink:0;
+  }
+  .modal-nav:hover{background:var(--line);}
+  .modal-nav.disabled{opacity:0.2;pointer-events:none;}
+
+  /* Card image area — arrows on each side */
+  .modal-imgwrap{
+    background:linear-gradient(160deg,#1a1d2b,#0e1016);
+    padding:48px 12px 16px;
+    display:flex;flex-direction:row;align-items:center;justify-content:center;
+    gap:10px;min-height:260px;
+  }
+  .modal-img-center{
+    display:flex;flex-direction:column;align-items:center;
+  }
+  .modal-imgwrap img{
+    width:260px;max-width:100%;max-height:52vh;border-radius:14px;display:block;
+    box-shadow:0 24px 64px rgba(0,0,0,0.8);
+  }
+  .modal-card-num{
+    font-size:12px;color:var(--dim);margin-top:10px;letter-spacing:0.04em;font-weight:600;
+  }
+  .modal-fallback{color:var(--dim);font-size:13px;padding:60px 10px;display:none;text-align:center;}
+
+  /* Content area */
+  .modal-body{padding:18px 22px 28px;text-align:center;}
+  .modal-name{font-family:'Luckiest Guy','Bebas Neue';font-size:24px;letter-spacing:0.01em;line-height:1.1;}
+  .modal-meta{color:var(--dim);font-size:13px;margin-top:6px;line-height:1.7;}
+  .modal-price{font-size:24px;font-weight:800;color:var(--gold-bright);margin-top:12px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;}
+
+  /* Action buttons */
+  .modal-actions{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
+  .modal-own{
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    width:100%;padding:12px 18px;border-radius:12px;
+    background:transparent;border:1.5px solid #4ade80;color:#4ade80;font-weight:700;
+    font-size:14px;font-family:inherit;cursor:pointer;transition:all .2s;letter-spacing:0.01em;
+  }
+  .modal-own:hover{background:#4ade8018;box-shadow:0 0 0 1px #4ade8040;}
+  .modal-own.owned{background:#4ade8022;color:#4ade80;border-color:#4ade80;}
+  .modal-own.owned::before{content:'✓  ';}
+  .modal-buy{
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    padding:12px 18px;border-radius:12px;
+    background:var(--gold);color:#231a00;font-weight:700;text-decoration:none;
+    font-size:14px;letter-spacing:0.01em;transition:all .2s;
+  }
+  .modal-buy:hover{background:var(--gold-bright);box-shadow:0 4px 16px rgba(255,203,5,0.3);}
+
+  /* EMPTY */
+  .empty{text-align:center;padding:60px 20px;color:var(--dim);border:1px dashed var(--line);border-radius:12px;}
+  .empty .display{font-size:22px;color:var(--text);margin-bottom:8px;}
+
+  footer{text-align:center;color:var(--dim);font-size:12px;padding:20px;border-top:1px solid var(--line);}
+
+  /* TREND BUTTONS */
+  .trend-btn{white-space:nowrap;}
+  .trend-btn.active-gainers{background:#4ade8022;border-color:#4ade80;color:#4ade80;font-weight:700;}
+  .trend-btn.active-drops{background:#f8717122;border-color:#f87171;color:#f87171;font-weight:700;}
+
+  /* TREND VIEW */
+  .trend-section{margin-bottom:36px;}
+  .trend-header{
+    display:flex;align-items:center;gap:10px;
+    border-bottom:2px solid var(--line);padding-bottom:10px;margin-bottom:14px;
+  }
+  .trend-title{font-family:'Luckiest Guy','Bebas Neue';font-size:22px;letter-spacing:0.04em;text-transform:uppercase;}
+  .trend-sub{font-size:12px;color:var(--dim);font-weight:600;}
+  .trend-rank{
+    width:24px;flex-shrink:0;font-size:12px;font-weight:800;
+    color:var(--dim);text-align:center;
+  }
+  .crow-set{font-size:10.5px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;}
+
+  /* PRICE CHANGE BADGES */
+  .price-change{font-size:10.5px;font-weight:700;padding:1px 5px;border-radius:4px;display:inline-block;margin-left:4px;white-space:nowrap;}
+  .price-up{background:#4ade8022;color:#4ade80;}
+  .price-down{background:#f8717122;color:#f87171;}
+  .price-flat{color:var(--dim);}
+  .tile-price-row{display:flex;align-items:center;flex-wrap:wrap;gap:2px;}
+  /* List view change column */
+  .td-change{font-size:12px;font-weight:700;white-space:nowrap;}
+
+  /* PRICE HISTORY CHART IN MODAL */
+  .modal-chart-wrap{
+    margin-top:14px;background:var(--panel);border:1px solid var(--line);
+    border-radius:10px;padding:10px 12px;
+  }
+  .modal-chart-label{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;}
+  #priceChart{width:100%!important;height:90px!important;}
+  .modal-chart-empty{font-size:12px;color:var(--dim);text-align:center;padding:18px 0;}
+
+  /* MOBILE FILTER DRAWER */
+  .filter-drawer{
+    display:none;max-width:1280px;margin:0 auto;padding:0 16px 12px;
+    gap:10px;flex-wrap:wrap;
+  }
+  .filter-drawer.open{display:flex;}
+  .filter-drawer select{flex:1;min-width:140px;}
+  .filter-toggle-btn{
+    background:var(--panel);border:1px solid var(--line);color:var(--dim);
+    padding:11px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit;
+    display:none;align-items:center;gap:6px;transition:border-color .15s,color .15s;
+  }
+  .filter-toggle-btn.active{border-color:var(--gold);color:var(--gold);}
+
+  @media(max-width:700px){
+    /* Header — compact on mobile */
+    header.hero{padding:10px 16px 14px;overflow:hidden;}
+    .eyebrow{display:none;}
+    h1.display{font-size:22px;margin:0 0 16px 0;line-height:1;}
+    .sub{display:none;}
+    .auth-btn{position:absolute;top:10px;right:10px;padding:5px 10px;font-size:11px;z-index:10;}
+
+    /* Prevent horizontal scroll on body */
+    body{overflow-x:hidden;}
+    main{overflow-x:hidden;}
+
+    /* Stats — 3 equal columns, no overflow */
+    .stats-row{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:8px;margin-top:14px;
+      width:100%;box-sizing:border-box;
+    }
+    .stat{min-width:0;padding:10px 8px;box-sizing:border-box;}
+    .stat .n{font-size:20px;word-break:break-all;}
+    .stat .l{font-size:10px;}
+
+    /* Toolbar — centered column layout */
+    .toolbar{
+      padding:12px 16px 0;margin-top:12px;
+      flex-direction:column;gap:10px;
+      align-items:stretch;
+    }
+    .search-wrap{min-width:0;width:100%;}
+    .toolbar-row2{
+      display:flex;gap:8px;width:100%;align-items:center;
+      justify-content:center;
+    }
+    .filter-toggle-btn{
+      display:flex;flex:1;justify-content:center;
+      padding:14px;font-size:15px;
+    }
+
+    /* Hide desktop controls on mobile — all live in quick-row / filter-drawer */
+    .toolbar select{display:none;}
+    .toolbar .view-toggle{display:none;}
+    .toolbar .trend-btn{display:none;}
+    #resetBtn{display:none!important;} /* always hidden on mobile — quick-row has resetBtnM */
+
+    /* Filter drawer */
+    .filter-drawer{padding:0 16px 16px;}
+    .filter-drawer select{
+      width:100%;flex:none;
+      padding:14px 12px;font-size:15px;
+      border-radius:10px;
+    }
+    /* mobile-view-toggle and mobile-trend-row now live in quick-row, not the drawer */
+    .mobile-view-toggle{display:none;}
+    .mobile-trend-row{display:none;}
+
+    /* Quick action row — mobile only, always shows Reset */
+    .quick-row{
+      display:none;max-width:1280px;margin:10px auto 0;padding:0 16px 10px;
+      gap:8px;
+    }
+    .quick-row.visible{display:flex;}
+    .quick-row .vbtn{flex:1;text-align:center;padding:13px 8px;font-size:14px;}
+    /* Reset always visible in quick-row on mobile */
+    .quick-row .reset-btn{
+      flex:1;text-align:center;
+      display:flex!important;
+      border-color:#f87171;color:#f87171;background:#f8717112;
+      font-size:14px;padding:13px 8px;font-weight:700;border-radius:8px;
+      align-items:center;justify-content:center;
+    }
+
+    /* Main padding */
+    main{padding:16px 12px 80px;}
+
+    /* Set overview — 1 column on mobile */
+    .set-overview-grid{grid-template-columns:1fr;}
+
+    /* Detail card grid — SINGLE column on mobile so nothing cuts off */
+    .detail-card-grid{grid-template-columns:1fr;}
+
+    /* Card rows — single column, full width, no overflow */
+    .card-row{
+      padding:10px 10px;
+      flex-wrap:nowrap;
+      gap:8px;
+      width:100%;box-sizing:border-box;
+      overflow:hidden;
+    }
+    .crow-num{font-size:13px;width:36px;flex-shrink:0;text-align:right;white-space:nowrap;}
+    .crow-thumb{width:40px;height:56px;flex-shrink:0;}
+    .crow-thumb-empty{width:40px;height:56px;flex-shrink:0;}
+    /* Name: takes remaining space, always truncates before touching price */
+    .crow-name{font-size:14px;flex:1 1 0;min-width:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;}
+    /* Price: absolutely fixed — never shrinks, never grows */
+    .crow-price-wrap{
+      flex:0 0 92px;width:92px;
+      flex-direction:column;align-items:flex-end;gap:2px;
+    }
+    .crow-price{font-size:13px;white-space:nowrap;overflow:hidden;}
+    .price-change{font-size:10px;padding:2px 5px;white-space:nowrap;}
+    .trend-rank{font-size:13px;min-width:18px;flex-shrink:0;}
+    .crow-set{max-width:100px;}
+
+    /* Stats — prevent right cutoff */
+    .stats-row{overflow:hidden;}
+
+    /* Modal — full-height bottom sheet, stretches north */
+    .modal-backdrop{padding:0;align-items:flex-end;}
+    .modal{
+      max-width:100%;border-radius:20px 20px 0 0;
+      height:100vh;max-height:100vh;overflow-y:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+    .modal-nav{width:34px;height:34px;font-size:20px;}
+    .modal-imgwrap{
+      min-height:0;
+      padding:44px 8px 10px;
+      gap:6px;
+    }
+    .modal-imgwrap img{
+      width:220px;max-width:100%;max-height:46vh;
+    }
+    .modal-body{padding:8px 20px 20px;text-align:left;}
+    .modal-name{font-size:20px;}
+    .modal-meta{font-size:11px;line-height:1.5;margin-top:3px;}
+    .modal-price{font-size:20px;margin-top:6px;justify-content:flex-start;}
+    .modal-chart-wrap{margin-top:10px;}
+    #priceChart{height:100px!important;}
+    .modal-chart-label{font-size:9px;}
+    .modal-actions{margin-top:12px;gap:6px;}
+    .modal-own,.modal-buy{padding:12px 16px;font-size:14px;}
+
+    /* Era headers */
+    .era-title{font-size:18px;}
+
+    footer{font-size:11px;padding:16px;}
+  }

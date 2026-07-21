@@ -98,7 +98,7 @@ function rarityClass(r, name, num) {
   return 'pill-default';
 }
 
-function shortRarity(r, name, num) {
+function shortRarity(r, name, num, subtypes, supertype) {
   if (!r) return '?';
   const isFull = isBeyondSetTotal(num);
   // Tag Team synthetic rarity — already rewritten in normalizeCard
@@ -108,9 +108,10 @@ function shortRarity(r, name, num) {
   // on a card always agrees with which filter bucket it falls into.
   if (r === 'Rare Ultra') {
     if (isFull) return 'Full Art';
-    const bucket = rareUltraBucket({ name });
+    const bucket = rareUltraBucket({ name, subtypes, supertype });
     if (bucket === '__GX__') return 'GX';
     if (bucket === '__EX__') return 'EX';
+    if (bucket === '__FA_POKEMON__') return 'Full Art';
     return 'FA Trainer';
   }
   // Rare Rainbow: Full Art if beyond set total
@@ -208,6 +209,11 @@ function normalizeCard(raw) {
   const date = raw.release_date || raw['release_date'] || '';
   const lastChecked = raw.last_checked || raw['last_checked'] || '';
   const lastPriced = raw.last_priced || raw['last_priced'] || '';
+  const supertype = raw.supertype || raw['supertype'] || '';
+  // Subtypes is stored pipe-joined in the CSV (e.g. "Basic|EX" or "Basic|TAG TEAM|GX").
+  // Split into an array so callers can check e.g. subtypes.includes('EX').
+  const subtypesRaw = raw.subtypes || raw['subtypes'] || '';
+  const subtypes = subtypesRaw ? subtypesRaw.split('|') : [];
   // Synthetic "Tag Team" rarity — Tag Team GX/EX cards always have & in the name.
   // This check takes priority over GX/EX classification — a card with & is always Tag Team.
   if (name.includes('&') && (rarity === 'Rare Ultra' || rarity === 'Rare Rainbow')) {
@@ -231,7 +237,7 @@ function normalizeCard(raw) {
   if (rarity === 'Rare Holo LV.X') {
     rarity = 'LV.X';
   }
-  return { name, series, set, setCode, num, setTotal, rarity, price, prevPrice, cardId, pic, setLogo, setSymbol, date, lastChecked, lastPriced };
+  return { name, series, set, setCode, num, setTotal, rarity, price, prevPrice, cardId, pic, setLogo, setSymbol, date, lastChecked, lastPriced, supertype, subtypes };
 }
 
 // Returns days between a YYYY-MM-DD date string and today, or null if invalid/missing.
@@ -332,11 +338,29 @@ const RARITY_DISPLAY = {
 // All TG rarity strings that map to the single "Trainer Gallery" filter option
 const TG_RARITY_STRINGS = new Set(['Trainer Gallery Rare Holo','Rare Holo V','Rare Holo VMAX','Rare Holo VSTAR']);
 
-// Classify a "Rare Ultra" card into one of three real sub-types by name,
-// same rule the grid/set-detail view already uses to visually separate them.
-// Tag Team cards (name has "&") are normalized to 'Tag Team' upstream already
-// and never reach this function with rarity === 'Rare Ultra'.
+// Classify a "Rare Ultra" card into a real sub-type. Tag Team cards (name has
+// "&") are normalized to 'Tag Team' upstream already and never reach this
+// function with rarity === 'Rare Ultra'.
+//
+// Prefers the API's `subtypes` field (e.g. ["Basic","EX"] or ["Basic","GX"])
+// when available — this is ground truth from the game data itself, unlike
+// scanning the printed name, which misses cards like classic Full Art
+// Legendary "Reshiram" (Black & White base set) that carry EX/GX status only
+// in their subtype, not in the printed card name.
+// Falls back to name-matching for older rows fetched before the Subtypes
+// column existed, or fallback-preserved rows where subtypes came back empty.
+// A card with neither an EX/GX subtype/name-match nor a Trainer supertype is
+// a plain Full Art Pokémon (e.g. non-EX Reshiram/Zekrom) — its own bucket,
+// so it no longer gets lumped in with real Trainer cards.
 function rareUltraBucket(c) {
+  const subtypes = c.subtypes || [];
+  if (subtypes.length > 0) {
+    if (subtypes.includes('GX')) return '__GX__';
+    if (subtypes.includes('EX')) return '__EX__';
+    if (c.supertype && c.supertype !== 'Pokémon') return '__FA_TRAINER__';
+    return '__FA_POKEMON__';
+  }
+  // No subtypes data (older row / fallback-preserved) — fall back to name matching.
   if (/GX\b/.test(c.name)) return '__GX__';
   if (/-EX\b|\bEX\b/i.test(c.name)) return '__EX__';
   return '__FA_TRAINER__';
@@ -376,9 +400,10 @@ function populateFilters() {
   const ULTRA_LABELS = {
     '__GX__':         'Full Art GX',
     '__EX__':         'Full Art EX',
+    '__FA_POKEMON__': 'Full Art Pokémon',
     '__FA_TRAINER__': 'Full Art Trainer',
   };
-  for (const bucket of ['__GX__', '__EX__', '__FA_TRAINER__']) {
+  for (const bucket of ['__GX__', '__EX__', '__FA_POKEMON__', '__FA_TRAINER__']) {
     if (seenUltraBuckets.has(bucket)) {
       seenLabels.set(ULTRA_LABELS[bucket], new Set([bucket]));
     }
@@ -459,7 +484,7 @@ function getFiltered() {
     if (rarityTokens) {
       const matches = rarityTokens.some(tok => {
         if (tok === '__TG__') return TG_RARITY_STRINGS.has(c.rarity);
-        if (tok === '__GX__' || tok === '__EX__' || tok === '__FA_TRAINER__') {
+        if (tok === '__GX__' || tok === '__EX__' || tok === '__FA_POKEMON__' || tok === '__FA_TRAINER__') {
           return c.rarity === 'Rare Ultra' && rareUltraBucket(c) === tok;
         }
         return c.rarity === tok;
@@ -851,17 +876,15 @@ function renderSetOverview(cards, el) {
           if (prefix === 'TG') bucket = '__TG__';
           else if (r === 'Rare Ultra') {
             if (c.name && c.name.includes('&')) bucket = r; // Tag Team — already normalized
-            else if (/GX\b/.test(c.name)) bucket = '__GX__';
-            else if (/-EX\b|\bEX\b/i.test(c.name)) bucket = '__EX__';
-            else bucket = '__FA_TRAINER__';
+            else bucket = rareUltraBucket(c);
           } else bucket = r;
           if (!ovBuckets[bucket]) ovBuckets[bucket] = 0;
           ovBuckets[bucket]++;
         }
       }
-      const OV_RANK = { '__TG__': rarityRank('Trainer Gallery Rare Holo'), '__GX__': rarityRank('Rare Ultra'), '__EX__': rarityRank('Rare Ultra') + 0.1, '__FA_TRAINER__': rarityRank('Rare Ultra') + 0.2 };
-      const OV_LABEL = { '__TG__':'TG', '__GX__':'GX', '__EX__':'EX', '__FA_TRAINER__':'FA Trainer' };
-      const OV_COLOR = { '__TG__':'Trainer Gallery Rare Holo', '__GX__':'Rare Ultra', '__EX__':'Rare Ultra', '__FA_TRAINER__':'Rare Ultra' };
+      const OV_RANK = { '__TG__': rarityRank('Trainer Gallery Rare Holo'), '__GX__': rarityRank('Rare Ultra'), '__EX__': rarityRank('Rare Ultra') + 0.1, '__FA_POKEMON__': rarityRank('Rare Ultra') + 0.15, '__FA_TRAINER__': rarityRank('Rare Ultra') + 0.2 };
+      const OV_LABEL = { '__TG__':'TG', '__GX__':'GX', '__EX__':'EX', '__FA_POKEMON__':'Full Art', '__FA_TRAINER__':'FA Trainer' };
+      const OV_COLOR = { '__TG__':'Trainer Gallery Rare Holo', '__GX__':'Rare Ultra', '__EX__':'Rare Ultra', '__FA_POKEMON__':'Rare Ultra', '__FA_TRAINER__':'Rare Ultra' };
       const rarities = Object.keys(ovBuckets).sort((a,b) => (OV_RANK[a] ?? rarityRank(a)) - (OV_RANK[b] ?? rarityRank(b)));
       const pillsHtml = rarities.map(r => {
         const cnt = ovBuckets[r];
@@ -918,9 +941,8 @@ function renderSetDetail(cards, el) {
 
   // Re-bucket all cards in this set by number-prefix and card type.
   // TG prefix → '__TG__'
-  // Rare Ultra with GX in name → '__GX__'
-  // Rare Ultra with EX/-EX in name → '__EX__'
-  // Rare Ultra trainer (neither) → '__FA_TRAINER__'
+  // Rare Ultra → classified by rareUltraBucket() (subtypes-based, with
+  // name-matching fallback) into GX / EX / plain Full Art Pokémon / Trainer.
   // Everything else → keep original rarity string
   const rebucketed = {};
   for (const [r, cards] of Object.entries(setData)) {
@@ -931,9 +953,7 @@ function renderSetDetail(cards, el) {
         bucket = '__TG__';
       } else if (r === 'Rare Ultra') {
         if (c.name && c.name.includes('&')) bucket = r; // Tag Team — already normalized
-        else if (/GX\b/.test(c.name)) bucket = '__GX__';
-        else if (/-EX\b|\bEX\b/i.test(c.name)) bucket = '__EX__';
-        else bucket = '__FA_TRAINER__';
+        else bucket = rareUltraBucket(c);
       } else {
         bucket = r;
       }
@@ -946,6 +966,7 @@ function renderSetDetail(cards, el) {
     '__TG__':         rarityRank('Trainer Gallery Rare Holo'),
     '__GX__':         rarityRank('Rare Ultra'),
     '__EX__':         rarityRank('Rare Ultra') + 0.1,
+    '__FA_POKEMON__': rarityRank('Rare Ultra') + 0.15,
     '__FA_TRAINER__': rarityRank('Rare Ultra') + 0.2,
   };
   const bucketOrder = Object.keys(rebucketed).sort((a, b) => {
@@ -963,8 +984,8 @@ function renderSetDetail(cards, el) {
     </div>
   </div>`;
 
-  const BUCKET_LABEL = { '__TG__':'TG', '__GX__':'GX', '__EX__':'EX', '__FA_TRAINER__':'FA Trainer' };
-  const BUCKET_COLOR_KEY = { '__TG__':'Trainer Gallery Rare Holo', '__GX__':'Rare Ultra', '__EX__':'Rare Ultra', '__FA_TRAINER__':'Rare Ultra' };
+  const BUCKET_LABEL = { '__TG__':'TG', '__GX__':'GX', '__EX__':'EX', '__FA_POKEMON__':'Full Art', '__FA_TRAINER__':'FA Trainer' };
+  const BUCKET_COLOR_KEY = { '__TG__':'Trainer Gallery Rare Holo', '__GX__':'Rare Ultra', '__EX__':'Rare Ultra', '__FA_POKEMON__':'Rare Ultra', '__FA_TRAINER__':'Rare Ultra' };
 
   for (const bucket of bucketOrder) {
     const rarCards = [...rebucketed[bucket]].sort(cardNumSort);
@@ -1020,7 +1041,7 @@ function renderGrid(cards, el) {
       <div class="card-grid">`;
     for (const c of eraCards) {
       const cls = rarityClass(c.rarity, c.name, c.num);
-      const short = shortRarity(c.rarity, c.name, c.num);
+      const short = shortRarity(c.rarity, c.name, c.num, c.subtypes, c.supertype);
       const owned = isOwned(c);
       const cdata = JSON.stringify(c).replace(/'/g, '&#39;');
       const key = cardKey(c).replace(/[^a-z0-9]/gi,'_');
@@ -1111,7 +1132,7 @@ function openModal(c, updateList = true) {
   const rarityPill = document.getElementById('mRarityPill');
   if (rarityPill) {
     const pillCls = rarityClass(c.rarity, c.name, c.num);
-    const pillLabel = shortRarity(c.rarity, c.name, c.num);
+    const pillLabel = shortRarity(c.rarity, c.name, c.num, c.subtypes, c.supertype);
     rarityPill.className = `pill ${pillCls}`;
     rarityPill.textContent = pillLabel;
   }

@@ -164,8 +164,8 @@
   .set-ov-card:hover{border-color:var(--gold);box-shadow:0 8px 28px rgba(0,0,0,0.4);transform:translateY(-2px);}
 
   /* top row: code badge + logo + year */
-  .set-ov-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
-  .set-ov-left{display:flex;align-items:center;gap:8px;}
+  .set-ov-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:8px;}
+  .set-ov-left{display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden;}
   .set-ov-symbol{
     width:36px;height:36px;object-fit:contain;
     filter:invert(1) brightness(2);opacity:0.85;
@@ -175,7 +175,7 @@
     font-size:9px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;
     color:var(--dim);padding:3px 6px;
   }
-  .set-ov-logo{width:28px;height:28px;object-fit:contain;opacity:0.9;}
+  .set-ov-logo{height:40px;max-width:120px;width:auto;object-fit:contain;opacity:0.95;}
   .set-ov-year{font-size:11px;color:var(--dim);font-weight:600;}
 
   /* set name */
@@ -204,7 +204,10 @@
     padding:8px 14px;transition:all .15s;white-space:nowrap;
   }
   .set-detail-back:hover{border-color:var(--gold);color:var(--gold);}
-  .set-detail-logo{width:52px;height:52px;object-fit:contain;opacity:0.9;}
+  .set-detail-symbol{
+    width:40px;height:40px;object-fit:contain;
+    filter:invert(1) brightness(2);opacity:0.85;flex-shrink:0;
+  }
   .set-detail-info{flex:1;}
   .set-detail-era{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:0.1em;font-weight:700;}
   .set-detail-name{font-family:'Luckiest Guy','Bebas Neue';font-size:24px;color:var(--text);letter-spacing:0.01em;line-height:1;}

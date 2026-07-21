@@ -922,6 +922,7 @@ function renderSetOverview(cards, el) {
         <div class="set-ov-top">
           <div class="set-ov-left">
             ${symbolHtml}
+            ${logoHtml}
           </div>
           <span class="set-ov-year">${setYear}</span>
         </div>
@@ -949,8 +950,10 @@ function renderSetDetail(cards, el) {
   const era = _activeSet.era, set = _activeSet.set;
   const setData = byEra[era]?.[set] || {};
   const firstCard = cards[0];
-  const logoHtml = firstCard.setLogo && firstCard.setLogo !== 'N/A'
-    ? `<img class="set-detail-logo" src="${firstCard.setLogo}" alt="" onerror="this.style.display='none'">`
+  // Set symbol (small icon, e.g. "PBL") instead of the full wordmark logo —
+  // matches the compact style of the back button beside it.
+  const symbolHtml = firstCard.setSymbol && firstCard.setSymbol !== 'N/A'
+    ? `<img class="set-detail-symbol" src="${firstCard.setSymbol}" alt="" onerror="this.style.display='none'">`
     : '';
   const setYear = firstCard.date ? firstCard.date.slice(0,4) : '';
   // Sort helper: parse prefixed card numbers like TG01, GG30, SWSH123 numerically
@@ -997,7 +1000,7 @@ function renderSetDetail(cards, el) {
 
   let html = `<div class="set-detail-header">
     <button class="set-detail-back" onclick="history.back()">← All Sets</button>
-    ${logoHtml}
+    ${symbolHtml}
     <div class="set-detail-info">
       <div class="set-detail-era">${era} · ${setYear}</div>
       <div class="set-detail-name">${set}</div>

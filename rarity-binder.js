@@ -217,6 +217,8 @@ function normalizeCard(raw) {
   const setLogo = raw.set_logo || raw['set_logo'] || '';
   const setSymbol = raw.set_symbol || raw['set_symbol'] || '';
   const date = raw.release_date || raw['release_date'] || '';
+  const lastChecked = raw.last_checked || raw['last_checked'] || '';
+  const lastPriced = raw.last_priced || raw['last_priced'] || '';
   // Synthetic "Tag Team" rarity — Tag Team GX/EX cards always have & in the name.
   // This check takes priority over GX/EX classification — a card with & is always Tag Team.
   if (name.includes('&') && (rarity === 'Rare Ultra' || rarity === 'Rare Rainbow')) {
@@ -240,7 +242,36 @@ function normalizeCard(raw) {
   if (rarity === 'Rare Holo LV.X') {
     rarity = 'LV.X';
   }
-  return { name, series, set, setCode, num, setTotal, rarity, price, prevPrice, cardId, pic, setLogo, setSymbol, date };
+  return { name, series, set, setCode, num, setTotal, rarity, price, prevPrice, cardId, pic, setLogo, setSymbol, date, lastChecked, lastPriced };
+}
+
+// Returns days between a YYYY-MM-DD date string and today, or null if invalid/missing.
+function daysSince(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d.getTime())) return null;
+  const diffMs = Date.now() - d.getTime();
+  return Math.floor(diffMs / (1000 * 60 * 60 * 24));
+}
+
+// Returns HTML for a staleness note, or '' if not stale / not applicable.
+// Only surfaces once a card's price has gone unresolved for a while, so a
+// single bad-API-day doesn't trigger noise.
+function stalePriceBadge(c) {
+  const noPrice = !c.price || c.price === 'N/A';
+  const days = daysSince(c.lastPriced);
+  if (noPrice) {
+    const checkedDays = daysSince(c.lastChecked);
+    if (days === null) {
+      return `<span class="price-stale" title="No price has ever been fetched for this card">Never priced</span>`;
+    }
+    return `<span class="price-stale" title="Last real price was ${days} day(s) ago (last checked ${checkedDays !== null ? checkedDays + ' day(s) ago' : 'unknown'})">Stale ${days}d</span>`;
+  }
+  // Has a current price, but flag if it's suspiciously old (e.g. fallback-preserved for weeks)
+  if (days !== null && days >= 14) {
+    return `<span class="price-stale" title="Price last confirmed ${days} days ago">Stale ${days}d</span>`;
+  }
+  return '';
 }
 
 function priceVal(p) {
@@ -686,10 +717,13 @@ function _doRender() {
       _lastRenderedSet = null;
       renderGrid(gridCards.length > 0 ? gridCards : cards, el);
     } else {
-      // Main page grid — only render if user has typed a search query
+      // Main page grid — only render if user has typed a search query OR applied a filter
       const q = document.getElementById('search').value.trim();
-      if (!q) {
-        el.innerHTML = `<div class="empty"><div class="display">Search to explore</div><p>Type a card name, Pokémon, or set to see results in grid view.</p></div>`;
+      const eraSel = document.getElementById('eraFilter').value;
+      const raritySel = document.getElementById('rarityFilter').value;
+      const hasFilter = !!q || !!eraSel || !!raritySel || showOwnedOnly;
+      if (!hasFilter) {
+        el.innerHTML = `<div class="empty"><div class="display">Search to explore</div><p>Type a card name, Pokémon, or set — or apply a filter — to see results in grid view.</p></div>`;
       } else {
         _lastRenderedSet = null;
         renderGrid(cards, el);
@@ -1069,6 +1103,8 @@ function openModal(c, updateList = true) {
     const arrow = delta >= 0 ? '↑' : '↓';
     priceHtml += ` <span class="price-change ${cls}" style="font-size:13px;">${arrow} ${sign}${pct}%</span>`;
   }
+  const staleBadge = stalePriceBadge(c);
+  if (staleBadge) priceHtml += ' ' + staleBadge;
   document.getElementById('mPrice').innerHTML = priceHtml;
 
   const img = document.getElementById('mImg');

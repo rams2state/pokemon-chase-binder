@@ -671,12 +671,21 @@ function _doRender() {
     return;
   }
   if (currentView === 'grid') {
-    // If inside a set, grid shows that set's cards; otherwise shows all filtered cards
-    const gridCards = _activeSet
-      ? cards.filter(c => c.series === _activeSet.era && c.set === _activeSet.set)
-      : cards;
-    _lastRenderedSet = null;
-    renderGrid(gridCards.length > 0 ? gridCards : cards, el);
+    if (_activeSet) {
+      // Inside a set — always render (small card count, no perf issue)
+      const gridCards = cards.filter(c => c.series === _activeSet.era && c.set === _activeSet.set);
+      _lastRenderedSet = null;
+      renderGrid(gridCards.length > 0 ? gridCards : cards, el);
+    } else {
+      // Main page grid — only render if user has typed a search query
+      const q = document.getElementById('search').value.trim();
+      if (!q) {
+        el.innerHTML = `<div class="empty"><div class="display">Search to explore</div><p>Type a card name, Pokémon, or set to see results in grid view.</p></div>`;
+      } else {
+        _lastRenderedSet = null;
+        renderGrid(cards, el);
+      }
+    }
     return;
   }
   // Trend view takes priority over set detail / overview
@@ -1227,7 +1236,7 @@ document.getElementById('search').addEventListener('input', function() {
   const val = this.value;
   setTimeout(() => {
     clearTimeout(_searchDebounce);
-    _searchDebounce = setTimeout(render, 1000);
+    _searchDebounce = setTimeout(render, 300);
   }, 0);
 });
 document.getElementById('clearSearch').addEventListener('click', function() {

@@ -166,9 +166,17 @@
   /* top row: code badge + logo + year */
   .set-ov-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:8px;}
   .set-ov-left{display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden;}
+  /* Light "chip" behind set symbol icons — symbols are drawn dark-on-transparent
+     for light backgrounds, so rather than inverting/distorting their colors,
+     give them a small light patch of their own to sit on. */
+  .symbol-chip{
+    display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
+    width:36px;height:36px;border-radius:9px;
+    background:rgba(255,255,255,0.92);
+  }
+  .symbol-chip-lg{width:44px;height:44px;border-radius:10px;}
   .set-ov-symbol{
-    width:36px;height:36px;object-fit:contain;
-    filter:invert(1) brightness(2);opacity:0.85;
+    width:24px;height:24px;object-fit:contain;
   }
   .set-ov-code{
     background:var(--panel2);border:1px solid var(--line);border-radius:6px;
@@ -205,8 +213,7 @@
   }
   .set-detail-back:hover{border-color:var(--gold);color:var(--gold);}
   .set-detail-symbol{
-    width:40px;height:40px;object-fit:contain;
-    filter:invert(1) brightness(2);opacity:0.85;flex-shrink:0;
+    width:26px;height:26px;object-fit:contain;
   }
   .set-detail-info{flex:1;}
   .set-detail-era{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:0.1em;font-weight:700;}

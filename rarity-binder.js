@@ -252,6 +252,15 @@ function formatDateDisplay(dateStr) {
   return `${mm}/${dd}/${yyyy}`;
 }
 
+// Shortens "Trainer Gallery" -> "TG" and "Galarian Gallery" -> "GG" in a set
+// name for display on the main-page set overview cards. Display-only — the
+// underlying c.set string is left untouched since it's used for matching/
+// routing (openSetDetail, era/set grouping, etc.).
+function shortSetName(setName) {
+  if (!setName) return setName;
+  return setName.replace('Trainer Gallery', 'TG').replace('Galarian Gallery', 'GG');
+}
+
 // Returns days between a YYYY-MM-DD date string and today, or null if invalid/missing.
 function daysSince(dateStr) {
   if (!dateStr) return null;
@@ -915,8 +924,11 @@ function renderSetOverview(cards, el) {
 
       const eraEnc = encodeURIComponent(era), setEnc = encodeURIComponent(set);
       const symbolUrl = firstCard?.setSymbol || '';
+      // Symbol icons are drawn dark-on-transparent (meant for light backgrounds),
+      // so instead of inverting the icon's own colors, give it a small light
+      // "chip" to sit on — reads naturally without distorting any icon color.
       const symbolHtml = symbolUrl && symbolUrl !== 'N/A'
-        ? `<img class="set-ov-symbol" src="${symbolUrl}" alt="" loading="lazy">`
+        ? `<span class="symbol-chip"><img class="set-ov-symbol" src="${symbolUrl}" alt="" loading="lazy"></span>`
         : '';
       html += `<div class="set-ov-card" onclick="openSetDetail('${eraEnc}','${setEnc}')">
         <div class="set-ov-top">
@@ -926,7 +938,7 @@ function renderSetOverview(cards, el) {
           </div>
           <span class="set-ov-year">${setYear}</span>
         </div>
-        <div class="set-ov-name">${set}</div>
+        <div class="set-ov-name">${shortSetName(set)}</div>
         <div class="set-ov-total">${setTotal} card${setTotal!==1?'s':''}</div>
         <div class="set-ov-pills">${pillsHtml}</div>
       </div>`;
@@ -951,9 +963,10 @@ function renderSetDetail(cards, el) {
   const setData = byEra[era]?.[set] || {};
   const firstCard = cards[0];
   // Set symbol (small icon, e.g. "PBL") instead of the full wordmark logo —
-  // matches the compact style of the back button beside it.
+  // matches the compact style of the back button beside it. Wrapped in a
+  // light chip since the icon is drawn dark-on-transparent for light backgrounds.
   const symbolHtml = firstCard.setSymbol && firstCard.setSymbol !== 'N/A'
-    ? `<img class="set-detail-symbol" src="${firstCard.setSymbol}" alt="" onerror="this.style.display='none'">`
+    ? `<span class="symbol-chip symbol-chip-lg"><img class="set-detail-symbol" src="${firstCard.setSymbol}" alt="" onerror="this.style.display='none'"></span>`
     : '';
   const setYear = firstCard.date ? firstCard.date.slice(0,4) : '';
   // Sort helper: parse prefixed card numbers like TG01, GG30, SWSH123 numerically

@@ -1289,6 +1289,11 @@ window.addEventListener('popstate', function(e) {
     _activeSet = null;
     _lastRenderedSet = null;
     _trendMode = null;
+    // Back out of a set always lands on the main overview in list view — if the
+    // user had switched to grid while inside the set, grid mode would otherwise
+    // carry over to the main overview, which needs a search/filter to show
+    // anything and would look like the app just lost all its cards.
+    if (currentView === 'grid') applyViewState('list');
     const y = parseInt(sessionStorage.getItem('overviewScroll') || '0', 10);
     render();
     // Restore after the rAF render paints — two frames to be safe on mobile

@@ -240,6 +240,17 @@ function normalizeCard(raw) {
   return { name, series, set, setCode, num, setTotal, rarity, price, prevPrice, cardId, pic, setLogo, setSymbol, date, lastChecked, lastPriced, supertype, subtypes };
 }
 
+// Formats a release date for display as MM/DD/YYYY. The CSV stores dates as
+// "YYYY/MM/DD" (needed for correct chronological string-sort in getFiltered()),
+// so this is display-only — the underlying c.date value is left untouched.
+function formatDateDisplay(dateStr) {
+  if (!dateStr) return '';
+  const m = dateStr.match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
+  if (!m) return dateStr;
+  const [, yyyy, mm, dd] = m;
+  return `${mm}/${dd}/${yyyy}`;
+}
+
 // Returns days between a YYYY-MM-DD date string and today, or null if invalid/missing.
 function daysSince(dateStr) {
   if (!dateStr) return null;
@@ -463,6 +474,10 @@ function resetFilters() {
     });
     updateNowBtn();
   }
+  // Reset always drops back to list view — grid view requires a search/filter
+  // to render anything, so staying in grid after a reset would just show
+  // the empty "search to explore" placeholder.
+  if (currentView === 'grid') applyViewState('list');
   updateResetBtn();
   render();
 }
@@ -648,6 +663,10 @@ function setTrend(mode) {
   } else {
     _trendMode = mode;
     _activeSet = null;
+    // Gainers/Losers is a list-style view — if the user triggers it while in
+    // grid mode, drop back to list so it actually renders instead of showing
+    // the grid's "search or filter to explore" placeholder.
+    if (currentView === 'grid') applyViewState('list');
     ['btnGainers','btnGainersM'].forEach(id => {
       const el = document.getElementById(id);
       if (!el) return;
@@ -1145,8 +1164,10 @@ function openModal(c, updateList = true) {
       cardNumEl.textContent = '';
     }
   }
+  // Condensed to one line (set · series · date) instead of three stacked lines,
+  // to free up vertical space for the card image and price chart.
   document.getElementById('mMeta').innerHTML =
-    `${c.set}<br>${c.series || ''}<br>${c.date || ''}`;
+    [c.set, c.series, formatDateDisplay(c.date)].filter(Boolean).join(' <span class="meta-dot">·</span> ');
   // Price with change indicator in modal
   const cv = priceVal(c.price), pv = priceVal(c.prevPrice);
   let priceHtml = c.price && c.price !== 'N/A' ? c.price : 'Price N/A';
@@ -1378,20 +1399,28 @@ function syncMobileFilters() {
   });
 });
 
-function setView(v) {
+// Updates currentView + the list/grid toggle button highlighting only —
+// does NOT touch trend mode or trigger a render. Shared by setView() and
+// any code path that needs to force list view without clobbering trend state
+// it's in the middle of setting (e.g. setTrend() activating Gainers/Drops).
+function applyViewState(v) {
   currentView = v;
+  ['btnList','btnGrid','btnListM','btnGridM','btnListQ','btnGridQ'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('active', id.startsWith(v === 'list' ? 'btnList' : 'btnGrid'));
+  });
+}
+
+function setView(v) {
   // Don't clear _activeSet — grid should show the same set you were just in
   // Switching view clears trend mode
   _trendMode = null;
+  applyViewState(v);
   updateNowBtn();
   const gEl = document.getElementById('btnGainers');
   const dEl = document.getElementById('btnDrops');
   if (gEl) gEl.classList.remove('active-gainers');
   if (dEl) dEl.classList.remove('active-drops');
-  ['btnList','btnGrid','btnListM','btnGridM','btnListQ','btnGridQ'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.classList.toggle('active', id.startsWith(v === 'list' ? 'btnList' : 'btnGrid'));
-  });
   render();
 }
 

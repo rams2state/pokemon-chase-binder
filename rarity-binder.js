@@ -240,12 +240,13 @@ function normalizeCard(raw) {
   return { name, series, set, setCode, num, setTotal, rarity, price, prevPrice, cardId, pic, setLogo, setSymbol, date, lastChecked, lastPriced, supertype, subtypes };
 }
 
-// Formats a release date for display as MM/DD/YYYY. The CSV stores dates as
-// "YYYY/MM/DD" (needed for correct chronological string-sort in getFiltered()),
-// so this is display-only — the underlying c.date value is left untouched.
+// Formats a release/history date for display as MM/DD/YYYY. Accepts either
+// "YYYY/MM/DD" (CSV release dates, needed as-is for chronological string-sort
+// in getFiltered()) or "YYYY-MM-DD" (price-history entries) — both are
+// display-only conversions; the underlying stored value is left untouched.
 function formatDateDisplay(dateStr) {
   if (!dateStr) return '';
-  const m = dateStr.match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
+  const m = dateStr.match(/^(\d{4})[/-](\d{2})[/-](\d{2})$/);
   if (!m) return dateStr;
   const [, yyyy, mm, dd] = m;
   return `${mm}/${dd}/${yyyy}`;
@@ -1502,6 +1503,7 @@ function renderPriceChart(cardId) {
         legend: { display: false },
         tooltip: {
           callbacks: {
+            title: ctx => formatDateDisplay(ctx[0]?.label || ''),
             label: ctx => `$${ctx.parsed.y.toFixed(2)}`,
           },
           backgroundColor: '#1f2330',
@@ -1514,7 +1516,13 @@ function renderPriceChart(cardId) {
       },
       scales: {
         x: {
-          ticks: { color: '#8b8fa3', font: { size: 9 }, maxTicksLimit: 6 },
+          ticks: {
+            color: '#8b8fa3', font: { size: 9 }, maxTicksLimit: 6,
+            callback: function(value) {
+              const label = this.getLabelForValue(value);
+              return formatDateDisplay(label);
+            },
+          },
           grid: { color: '#2b2f3d' },
         },
         y: {

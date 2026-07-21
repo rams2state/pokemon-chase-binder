@@ -68,7 +68,7 @@
   .search-wrap{position:relative;flex:1;min-width:220px;}
   input#search{
     width:100%;background:var(--panel);border:1px solid var(--line);color:var(--text);
-    padding:11px 36px 11px 14px;border-radius:8px;font-size:14px;font-family:inherit;
+    padding:11px 36px 11px 14px;border-radius:8px;font-size:16px;font-family:inherit;
   }
   input#search:focus{outline:none;border-color:var(--gold);}
   #clearSearch{

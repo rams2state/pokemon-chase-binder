@@ -186,10 +186,13 @@
   .set-ov-logo{height:62px;max-width:175px;width:auto;object-fit:contain;opacity:0.95;}
   .set-ov-year{font-size:13px;color:var(--dim);font-weight:700;}
 
-  /* set name */
+  /* set name row — shows the set logo in place of text; falls back to the
+     text name (.set-ov-name) only if the logo image is missing or fails to load */
+  .set-ov-name-row{display:flex;align-items:center;margin-bottom:5px;min-height:34px;}
+  .set-ov-logo-title{height:34px;max-width:100%;width:auto;object-fit:contain;object-position:left center;}
   .set-ov-name{
     font-family:'Luckiest Guy','Bebas Neue';font-size:29px;color:var(--text);
-    letter-spacing:0.01em;line-height:1.05;margin-bottom:5px;
+    letter-spacing:0.01em;line-height:1.05;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
   /* Card count + rarity pills right-aligned to free up left-side room for the

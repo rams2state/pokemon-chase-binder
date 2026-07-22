@@ -893,9 +893,10 @@ function renderSetOverview(cards, el) {
       const firstCard = Object.values(setData)[0][0];
       const setTotal = Object.values(setData).reduce((a,b) => a+b.length, 0);
       const setYear = firstCard.date ? firstCard.date.slice(0,4) : '';
-      // Wizards Black Star Promos: logo image intentionally suppressed (looks
+      // Black Star Promos sets: logo image intentionally suppressed (looks
       // bad at this size / not representative) — falls back to text name only.
-      const logoHtml = firstCard.setLogo && firstCard.setLogo !== 'N/A' && set !== 'Wizards Black Star Promos'
+      const NO_LOGO_SETS = ['Wizards Black Star Promos', 'SWSH Black Star Promos'];
+      const logoHtml = firstCard.setLogo && firstCard.setLogo !== 'N/A' && !NO_LOGO_SETS.includes(set)
         ? `<img class="set-ov-logo" src="${firstCard.setLogo}" alt="" onerror="this.style.display='none'">`
         : '';
       // Re-bucket by number prefix for accurate pill counts

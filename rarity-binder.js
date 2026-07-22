@@ -893,8 +893,10 @@ function renderSetOverview(cards, el) {
       const firstCard = Object.values(setData)[0][0];
       const setTotal = Object.values(setData).reduce((a,b) => a+b.length, 0);
       const setYear = firstCard.date ? firstCard.date.slice(0,4) : '';
-      const logoHtml = firstCard.setLogo && firstCard.setLogo !== 'N/A'
-        ? `<img class="set-ov-logo-title" src="${firstCard.setLogo}" alt="${shortSetName(set)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">`
+      // Wizards Black Star Promos: logo image intentionally suppressed (looks
+      // bad at this size / not representative) — falls back to text name only.
+      const logoHtml = firstCard.setLogo && firstCard.setLogo !== 'N/A' && set !== 'Wizards Black Star Promos'
+        ? `<img class="set-ov-logo" src="${firstCard.setLogo}" alt="" onerror="this.style.display='none'">`
         : '';
       // Re-bucket by number prefix for accurate pill counts
       const ovBuckets = {};
@@ -934,13 +936,11 @@ function renderSetOverview(cards, el) {
         <div class="set-ov-top">
           <div class="set-ov-left">
             ${symbolHtml}
+            ${logoHtml}
           </div>
           <span class="set-ov-year">${setYear}</span>
         </div>
-        <div class="set-ov-name-row">
-          ${logoHtml}
-          <div class="set-ov-name" style="${logoHtml ? 'display:none;' : ''}">${shortSetName(set)}</div>
-        </div>
+        <div class="set-ov-name">${shortSetName(set)}</div>
         <div class="set-ov-total">${setTotal} card${setTotal!==1?'s':''}</div>
         <div class="set-ov-pills">${pillsHtml}</div>
       </div>`;

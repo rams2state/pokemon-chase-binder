@@ -278,6 +278,7 @@ const JP_SET_SYMBOLS = {
   "151": [{ name: "Pokémon Card 151", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/pokemon-card-151.png" }],
   "Ancient Origins": [{ name: "Bandit Ring", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/bandit-ring.png" }],
   "Aquapolis": [{ name: "The Town on No Map", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/the-town-on-no-map.png" }, { name: "Wind from the Sea", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/wind-from-the-sea.png" }],
+  "Ascended Heroes": [{ name: "MEGA Dream ex", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/mega-dream-ex.png" }],
   "Astral Radiance": [{ name: "Time Gazer", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/time-gazer.png" }, { name: "Space Juggler", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/space-juggler.png" }],
   "Astral Radiance Trainer Gallery": [{ name: "Time Gazer", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/time-gazer.png" }, { name: "Space Juggler", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/space-juggler.png" }],
   "BREAKpoint": [{ name: "Rage of the Broken Heavens", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/rage-of-the-broken-heavens.png" }],
@@ -397,13 +398,29 @@ const JP_SET_SYMBOLS = {
   "XY": [{ name: "Collection X", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/collection-x.png" }, { name: "Collection Y", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/collection-y.png" }],
 };
 
+// Sets where the JP symbol icon is visually indistinguishable from the
+// English icon (WOTC/EX-era Nintendo used near-identical pictogram symbols
+// across languages) — showing both side by side is just a duplicate, so
+// jpSymbolsFor() suppresses the JP badge for these even though a real JP
+// equivalent set exists and is documented above.
+const JP_SYMBOL_VISUALLY_DUPLICATE = new Set([
+  'Team Rocket', 'Fossil', 'Wizards Black Star Promos', 'Jungle', 'Base',
+  'Neo Destiny', 'Neo Revelation', 'Neo Discovery', 'Neo Genesis',
+  'Power Keepers', 'Dragon Frontiers', 'Crystal Guardians', 'Holon Phantoms',
+  'Legend Maker', 'Delta Species', 'Unseen Forces', 'Emerald', 'Deoxys',
+  'Team Rocket Returns', 'FireRed & LeafGreen', 'Hidden Legends',
+  'Team Magma vs Team Aqua', 'Dragon', 'Sandstorm', 'Ruby & Sapphire',
+]);
+
 // Returns the JP symbol image URL(s) for a given English set name, or null if
 // no confirmed Japanese equivalent exists. Trainer Gallery / Shiny Vault /
 // Galarian Gallery subsets fall back to their parent set name.
 function jpSymbolsFor(setName) {
   if (!setName) return null;
+  if (JP_SYMBOL_VISUALLY_DUPLICATE.has(setName)) return null;
   if (JP_SET_SYMBOLS[setName]) return JP_SET_SYMBOLS[setName];
   const parent = setName.replace(/ (Trainer Gallery|Galarian Gallery)$/, '');
+  if (parent !== setName && JP_SYMBOL_VISUALLY_DUPLICATE.has(parent)) return null;
   if (parent !== setName && JP_SET_SYMBOLS[parent]) return JP_SET_SYMBOLS[parent];
   return null;
 }

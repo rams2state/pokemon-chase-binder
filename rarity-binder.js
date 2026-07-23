@@ -261,6 +261,155 @@ function shortSetName(setName) {
   return setName.replace('Trainer Gallery', 'TG').replace('Galarian Gallery', 'GG');
 }
 
+// Japanese set symbol equivalents, keyed by exact CSV/rarity-binder Set Name.
+// Each value is a list of {name, symbol} for the JP set(s) that correspond to
+// this English set (some English sets map to 2-3 JP sets).
+// Sourced from pokesymbols.com's own English<->Japanese set equivalence data,
+// with every image URL individually confirmed against the live page (the site
+// uses two different image path prefixes depending on set era, and a handful of
+// filenames don't match their slug -- e.g. SoulSilver Collection's file is
+// "soulsilver-collection.png" not "soul-silver-collection.png").
+// Trainer Gallery / Shiny Vault / Galarian Gallery subsets inherit their parent
+// set's JP symbol since they're the same physical Japanese product.
+// Sets absent from this object have no confirmed Japanese equivalent (Emerald,
+// Chaos Rising) or were intentionally left unchanged (Wizards/SWSH Black Star
+// Promos -- promos aren't tied to a single Japanese product).
+const JP_SET_SYMBOLS = {
+  "151": [{ name: "Pokémon Card 151", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/pokemon-card-151.png" }],
+  "Ancient Origins": [{ name: "Bandit Ring", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/bandit-ring.png" }],
+  "Aquapolis": [{ name: "The Town on No Map", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/the-town-on-no-map.png" }, { name: "Wind from the Sea", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/wind-from-the-sea.png" }],
+  "Ascended Heroes": [{ name: "Nihil Zero", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/nihil-zero.png" }],
+  "Astral Radiance": [{ name: "Time Gazer", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/time-gazer.png" }, { name: "Space Juggler", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/space-juggler.png" }],
+  "Astral Radiance Trainer Gallery": [{ name: "Time Gazer", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/time-gazer.png" }, { name: "Space Juggler", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/space-juggler.png" }],
+  "BREAKpoint": [{ name: "Rage of the Broken Heavens", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/rage-of-the-broken-heavens.png" }],
+  "Chaos Rising": [{ name: "Ninja Spinner", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/ninja-spinner.png" }],
+  "BREAKthrough": [{ name: "Blue Shock", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/blue-shock.png" }, { name: "Legendary Shine Collection", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/legendary-shine-collection.png" }, { name: "Red Flash", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/red-flash.png" }],
+  "Base": [{ name: "Expansion Pack", symbol: "https://pokesymbols.com/images/tcg/sets/logos/base.png" }],
+  "Battle Styles": [{ name: "Single Strike Master", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/single-strike-master.png" }, { name: "Rapid Strike Master", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/rapid-strike-master.png" }],
+  "Black & White": [{ name: "Black Collection", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/black-collection.png" }, { name: "White Collection", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/white-collection.png" }],
+  "Black Bolt": [{ name: "Black Bolt", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/black-bolt.png" }],
+  "Boundaries Crossed": [{ name: "Spiral Force", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/spiral-force.png" }, { name: "Thunder Knuckle", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/thunder-knuckle.png" }],
+  "Brilliant Stars": [{ name: "Star Birth", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/star-birth.png" }],
+  "Brilliant Stars Trainer Gallery": [{ name: "Star Birth", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/star-birth.png" }],
+  "Burning Shadows": [{ name: "To Have Seen the Battle Rainbow", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/to-have-seen-the-battle-rainbow.png" }, { name: "Darkness that Consumes Light", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/darkness-that-consumes-light.png" }],
+  "Celestial Storm": [{ name: "Awakened Heroes", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/awakened-heroes.png" }, { name: "Ultradimensional Beasts", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/ultradimensional-beasts.png" }],
+  "Champion's Path": [{ name: "Champion Road", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/champion-road.png" }],
+  "Chilling Reign": [{ name: "Silver Lance", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/silver-lance.png" }, { name: "Jet-Black Spirit", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/jet-black-spirit.png" }],
+  "Cosmic Eclipse": [{ name: "Sky Legend", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/sky-legend.png" }, { name: "GG End", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/gg-end.png" }],
+  "Crimson Invasion": [{ name: "Awakened Heroes", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/awakened-heroes.png" }, { name: "Ultradimensional Beasts", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/ultradimensional-beasts.png" }],
+  "Crown Zenith": [{ name: "VSTAR Universe", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/vstar-universe.png" }],
+  "Crown Zenith Galarian Gallery": [{ name: "VSTAR Universe", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/vstar-universe.png" }],
+  "Crystal Guardians": [{ name: "Offense and Defense of the Furthest Ends", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/offense-and-defense-of-the-furthest-ends.png" }],
+  "Dark Explorers": [{ name: "Dark Rush", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/dark-rush.png" }],
+  "Darkness Ablaze": [{ name: "Explosive Walker", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/explosive-walker.png" }, { name: "Infinity Zone", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/infinity-zone.png" }],
+  "Delta Species": [{ name: "Miracle Crystal", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/miracle-crystal.png" }, { name: "Holon Phantom", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/holon-phantom.png" }],
+  "Deoxys": [{ name: "Miracle of the Desert", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/miracle-of-the-desert.png" }],
+  "Destined Rivals": [{ name: "Battle Partners", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/battle-partners.png" }],
+  "Double Crisis": [{ name: "Magma Gang VS Aqua Gang: Double Crisis", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/magma-gang-vs-aqua-gang-double-crisis.png" }],
+  "Dragon": [{ name: "Rulers of the Heavens", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/rulers-of-the-heavens.png" }],
+  "Dragon Frontiers": [{ name: "Holon Research Tower", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/holon-research-tower.png" }],
+  "Dragon Majesty": [{ name: "Dragon Storm", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/dragon-storm.png" }],
+  "Dragons Exalted": [{ name: "Dragon Selection", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/dragon-selection.png" }, { name: "Dragon Blast", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/dragon-blast.png" }, { name: "Dragon Blade", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/dragon-blade.png" }],
+  "Emerging Powers": [{ name: "Red Collection", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/red-collection.png" }],
+  "Evolutions": [{ name: "The Best of XY", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/the-best-of-xy.png" }],
+  "Evolving Skies": [{ name: "Blue Sky Stream", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/blue-sky-stream.png" }, { name: "Skyscraping Perfection", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/skyscraping-perfection.png" }],
+  "Expedition Base Set": [{ name: "Base Expansion Pack", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/base-expansion-pack.png" }],
+  "Fates Collide": [{ name: "Cruel Traitor", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/cruel-traitor.png" }, { name: "Fever-Burst Fighter", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/fever-burst-fighter.png" }],
+  "FireRed & LeafGreen": [{ name: "Flight of Legends", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/flight-of-legends.png" }],
+  "Flashfire": [{ name: "Wild Blaze", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/wild-blaze.png" }],
+  "Forbidden Light": [{ name: "Forbidden Light", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/forbidden-light.png" }],
+  "Fossil": [{ name: "Mystery of the Fossils", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/mystery-of-the-fossils.png" }],
+  "Furious Fists": [{ name: "Rising Fist", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/rising-fist.png" }],
+  "Fusion Strike": [{ name: "Fusion Arts", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/fusion-arts.png" }],
+  "Generations": [{ name: "Premium Champion Pack", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/premium-champion-pack.png" }],
+  "Guardians Rising": [{ name: "Islands Await You", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/islands-await-you.png" }, { name: "Alolan Moonlight", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/alolan-moonlight.png" }],
+  "Gym Challenge": [{ name: "Leaders' Stadium", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/leaders-stadium.png" }],
+  "Gym Heroes": [{ name: "Leaders' Stadium", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/leaders-stadium.png" }],
+  "HS—Triumphant": [{ name: "Clash at the Summit", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/clash-at-the-summit.png" }],
+  "HS—Undaunted": [{ name: "Reviving Legends", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/reviving-legends.png" }],
+  "HS—Unleashed": [{ name: "HeartGold Collection", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/heartgold-collection.png" }, { name: "SoulSilver Collection", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/soulsilver-collection.png" }],
+  "HeartGold & SoulSilver": [{ name: "HeartGold Collection", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/heartgold-collection.png" }, { name: "SoulSilver Collection", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/soulsilver-collection.png" }],
+  "Hidden Fates": [{ name: "GX Ultra Shiny", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/gx-ultra-shiny.png" }],
+  "Hidden Fates Shiny Vault": [{ name: "GX Ultra Shiny", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/gx-ultra-shiny.png" }],
+  "Hidden Legends": [{ name: "Undone Seal", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/undone-seal.png" }],
+  "Holon Phantoms": [{ name: "Holon Phantom", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/holon-phantom.png" }],
+  "Journey Together": [{ name: "Battle Partners", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/battle-partners.png" }],
+  "Jungle": [{ name: "Pokémon Jungle", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/pokemon-jungle.png" }],
+  "Legend Maker": [{ name: "Mirage Forest", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/mirage-forest.png" }],
+  "Legendary Treasures": [{ name: "EX Battle Boost", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/ex-battle-boost.png" }, { name: "Shiny Collection", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/shiny-collection.png" }],
+  "Lost Origin": [{ name: "Paradigm Trigger", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/paradigm-trigger.png" }],
+  "Lost Origin Trainer Gallery": [{ name: "Paradigm Trigger", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/paradigm-trigger.png" }],
+  "Lost Thunder": [{ name: "Full Metal Wall", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/full-metal-wall.png" }, { name: "Double Blaze", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/double-blaze.png" }],
+  "Mega Evolution": [{ name: "Mega Symphonia", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/mega-symphonia.png" }, { name: "Mega Brave", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/mega-brave.png" }],
+  "Mysterious Treasures": [{ name: "Secret of the Lakes", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/secret-of-the-lakes.png" }],
+  "Neo Destiny": [{ name: "Darkness, and to Light...", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/darkness-and-to-light.png" }],
+  "Neo Discovery": [{ name: "Crossing the Ruins...", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/crossing-the-ruins.png" }],
+  "Neo Genesis": [{ name: "Gold, Silver, to a New World...", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/gold-silver-to-a-new-world.png" }],
+  "Neo Revelation": [{ name: "Awakening Legends", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/awakening-legends.png" }],
+  "Next Destinies": [{ name: "Hail Blizzard", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/hail-blizzard.png" }, { name: "Psycho Drive", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/psycho-drive.png" }],
+  "Noble Victories": [{ name: "Red Collection", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/red-collection.png" }],
+  "Obsidian Flames": [{ name: "Ruler of the Black Flame", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/ruler-of-the-black-flame.png" }],
+  "Paldea Evolved": [{ name: "Triplet Beat", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/triplet-beat.png" }],
+  "Paldean Fates": [{ name: "Shiny Treasure ex", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/shiny-treasure-ex.png" }],
+  "Paradox Rift": [{ name: "Ancient Roar", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/ancient-roar.png" }, { name: "Future Flash", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/future-flash.png" }],
+  "Perfect Order": [{ name: "Nihil Zero", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/nihil-zero.png" }],
+  "Phantasmal Flames": [{ name: "Inferno X", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/inferno-x.png" }],
+  "Phantom Forces": [{ name: "Phantom Gate", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/phantom-gate.png" }],
+  "Pitch Black": [{ name: "Abyss Eye", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/abyss-eye.png" }],
+  "Plasma Blast": [{ name: "Plasma Gale", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/plasma-gale.png" }],
+  "Plasma Freeze": [{ name: "Spiral Force", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/spiral-force.png" }, { name: "Thunder Knuckle", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/thunder-knuckle.png" }],
+  "Plasma Storm": [{ name: "Plasma Gale", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/plasma-gale.png" }],
+  "Platinum": [{ name: "Galactic's Conquest", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/galactics-conquest.png" }],
+  "Pokémon GO": [{ name: "Pokémon GO", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/pokemon-go.png" }],
+  "Power Keepers": [{ name: "World Champions Pack", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/world-champions-pack.png" }],
+  "Primal Clash": [{ name: "Gaia Volcano", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/gaia-volcano.png" }, { name: "Tidal Storm", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/tidal-storm.png" }],
+  "Prismatic Evolutions": [{ name: "Terastal Fest ex", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/terastal-fest-ex.png" }],
+  "Rebel Clash": [{ name: "Explosive Walker", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/explosive-walker.png" }, { name: "Rebellion Crash", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/rebellion-crash.png" }],
+  "Rising Rivals": [{ name: "Bonds to the End of Time", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/bonds-to-the-end-of-time.png" }],
+  "Roaring Skies": [{ name: "Emerald Break", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/emerald-break.png" }],
+  "Ruby & Sapphire": [{ name: "ADV Expansion Pack", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/adv-expansion-pack.png" }],
+  "Sandstorm": [{ name: "Miracle of the Desert", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/miracle-of-the-desert.png" }],
+  "Scarlet & Violet": [{ name: "Scarlet ex", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/scarlet-ex.png" }, { name: "Violet ex", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/violet-ex.png" }],
+  "Shining Fates": [{ name: "Shiny Star V", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/shiny-star-v.png" }],
+  "Shining Fates Shiny Vault": [{ name: "Shiny Star V", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/shiny-star-v.png" }],
+  "Shining Legends": [{ name: "Shining Legends", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/shining-legends.png" }],
+  "Shrouded Fable": [{ name: "Night Wanderer", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/night-wanderer.png" }],
+  "Silver Tempest": [{ name: "Lost Abyss", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/lost-abyss.png" }],
+  "Silver Tempest Trainer Gallery": [{ name: "Lost Abyss", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/lost-abyss.png" }],
+  "Skyridge": [{ name: "Mysterious Mountains", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/mysterious-mountains.png" }, { name: "Split Earth", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/split-earth.png" }],
+  "Steam Siege": [{ name: "Cruel Traitor", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/cruel-traitor.png" }, { name: "Fever-Burst Fighter", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/fever-burst-fighter.png" }],
+  "Stellar Crown": [{ name: "Wild Force", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/wild-force.png" }, { name: "Cyber Judge", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/cyber-judge.png" }],
+  "Stormfront": [{ name: "Intense Fight in the Destroyed Sky", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/intense-fight-in-the-destroyed-sky.png" }],
+  "Sun & Moon": [{ name: "Sun & Moon", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/sun-and-moon.png" }],
+  "Supreme Victors": [{ name: "Beat of the Frontier", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/beat-of-the-frontier.png" }],
+  "Surging Sparks": [{ name: "Super Electric Breaker", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/super-electric-breaker.png" }],
+  "Sword & Shield": [{ name: "Sword", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/sword.png" }, { name: "Shield", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/shield.png" }],
+  "Team Magma vs Team Aqua": [{ name: "Magma VS Aqua: Two Ambitions", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/magma-vs-aqua-two-ambitions.png" }],
+  "Team Rocket": [{ name: "Rocket Gang", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/rocket-gang.png" }],
+  "Team Rocket Returns": [{ name: "Rocket Gang Strikes Back", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/rocket-gang-strikes-back.png" }],
+  "Team Up": [{ name: "Tag Bolt", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/tag-bolt.png" }],
+  "Temporal Forces": [{ name: "Crimson Haze", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/crimson-haze.png" }],
+  "Twilight Masquerade": [{ name: "Night Wanderer", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/night-wanderer.png" }],
+  "Ultra Prism": [{ name: "Ultra Force", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/ultra-force.png" }],
+  "Unbroken Bonds": [{ name: "Sky-Splitting Charisma", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/sky-splitting-charisma.png" }],
+  "Unified Minds": [{ name: "Tag Team GX: Tag All Stars", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/tag-team-gx-tag-all-stars.png" }],
+  "Unseen Forces": [{ name: "Golden Sky, Silvery Ocean", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/golden-sky-silvery-ocean.png" }],
+  "Vivid Voltage": [{ name: "Amazing Volt Tackle", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/amazing-volt-tackle.png" }],
+  "White Flare": [{ name: "White Flare", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/white-flare.png" }],
+  "XY": [{ name: "Collection X", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/collection-x.png" }, { name: "Collection Y", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/collection-y.png" }],
+};
+
+// Returns the JP symbol image URL(s) for a given English set name, or null if
+// no confirmed Japanese equivalent exists. Trainer Gallery / Shiny Vault /
+// Galarian Gallery subsets fall back to their parent set name.
+function jpSymbolsFor(setName) {
+  if (!setName) return null;
+  if (JP_SET_SYMBOLS[setName]) return JP_SET_SYMBOLS[setName];
+  const parent = setName.replace(/ (Trainer Gallery|Galarian Gallery)$/, '');
+  if (parent !== setName && JP_SET_SYMBOLS[parent]) return JP_SET_SYMBOLS[parent];
+  return null;
+}
+
 // Returns days between a YYYY-MM-DD date string and today, or null if invalid/missing.
 function daysSince(dateStr) {
   if (!dateStr) return null;
@@ -933,11 +1082,16 @@ function renderSetOverview(cards, el) {
       const symbolHtml = symbolUrl && symbolUrl !== 'N/A'
         ? `<span class="symbol-chip"><img class="set-ov-symbol" src="${symbolUrl}" alt="" loading="lazy"></span>`
         : '';
+      const jpSymbols = jpSymbolsFor(set);
+      const jpBadgesHtml = jpSymbols
+        ? `<span class="jp-badges">${jpSymbols.map(jp => `<img class="jp-symbol-mini" src="${jp.symbol}" alt="${jp.name}" title="${jp.name}" loading="lazy" onerror="this.style.display='none'">`).join('')}</span>`
+        : '';
       html += `<div class="set-ov-card" onclick="openSetDetail('${eraEnc}','${setEnc}')">
         <div class="set-ov-top">
           <div class="set-ov-left">
             ${symbolHtml}
             ${logoHtml}
+            ${jpBadgesHtml}
           </div>
           <span class="set-ov-year">${setYear}</span>
         </div>
@@ -970,6 +1124,10 @@ function renderSetDetail(cards, el) {
   // light chip since the icon is drawn dark-on-transparent for light backgrounds.
   const symbolHtml = firstCard.setSymbol && firstCard.setSymbol !== 'N/A'
     ? `<span class="symbol-chip symbol-chip-lg"><img class="set-detail-symbol" src="${firstCard.setSymbol}" alt="" onerror="this.style.display='none'"></span>`
+    : '';
+  const jpSymbolsDetail = jpSymbolsFor(set);
+  const jpBadgesDetailHtml = jpSymbolsDetail
+    ? `<span class="jp-badges">${jpSymbolsDetail.map(jp => `<img class="jp-symbol-mini" src="${jp.symbol}" alt="${jp.name}" title="${jp.name}" loading="lazy" onerror="this.style.display='none'">`).join('')}</span>`
     : '';
   const setYear = firstCard.date ? firstCard.date.slice(0,4) : '';
   // Sort helper: parse prefixed card numbers like TG01, GG30, SWSH123 numerically
@@ -1021,6 +1179,7 @@ function renderSetDetail(cards, el) {
       <div class="set-detail-era">${era} · ${setYear}</div>
       <div class="set-detail-name">${set}</div>
     </div>
+    ${jpBadgesDetailHtml}
   </div>`;
 
   const BUCKET_LABEL = { '__TG__':'TG', '__GX__':'GX', '__EX__':'EX', '__FA_POKEMON__':'Full Art', '__FA_TRAINER__':'FA Trainer' };

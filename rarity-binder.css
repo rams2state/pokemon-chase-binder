@@ -186,6 +186,15 @@
   .set-ov-logo{height:62px;max-width:175px;width:auto;object-fit:contain;opacity:0.95;}
   .set-ov-year{font-size:13px;color:var(--dim);font-weight:700;}
 
+  /* Japanese set symbol badges — small icons shown alongside the English
+     symbol/logo, one per equivalent JP set (some English sets map to 2-3).
+     Sized smaller than the English symbol chip since they're secondary info. */
+  .jp-badges{display:inline-flex;align-items:center;gap:4px;flex-shrink:0;}
+  .jp-symbol-mini{
+    width:22px;height:22px;object-fit:contain;
+    background:rgba(255,255,255,0.92);border-radius:6px;padding:2px;
+  }
+
   /* set name */
   .set-ov-name{
     font-family:'Luckiest Guy','Bebas Neue';font-size:29px;color:var(--text);

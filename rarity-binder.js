@@ -1042,12 +1042,6 @@ function renderSetOverview(cards, el) {
       const firstCard = Object.values(setData)[0][0];
       const setTotal = Object.values(setData).reduce((a,b) => a+b.length, 0);
       const setYear = firstCard.date ? firstCard.date.slice(0,4) : '';
-      // Black Star Promos sets: logo image intentionally suppressed (looks
-      // bad at this size / not representative) — falls back to text name only.
-      const NO_LOGO_SETS = ['Wizards Black Star Promos', 'SWSH Black Star Promos'];
-      const logoHtml = firstCard.setLogo && firstCard.setLogo !== 'N/A' && !NO_LOGO_SETS.includes(set)
-        ? `<img class="set-ov-logo" src="${firstCard.setLogo}" alt="" onerror="this.style.display='none'">`
-        : '';
       // Re-bucket by number prefix for accurate pill counts
       const ovBuckets = {};
       for (const [r, cards] of Object.entries(setData)) {
@@ -1082,16 +1076,20 @@ function renderSetOverview(cards, el) {
       const symbolHtml = symbolUrl && symbolUrl !== 'N/A'
         ? `<span class="symbol-chip"><img class="set-ov-symbol" src="${symbolUrl}" alt="" loading="lazy"></span>`
         : '';
+      // JP symbol now takes the wordmark logo's place on the overview card —
+      // shown large (matching the old logo's footprint) instead of as a tiny
+      // corner badge. Falls back to nothing if no JP equivalent is confirmed
+      // (Emerald, Chaos Rising — wait, Chaos Rising has one — and the two
+      // Black Star Promos sets, which were intentionally left unmapped).
       const jpSymbols = jpSymbolsFor(set);
-      const jpBadgesHtml = jpSymbols
-        ? `<span class="jp-badges">${jpSymbols.map(jp => `<img class="jp-symbol-mini" src="${jp.symbol}" alt="${jp.name}" title="${jp.name}" loading="lazy" onerror="this.style.display='none'">`).join('')}</span>`
+      const jpLogoHtml = jpSymbols
+        ? `<span class="jp-ov-logo-wrap">${jpSymbols.map(jp => `<img class="jp-ov-logo" src="${jp.symbol}" alt="${jp.name}" title="${jp.name}" loading="lazy" onerror="this.style.display='none'">`).join('')}</span>`
         : '';
       html += `<div class="set-ov-card" onclick="openSetDetail('${eraEnc}','${setEnc}')">
         <div class="set-ov-top">
           <div class="set-ov-left">
             ${symbolHtml}
-            ${logoHtml}
-            ${jpBadgesHtml}
+            ${jpLogoHtml}
           </div>
           <span class="set-ov-year">${setYear}</span>
         </div>
@@ -1175,11 +1173,11 @@ function renderSetDetail(cards, el) {
   let html = `<div class="set-detail-header">
     <button class="set-detail-back" onclick="history.back()">← All Sets</button>
     ${symbolHtml}
+    ${jpBadgesDetailHtml}
     <div class="set-detail-info">
       <div class="set-detail-era">${era} · ${setYear}</div>
       <div class="set-detail-name">${set}</div>
     </div>
-    ${jpBadgesDetailHtml}
   </div>`;
 
   const BUCKET_LABEL = { '__TG__':'TG', '__GX__':'GX', '__EX__':'EX', '__FA_POKEMON__':'Full Art', '__FA_TRAINER__':'FA Trainer' };

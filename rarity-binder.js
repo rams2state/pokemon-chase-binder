@@ -47,6 +47,12 @@ function isOwned(c) {
 function setSharedOwned(keys) {
   _sharedOwned = new Set(keys || []);
   updateCollectionValue();
+  // Force a full rebuild rather than the cheap same-set hide/show fast path
+  // in _doRender (see _lastRenderedSet) — that path only toggles row
+  // visibility for search/filter changes and never touches owned checkmarks,
+  // so a live ownership update while viewing a set's detail page would
+  // otherwise update the header stats but leave stale checkmarks on screen.
+  _lastRenderedSet = null;
   if (typeof render === 'function') render();
 }
 function updateCollectionValue() {

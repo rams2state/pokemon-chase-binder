@@ -80,7 +80,10 @@
   }
   @media (max-width:600px) {
     /* Side-by-side no longer fits reliably once both "Share" and a signed-in
-       display name are showing on a narrow phone screen — stack instead. */
+       display name are showing on a narrow phone screen — stack instead.
+       (.stats-row clearance for the taller stacked column is handled in the
+       max-width:700px block further down, which is what actually applies at
+       real phone widths and was overriding this one via source order.) */
     .header-btn-row { top:10px; right:10px; flex-direction:column; align-items:flex-end; gap:6px; }
     .auth-btn { padding:6px 10px; font-size:12px; }
     .read-only-banner { margin-bottom:8px; font-size:11px; padding:6px 10px; }
@@ -517,19 +520,24 @@
     /* Header — compact on mobile */
     header.hero{padding:10px 16px 14px;overflow:hidden;}
     .eyebrow{display:none;}
-    h1.display{font-size:22px;margin:0 0 16px 0;line-height:1;}
     .sub{display:none;}
-    .auth-btn{position:absolute;top:10px;right:10px;padding:5px 10px;font-size:11px;z-index:10;}
+    /* NOTE: .auth-btn's own position:absolute rule was removed here — it's
+       now a flex child of .header-btn-row (see the max-width:600px block
+       above), which owns the actual positioning. This block only needs to
+       control size/spacing at this narrower breakpoint. */
+    .auth-btn{padding:5px 10px;font-size:11px;}
 
     /* Prevent horizontal scroll on body */
     body{overflow-x:hidden;}
     main{overflow-x:hidden;}
 
-    /* Stats — 3 equal columns, no overflow */
+    /* Stats — 3 equal columns, no overflow. Extra top margin clears the
+       absolutely-positioned, stacked Share/Sign-in buttons in the corner
+       now that there's no h1 above to push this row down naturally. */
     .stats-row{
       display:grid;
       grid-template-columns:repeat(3,1fr);
-      gap:8px;margin-top:14px;
+      gap:8px;margin-top:82px;
       width:100%;box-sizing:border-box;
     }
     .stat{min-width:0;padding:10px 8px;box-sizing:border-box;}

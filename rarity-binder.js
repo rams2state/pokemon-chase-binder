@@ -712,9 +712,14 @@ function getFiltered() {
     return true;
   });
 
+  // Parses prefixed card numbers like TG01, GG30, SWSH123 numerically, so
+  // ties (e.g. same release date) break in card-number order instead of
+  // whatever order ALL_CARDS happened to have them in.
+  const parseNum = n => { const m = (n || '').match(/(\d+)$/); return m ? parseInt(m[1], 10) : 0; };
+
   cards.sort((a, b) => {
-    if (sort === 'date-asc') return (a.date || '').localeCompare(b.date || '');
-    if (sort === 'date-desc') return (b.date || '').localeCompare(a.date || '');
+    if (sort === 'date-asc') return (a.date || '').localeCompare(b.date || '') || parseNum(a.num) - parseNum(b.num);
+    if (sort === 'date-desc') return (b.date || '').localeCompare(a.date || '') || parseNum(a.num) - parseNum(b.num);
     if (sort === 'price-desc') return priceVal(b.price) - priceVal(a.price);
     if (sort === 'price-asc') {
       const av = priceVal(a.price), bv = priceVal(b.price);

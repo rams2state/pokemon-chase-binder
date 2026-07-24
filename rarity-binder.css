@@ -41,7 +41,10 @@
   h1.display{font-size:44px;margin:0 0 6px;color:var(--text);line-height:0.95;}
   h1.display span{color:var(--gold-bright);}
   .sub{color:var(--dim);font-size:15px;max-width:640px;line-height:1.5;}
-  .stats-row{display:flex;gap:16px;margin-top:20px;flex-wrap:wrap;}
+  /* Extra top margin here since the h1 that used to sit above (and push this
+     row down naturally) was removed — the button row is absolutely
+     positioned in the same corner, so this keeps them from visually colliding. */
+  .stats-row{display:flex;gap:16px;margin-top:52px;flex-wrap:wrap;}
   .stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 16px;min-width:110px;}
   .stat .n{font-family:'Luckiest Guy','Bebas Neue';font-size:26px;color:var(--gold-bright);line-height:1;}
   .stat .l{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:0.08em;margin-top:3px;}
@@ -76,7 +79,9 @@
     font-size:13px;
   }
   @media (max-width:600px) {
-    .header-btn-row { top:10px; right:10px; gap:6px; }
+    /* Side-by-side no longer fits reliably once both "Share" and a signed-in
+       display name are showing on a narrow phone screen — stack instead. */
+    .header-btn-row { top:10px; right:10px; flex-direction:column; align-items:flex-end; gap:6px; }
     .auth-btn { padding:6px 10px; font-size:12px; }
     .read-only-banner { margin-bottom:8px; font-size:11px; padding:6px 10px; }
   }

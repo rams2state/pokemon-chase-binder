@@ -181,7 +181,10 @@ async function loadExistingShareId(uid) {
 function updateShareBtnVisibility() {
   const btn = document.getElementById('shareBtn');
   if (!btn) return;
-  btn.style.display = _currentUid ? 'inline-block' : 'none';
+  // '' rather than a hardcoded display value — the button is a flex child of
+  // .header-btn-row now, so let CSS control its display when visible instead
+  // of fighting the flex layout with an inline style.
+  btn.style.display = _currentUid ? '' : 'none';
 }
 
 function shareUrlFor(shareId) {

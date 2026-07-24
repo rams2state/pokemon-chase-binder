@@ -20,22 +20,68 @@ const provider = new GoogleAuthProvider();
 
 let _firestoreUnsub = null;
 let _currentUid = null;
+let _currentShareId = null;
+
+// Read directly from the URL rather than relying on rarity-binder.js globals —
+// this module script's execution order relative to that plain <script> tag
+// isn't guaranteed, so SHARE_ID must not depend on it having run first.
+const _shareIdParam = new URLSearchParams(window.location.search).get('share');
 
 // ── Auth state ──────────────────────────────────────────────────────────────
-onAuthStateChanged(auth, async user => {
-  _currentUid = user ? user.uid : null;
-  updateAuthUI(user);
-  if (user) {
-    // Pull Firestore data, merge with localStorage, start live listener
-    await mergeFirestoreToLocal(user.uid);
-    startFirestoreListener(user.uid);
-  } else {
-    if (_firestoreUnsub) { _firestoreUnsub(); _firestoreUnsub = null; }
-  }
-  // Re-render so owned badges reflect current state
-  if (typeof updateCollectionValue === 'function') updateCollectionValue();
-  if (typeof render === 'function') render();
-});
+if (_shareIdParam) {
+  // Viewing someone else's shared collection: skip auth entirely, no sign-in
+  // possible/relevant, just load their public share doc read-only and keep
+  // it live.
+  initReadOnlyShareView(_shareIdParam);
+} else {
+  onAuthStateChanged(auth, async user => {
+    _currentUid = user ? user.uid : null;
+    updateAuthUI(user);
+    if (user) {
+      // Pull Firestore data, merge with localStorage, start live listener
+      await mergeFirestoreToLocal(user.uid);
+      startFirestoreListener(user.uid);
+      await loadExistingShareId(user.uid);
+    } else {
+      if (_firestoreUnsub) { _firestoreUnsub(); _firestoreUnsub = null; }
+      _currentShareId = null;
+      updateShareBtnVisibility();
+    }
+    // Re-render so owned badges reflect current state
+    if (typeof updateCollectionValue === 'function') updateCollectionValue();
+    if (typeof render === 'function') render();
+  });
+}
+
+// ── Read-only shared-collection view ──────────────────────────────────────────
+function initReadOnlyShareView(shareId) {
+  // Hide auth/share controls — neither makes sense when viewing someone else's
+  // collection — and show the read-only banner.
+  const authBtn = document.getElementById('authBtn');
+  const shareBtn = document.getElementById('shareBtn');
+  const banner = document.getElementById('readOnlyBanner');
+  if (authBtn) authBtn.style.display = 'none';
+  if (shareBtn) shareBtn.style.display = 'none';
+  if (banner) banner.style.display = '';
+
+  const applySnapshot = snap => {
+    const keys = snap.exists() ? (snap.data().keys || []) : [];
+    // setSharedOwned lives in rarity-binder.js. That script may not have run
+    // yet (module scripts can execute before/after plain scripts), so retry
+    // briefly rather than silently dropping the first snapshot.
+    const tryApply = () => {
+      if (typeof window.setSharedOwned === 'function') window.setSharedOwned(keys);
+      else if (typeof setSharedOwned === 'function') setSharedOwned(keys);
+      else { setTimeout(tryApply, 50); return; }
+    };
+    tryApply();
+  };
+
+  // Live listener — public read, no auth required (see Firestore rules).
+  onSnapshot(shareDocRef(shareId), applySnapshot, e => {
+    console.warn('[Firebase] Shared collection listener failed', e);
+  });
+}
 
 function updateAuthUI(user) {
   const btn = document.getElementById('authBtn');
@@ -91,7 +137,14 @@ function startFirestoreListener(uid) {
 async function pushOwnedToFirestore(ownedSet) {
   if (!_currentUid) return;
   try {
-    await setDoc(ownedDocRef(_currentUid), { keys: [...ownedSet] });
+    // merge:true — this doc may also carry a shareId field (see _fbShare below),
+    // and a plain setDoc would silently wipe that out on every owned-card toggle.
+    await setDoc(ownedDocRef(_currentUid), { keys: [...ownedSet] }, { merge: true });
+    // Keep the public share doc (if one exists) live too, so the shared link
+    // always reflects current ownership rather than a frozen snapshot.
+    if (_currentShareId) {
+      await setDoc(shareDocRef(_currentShareId), { ownerUid: _currentUid, keys: [...ownedSet] });
+    }
   } catch(e) { console.warn('Firebase write failed', e); }
 }
 
@@ -107,5 +160,60 @@ window._fbSignIn = async () => {
   } else {
     try { await signInWithPopup(auth, provider); }
     catch(e) { console.warn('Sign-in failed', e); }
+  }
+};
+
+// ── Share link ───────────────────────────────────────────────────────────────
+function shareDocRef(shareId) {
+  return doc(db, 'shares', shareId);
+}
+
+// Loads (but does not create) the current user's existing shareId, if any,
+// so a repeat "Share" click reuses the same link instead of minting a new one.
+async function loadExistingShareId(uid) {
+  try {
+    const snap = await getDoc(ownedDocRef(uid));
+    _currentShareId = snap.exists() ? (snap.data().shareId || null) : null;
+  } catch(e) { console.warn('[Firebase] loadExistingShareId failed', e); _currentShareId = null; }
+  updateShareBtnVisibility();
+}
+
+function updateShareBtnVisibility() {
+  const btn = document.getElementById('shareBtn');
+  if (!btn) return;
+  btn.style.display = _currentUid ? 'inline-block' : 'none';
+}
+
+function shareUrlFor(shareId) {
+  const url = new URL(window.location.href);
+  url.search = ''; // drop any existing query params (e.g. a ?share= link you opened yourself)
+  url.searchParams.set('share', shareId);
+  return url.toString();
+}
+
+window._fbShare = async () => {
+  if (!_currentUid) return;
+  const btn = document.getElementById('shareBtn');
+  try {
+    if (!_currentShareId) {
+      _currentShareId = crypto.randomUUID();
+      // Save the new shareId onto the user's own doc (merge — don't clobber `keys`).
+      await setDoc(ownedDocRef(_currentUid), { shareId: _currentShareId }, { merge: true });
+    }
+    // Ensure the public share doc exists / is current before copying the link.
+    const owned = JSON.parse(localStorage.getItem('pokemon-rarity-binder-owned') || '[]');
+    await setDoc(shareDocRef(_currentShareId), { ownerUid: _currentUid, keys: owned });
+
+    const url = shareUrlFor(_currentShareId);
+    await navigator.clipboard.writeText(url);
+    if (btn) {
+      const original = btn.textContent;
+      btn.textContent = '✓ Link copied';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 2000);
+    }
+  } catch(e) {
+    console.warn('[Firebase] Share failed', e);
+    if (btn) { btn.textContent = '⚠ Share failed'; setTimeout(() => { btn.textContent = '🔗 Share'; }, 2000); }
   }
 };

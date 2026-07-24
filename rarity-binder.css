@@ -60,8 +60,19 @@
   }
   .auth-btn:hover { border-color:var(--gold); color:var(--text); }
   .auth-btn.signed-in { border-color:#4ade80; color:#4ade80; }
+  /* Share button sits just left of the auth button, same footprint/style */
+  .share-btn { right:118px; }
+  .share-btn.copied { border-color:var(--gold); color:var(--gold-bright); }
+  .read-only-banner {
+    position:absolute; top:16px; left:20px;
+    background:rgba(250,204,21,.12); border:1px solid var(--gold);
+    color:var(--gold-bright); padding:8px 14px; border-radius:8px;
+    font-size:13px; z-index:10;
+  }
   @media (max-width:600px) {
     .auth-btn { top:10px; right:10px; padding:6px 10px; font-size:12px; }
+    .share-btn { right:96px; }
+    .read-only-banner { position:static; display:inline-block; margin-bottom:8px; font-size:11px; padding:6px 10px; }
   }
 
   /* TOOLBAR */

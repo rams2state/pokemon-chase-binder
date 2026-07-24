@@ -6,11 +6,21 @@ let showOwnedOnly = false;
 const STORAGE_KEY = 'pokemon-rarity-binder-owned';
 let _priceChart = null;  // Chart.js instance
 
-// ─── OWNED COLLECTION (persisted to localStorage) ────────────────────────────
+// ─── SHARED (READ-ONLY) VIEW ──────────────────────────────────────────────────
+// If the page was opened via a share link (?share=<id>), we're viewing someone
+// else's collection: card data still loads normally from the CSV (public,
+// same for everyone), but the *owned* set comes from their public Firestore
+// share doc instead of our own localStorage, and nothing is editable.
+const SHARE_ID = new URLSearchParams(window.location.search).get('share');
+const READ_ONLY_SHARE = !!SHARE_ID;
+let _sharedOwned = new Set(); // populated by firebase.js once the share doc loads
+
+// ─── OWNED COLLECTION (persisted to localStorage, unless viewing a share) ────
 function cardKey(c) {
   return `${c.set}||${c.num}||${c.name}`;
 }
 function getOwned() {
+  if (READ_ONLY_SHARE) return _sharedOwned;
   try { return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')); }
   catch(e) { return new Set(); }
 }
@@ -18,6 +28,7 @@ function setOwned(owned) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify([...owned]));
 }
 function toggleOwned(c) {
+  if (READ_ONLY_SHARE) return; // visitors can't edit someone else's collection
   const owned = getOwned();
   const key = cardKey(c);
   if (owned.has(key)) owned.delete(key);
@@ -29,6 +40,14 @@ function toggleOwned(c) {
 }
 function isOwned(c) {
   return getOwned().has(cardKey(c));
+}
+
+// Called by firebase.js once the shares/{shareId} doc loads (and again on
+// every live update from its onSnapshot listener).
+function setSharedOwned(keys) {
+  _sharedOwned = new Set(keys || []);
+  updateCollectionValue();
+  if (typeof render === 'function') render();
 }
 function updateCollectionValue() {
   const owned = getOwned();

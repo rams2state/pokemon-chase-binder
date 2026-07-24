@@ -41,10 +41,7 @@
   h1.display{font-size:44px;margin:0 0 6px;color:var(--text);line-height:0.95;}
   h1.display span{color:var(--gold-bright);}
   .sub{color:var(--dim);font-size:15px;max-width:640px;line-height:1.5;}
-  /* Extra top margin here since the h1 that used to sit above (and push this
-     row down naturally) was removed — the button row is absolutely
-     positioned in the same corner, so this keeps them from visually colliding. */
-  .stats-row{display:flex;gap:16px;margin-top:52px;flex-wrap:wrap;}
+  .stats-row{display:flex;gap:16px;margin-top:16px;flex-wrap:wrap;}
   .stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 16px;min-width:110px;}
   .stat .n{font-family:'Luckiest Guy','Bebas Neue';font-size:26px;color:var(--gold-bright);line-height:1;}
   .stat .l{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:0.08em;margin-top:3px;}
@@ -54,14 +51,17 @@
   .stat-owned.active .l::after{content:' ✓';}
 
   /* AUTH BUTTON */
-  /* Sign-in + Share sit together in a flex row, absolutely positioned as a
-     unit — this lets the browser handle spacing between them naturally
-     instead of hardcoded right: offsets, which broke on narrow screens where
-     "Share" would overlap "Sign in" (or a signed-in user's name). */
+  /* Sign-in + Share sit together in a normal-flow flex row, right-aligned,
+     above the stats row — NOT position:absolute. Absolute positioning kept
+     causing this row to visually collide with the stats row on mobile any
+     time either row's height changed (removing the h1, stacking the
+     buttons, etc.), since the two were positioned independently with no
+     relationship to each other. Normal flow means the browser handles
+     spacing between them automatically, and they naturally stay side by
+     side (wrapping only if truly out of room) at any width. */
   .header-btn-row {
-    position:absolute; top:16px; right:20px;
-    display:flex; gap:10px; align-items:center;
-    z-index:10;
+    display:flex; gap:10px; align-items:center; justify-content:flex-end;
+    flex-wrap:wrap;
   }
   .auth-btn {
     background:var(--panel); border:1px solid var(--line); color:var(--dim);
@@ -79,12 +79,7 @@
     font-size:13px;
   }
   @media (max-width:600px) {
-    /* Side-by-side no longer fits reliably once both "Share" and a signed-in
-       display name are showing on a narrow phone screen — stack instead.
-       (.stats-row clearance for the taller stacked column is handled in the
-       max-width:700px block further down, which is what actually applies at
-       real phone widths and was overriding this one via source order.) */
-    .header-btn-row { top:10px; right:10px; flex-direction:column; align-items:flex-end; gap:6px; }
+    .header-btn-row { gap:6px; }
     .auth-btn { padding:6px 10px; font-size:12px; }
     .read-only-banner { margin-bottom:8px; font-size:11px; padding:6px 10px; }
   }
@@ -521,23 +516,17 @@
     header.hero{padding:10px 16px 14px;overflow:hidden;}
     .eyebrow{display:none;}
     .sub{display:none;}
-    /* NOTE: .auth-btn's own position:absolute rule was removed here — it's
-       now a flex child of .header-btn-row (see the max-width:600px block
-       above), which owns the actual positioning. This block only needs to
-       control size/spacing at this narrower breakpoint. */
     .auth-btn{padding:5px 10px;font-size:11px;}
 
     /* Prevent horizontal scroll on body */
     body{overflow-x:hidden;}
     main{overflow-x:hidden;}
 
-    /* Stats — 3 equal columns, no overflow. Extra top margin clears the
-       absolutely-positioned, stacked Share/Sign-in buttons in the corner
-       now that there's no h1 above to push this row down naturally. */
+    /* Stats — 3 equal columns, no overflow */
     .stats-row{
       display:grid;
       grid-template-columns:repeat(3,1fr);
-      gap:8px;margin-top:82px;
+      gap:8px;margin-top:14px;
       width:100%;box-sizing:border-box;
     }
     .stat{min-width:0;padding:10px 8px;box-sizing:border-box;}

@@ -31,8 +31,10 @@ if ('serviceWorker' in navigator) {
 <header class="hero">
   <div class="hero-inner">
     <h1 class="display">Rarity <span>Binder</span></h1>
-    <button id="authBtn" class="auth-btn" onclick="window._fbSignIn && window._fbSignIn()">⬡ Sign in</button>
-    <button id="shareBtn" class="auth-btn share-btn" style="display:none;" onclick="window._fbShare && window._fbShare()">🔗 Share</button>
+    <div class="header-btn-row">
+      <button id="shareBtn" class="auth-btn share-btn" style="display:none;" onclick="window._fbShare && window._fbShare()">🔗 Share</button>
+      <button id="authBtn" class="auth-btn" onclick="window._fbSignIn && window._fbSignIn()">⬡ Sign in</button>
+    </div>
     <div id="readOnlyBanner" class="read-only-banner" style="display:none;">👁 Viewing a shared collection (read-only)</div>
     <div class="stats-row">
       <div class="stat"><div class="n" id="statCards">—</div><div class="l">Total Cards</div></div>

@@ -51,17 +51,23 @@
   .stat-owned.active .l::after{content:' ✓';}
 
   /* AUTH BUTTON */
-  .auth-btn {
+  /* Sign-in + Share sit together in a flex row, absolutely positioned as a
+     unit — this lets the browser handle spacing between them naturally
+     instead of hardcoded right: offsets, which broke on narrow screens where
+     "Share" would overlap "Sign in" (or a signed-in user's name). */
+  .header-btn-row {
     position:absolute; top:16px; right:20px;
+    display:flex; gap:10px; align-items:center;
+    z-index:10;
+  }
+  .auth-btn {
     background:var(--panel); border:1px solid var(--line); color:var(--dim);
     padding:8px 14px; border-radius:8px; font-size:13px; font-family:inherit;
     cursor:pointer; transition:border-color .15s, color .15s;
-    z-index:10;
+    white-space:nowrap;
   }
   .auth-btn:hover { border-color:var(--gold); color:var(--text); }
   .auth-btn.signed-in { border-color:#4ade80; color:#4ade80; }
-  /* Share button sits just left of the auth button, same footprint/style */
-  .share-btn { right:118px; }
   .share-btn.copied { border-color:var(--gold); color:var(--gold-bright); }
   .read-only-banner {
     display:inline-block; position:static; margin:10px 0 0;
@@ -70,8 +76,8 @@
     font-size:13px;
   }
   @media (max-width:600px) {
-    .auth-btn { top:10px; right:10px; padding:6px 10px; font-size:12px; }
-    .share-btn { right:96px; }
+    .header-btn-row { top:10px; right:10px; gap:6px; }
+    .auth-btn { padding:6px 10px; font-size:12px; }
     .read-only-banner { margin-bottom:8px; font-size:11px; padding:6px 10px; }
   }
 

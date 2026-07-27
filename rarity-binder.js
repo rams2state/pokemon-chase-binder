@@ -994,6 +994,9 @@ function _doRender() {
     return;
   }
   if (currentView === 'grid') {
+    // Leaving set-detail view — _setDetailOrder no longer reflects what's
+    // on screen, so fall back to the global getFiltered() order for the modal.
+    _setDetailOrder = null;
     if (_activeSet) {
       // Inside a set — always render (small card count, no perf issue)
       const gridCards = cards.filter(c => c.series === _activeSet.era && c.set === _activeSet.set);
@@ -1015,7 +1018,7 @@ function _doRender() {
     return;
   }
   // Trend view takes priority over set detail / overview
-  if (_trendMode) { _lastRenderedSet = null; renderTrend(el); return; }
+  if (_trendMode) { _setDetailOrder = null; _lastRenderedSet = null; renderTrend(el); return; }
   // If a set is active and still has cards in filtered result, show detail
   if (_activeSet) {
     const setCards = cards.filter(c => c.series === _activeSet.era && c.set === _activeSet.set);
@@ -1032,9 +1035,11 @@ function _doRender() {
     } else {
       _activeSet = null;
       _lastRenderedSet = null;
+      _setDetailOrder = null;
     }
   }
   _lastRenderedSet = null;
+  _setDetailOrder = null;
   renderSetOverview(cards, el);
 } // end _doRender
 
@@ -1229,6 +1234,11 @@ function renderSetDetail(cards, el) {
   const BUCKET_LABEL = { '__TG__':'TG', '__GX__':'GX', '__EX__':'EX', '__FA_POKEMON__':'Full Art', '__FA_TRAINER__':'FA Trainer' };
   const BUCKET_COLOR_KEY = { '__TG__':'Trainer Gallery Rare Holo', '__GX__':'Rare Ultra', '__EX__':'Rare Ultra', '__FA_POKEMON__':'Rare Ultra', '__FA_TRAINER__':'Rare Ultra' };
 
+  // Flattened on-screen order, in the exact sequence cards are about to be
+  // rendered below — feeds _setDetailOrder so the modal's Prev/Next matches
+  // what's visually on screen (see _setDetailOrder comment for why).
+  const onScreenOrder = [];
+
   for (const bucket of bucketOrder) {
     const rarCards = [...rebucketed[bucket]].sort(cardNumSort);
     const displayLabel = BUCKET_LABEL[bucket] ?? shortRarity(bucket);
@@ -1242,6 +1252,7 @@ function renderSetDetail(cards, el) {
       <div class="detail-card-grid">`;
 
     for (const c of rarCards) {
+      onScreenOrder.push(c);
       const owned = isOwned(c);
       const cdata = JSON.stringify(c).replace(/'/g,'&#39;');
       const key = cardKey(c).replace(/[^a-z0-9]/gi,'_');
@@ -1261,6 +1272,7 @@ function renderSetDetail(cards, el) {
     }
     html += `</div></div>`; // detail-card-grid + rarity-group
   }
+  _setDetailOrder = onScreenOrder;
   el.innerHTML = html;
 }
 
@@ -1337,6 +1349,18 @@ let _modalCard = null;
 let _modalList = [];   // current filtered card list for prev/next navigation
 let _modalIdx  = -1;   // index of open card within _modalList
 
+// Flattened, on-screen order for the currently-rendered set detail page
+// (bucket order, then cardNumSort within each bucket — see renderSetDetail).
+// BUG FIX (2026-07-27): openModal() used to always rebuild _modalList from
+// getFiltered() (the global search/sort list), even when a card was opened
+// from the set-detail view — which displays cards in a totally different
+// order (grouped by rarity bucket, ascending card number within each). That
+// mismatch made Prev/Next silently jump through the wrong list, so the
+// buttons could visually appear to move backward relative to the numbers
+// on screen. Populated by renderSetDetail(); cleared elsewhere so the
+// global list is used everywhere else (main grid, price-movers, etc.).
+let _setDetailOrder = null;
+
 function modalNav(dir) {
   const next = _modalIdx + dir;
   if (next < 0 || next >= _modalList.length) return;
@@ -1360,7 +1384,10 @@ function updateNavState() {
 function openModal(c, updateList = true) {
   _modalCard = c;
   if (updateList) {
-    _modalList = getFiltered();
+    // Use the set-detail page's own on-screen order (bucket + card-number
+    // order) when opened from there, instead of the unrelated global
+    // search/sort list — see _setDetailOrder comment above for why.
+    _modalList = _setDetailOrder || getFiltered();
     _modalIdx = _modalList.findIndex(x => x.cardId === c.cardId && x.num === c.num && x.set === c.set);
     if (_modalIdx === -1) _modalIdx = 0;
     // Save scroll position and push a history entry so back button closes modal

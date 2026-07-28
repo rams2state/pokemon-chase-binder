@@ -682,8 +682,18 @@ function resetFilters() {
 }
 
 // ─── FILTER + SORT ───────────────────────────────────────────────────────────
+// BUG FIX (2026-07-27): older BW/XY-era EX cards are named with a literal
+// hyphen (e.g. "Mew-EX", "Mewtwo-EX" — how they were actually printed and
+// how the underlying data correctly stores them), but users naturally type
+// a space when searching ("mew ex"). Plain substring search failed on this
+// mismatch. Rather than alter the real card names (would break historical
+// accuracy, image URLs, price-history keys, etc.), normalize hyphens to
+// spaces on BOTH the query and the haystack before comparing — search-only,
+// doesn't touch anything displayed or stored.
+const normalizeSearchText = s => (s || '').toLowerCase().replace(/-/g, ' ');
+
 function getFiltered() {
-  const q = document.getElementById('search').value.toLowerCase();
+  const q = normalizeSearchText(document.getElementById('search').value);
   const era = document.getElementById('eraFilter').value;
   const rarity = document.getElementById('rarityFilter').value;
   const sort = document.getElementById('sortBy').value;
@@ -706,7 +716,7 @@ function getFiltered() {
       if (!matches) return false;
     }
     if (q) {
-      const haystack = `${c.name} ${c.set} ${c.series} ${c.rarity}`.toLowerCase();
+      const haystack = normalizeSearchText(`${c.name} ${c.set} ${c.series} ${c.rarity}`);
       if (!haystack.includes(q)) return false;
     }
     return true;
@@ -718,9 +728,31 @@ function getFiltered() {
   // ascend by number (lowest first); Newest First ties descend (highest first).
   const parseNum = n => { const m = (n || '').match(/(\d+)$/); return m ? parseInt(m[1], 10) : 0; };
 
+  // BUG FIX (2026-07-27): when two DIFFERENT sets share an exact release
+  // date (e.g. Black Bolt / White Flare, both 2025/07/18), the old tiebreak
+  // sorted every card from both sets together by card number, interleaving
+  // them instead of keeping each set as its own block. Now, on a same-date
+  // tie, group by setCode first (falls back to set name if setCode is also
+  // tied — true for "main set" + "Trainer Gallery"/"Shiny Vault" pairs that
+  // share one set code, e.g. "Brilliant Stars" + "Brilliant Stars Trainer
+  // Gallery" are both "BRS" — alphabetical naturally puts the main set
+  // first since its name is always a prefix of the sub-collection's name),
+  // THEN by card number within each set's block.
+  const setGroupKey = c => (c.setCode || c.set || '');
+
   cards.sort((a, b) => {
-    if (sort === 'date-asc') return (a.date || '').localeCompare(b.date || '') || parseNum(a.num) - parseNum(b.num);
-    if (sort === 'date-desc') return (b.date || '').localeCompare(a.date || '') || parseNum(b.num) - parseNum(a.num);
+    if (sort === 'date-asc') {
+      return (a.date || '').localeCompare(b.date || '')
+        || setGroupKey(a).localeCompare(setGroupKey(b))
+        || (a.set || '').localeCompare(b.set || '')
+        || parseNum(a.num) - parseNum(b.num);
+    }
+    if (sort === 'date-desc') {
+      return (b.date || '').localeCompare(a.date || '')
+        || setGroupKey(a).localeCompare(setGroupKey(b))
+        || (a.set || '').localeCompare(b.set || '')
+        || parseNum(b.num) - parseNum(a.num);
+    }
     if (sort === 'price-desc') return priceVal(b.price) - priceVal(a.price);
     if (sort === 'price-asc') {
       const av = priceVal(a.price), bv = priceVal(b.price);

@@ -249,11 +249,19 @@ function normalizeCard(raw) {
   if (set === 'Crown Zenith Galarian Gallery') {
     rarity = 'Galarian Gallery';
   }
-  // "Hyper Rare" in the API means SWSH Rainbow Rare (gold rainbow treatment).
-  // Normalize to "Rainbow Rare" so it's distinct from SV's gold "Hyper Rare" cards.
-  if (rarity === 'Hyper Rare') {
-    rarity = 'Rainbow Rare';
-  }
+  // BUG FIX (2026-07-27): removed a rule that blindly converted every raw
+  // "Hyper Rare" rarity to "Rainbow Rare", on the premise that pokemontcg.io
+  // used "Hyper Rare" to mean SWSH's Rainbow Rare treatment. Checked the
+  // actual CSV data: EVERY card with raw rarity "Hyper Rare" is Series =
+  // "Scarlet & Violet" (74 cards, including Prismatic Evolutions' 5 gold-
+  // star ex cards) — genuine SV Hyper Rares, not SWSH Rainbow Rares. SWSH
+  // (and SM) Rainbow Rares are actually tagged "Rare Rainbow" in the data
+  // and are already correctly normalized to "Rainbow Rare" a few lines up
+  // (see the 'Rare Rainbow' branch). No real SWSH card was found using raw
+  // "Hyper Rare" in the current dataset, so this rule had no correct case
+  // left to handle and was only mislabeling real Hyper Rares as Rainbow
+  // Rares (reported: Prismatic Evolutions cards showing as Rainbow Rare
+  // despite being genuine 3-star gold Hyper Rares).
   // SV "Mega Hyper Rare" (our old internal name) → "Hyper Rare" (community name for SV gold cards)
   if (rarity === 'Mega Hyper Rare') {
     rarity = 'Hyper Rare';

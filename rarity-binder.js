@@ -903,7 +903,6 @@ function getFiltered() {
       if (bv < 0) return -1;
       return av - bv;
     }
-    if (sort === 'name-asc') return (a.name || '').localeCompare(b.name || '');
     if (sort === 'recent-purchase') {
       // Most-recently-marked-owned first. Unowned cards (addedAt 0) sort to
       // the very end — this view is only meaningful for owned cards, but we
@@ -1157,6 +1156,47 @@ function renderTrend(el) {
   el.innerHTML = html;
 }
 
+// FEATURE (2026-07-30): flat, ungrouped list view — used for "Recent
+// Purchases" and the price sorts. These sorts are inherently about a single
+// global ordering (most recently bought, or highest/lowest price) that
+// spans every set; grouping by era/set (like the default overview does)
+// would chop that ordering back up into per-set blocks and defeat the
+// purpose. Modeled directly on renderTrend()'s flat card-row list, just
+// without the gainers/losers-specific delta badge.
+function renderFlatList(cards, el, title) {
+  let html = `<div class="trend-section">
+    <div class="trend-header">
+      <div class="trend-title">${title}</div>
+      <div class="trend-sub">${cards.length} card${cards.length !== 1 ? 's' : ''}</div>
+    </div>`;
+
+  cards.forEach((c, i) => {
+    const owned = isOwned(c);
+    const cdata = JSON.stringify(c).replace(/'/g,'&#39;');
+    const key = cardKey(c).replace(/[^a-z0-9]/gi,'_');
+    const thumbHtml = c.pic && c.pic !== 'N/A'
+      ? `<img class="crow-thumb" src="${c.pic}" alt="${c.name||''}" loading="lazy" onerror="this.style.display='none'">`
+      : `<div class="crow-thumb-empty">?</div>`;
+
+    html += `<div class="card-row${owned?' owned':''}" id="row-${key}" onclick='openModal(${cdata})'>
+      <span class="trend-rank">${i+1}</span>
+      <div class="crow-check${owned?' owned':''}" onclick='event.stopPropagation();handleToggle(${cdata})'>${owned?'✓':''}</div>
+      ${thumbHtml}
+      <div style="flex:1;min-width:0;">
+        <div class="crow-name">${c.name||'—'}</div>
+        <div class="crow-set">${c.set}</div>
+      </div>
+      <div class="crow-price-wrap">
+        <span class="crow-price">${c.price!=='N/A'?c.price:'—'}</span>
+        ${seventyPercentBadgeHtml(c)}
+      </div>
+    </div>`;
+  });
+
+  html += `</div>`;
+  el.innerHTML = html;
+}
+
 let _renderPending = false;
 let _lastRenderedSet = null; // tracks which set is currently rendered in the DOM
 function render() {
@@ -1201,6 +1241,28 @@ function _doRender() {
   }
   // Trend view takes priority over set detail / overview
   if (_trendMode) { _setDetailOrder = null; _lastRenderedSet = null; renderTrend(el); return; }
+  // FEATURE (2026-07-30): "Recent Purchases" and the price sorts are a single
+  // global ordering across every set — grouping them into the normal
+  // era/set overview would immediately chop that ordering back into
+  // per-set blocks, defeating the point of the sort. Skip the grouped
+  // overview/set-detail entirely for these and render one flat list instead
+  // (same treatment as the Gainers/Losers trend view), UNLESS the user has
+  // actually drilled into a specific set — browsing one set's cards in
+  // price/recent order still makes sense grouped by that set alone via the
+  // normal set-detail view.
+  const sortValue = document.getElementById('sortBy').value;
+  const FLAT_SORTS = new Set(['recent-purchase', 'price-desc', 'price-asc']);
+  if (FLAT_SORTS.has(sortValue) && !_activeSet) {
+    _setDetailOrder = null;
+    _lastRenderedSet = null;
+    const titles = {
+      'recent-purchase': '🕐 Recent Purchases',
+      'price-desc': '💰 Price: High to Low',
+      'price-asc': '💰 Price: Low to High',
+    };
+    renderFlatList(cards, el, titles[sortValue]);
+    return;
+  }
   // If a set is active and still has cards in filtered result, show detail
   if (_activeSet) {
     const setCards = cards.filter(c => c.series === _activeSet.era && c.set === _activeSet.set);

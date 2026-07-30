@@ -1,7 +1,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { getFirestore, doc, setDoc, getDoc, onSnapshot, deleteField }
+import { getFirestore, doc, setDoc, updateDoc, getDoc, onSnapshot, deleteField }
   from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -203,18 +203,52 @@ async function pushOwnedDelta(key, action, meta) {
     console.warn('[Firebase] pushOwnedDelta: no _currentUid, write SKIPPED.');
     return;
   }
+  const fieldPath = 'owned.' + key;
+  const value = action === 'remove' ? deleteField() : meta;
   try {
-    const fieldPath = 'owned.' + key;
-    const value = action === 'remove' ? deleteField() : meta;
-    await setDoc(ownedDocRef(_currentUid), { [fieldPath]: value }, { merge: true });
+    // BUG FIX (2026-07-30 v2): use updateDoc, not setDoc(...,{merge:true}).
+    // deleteField() + a dynamic dot-notation key is the OFFICIALLY documented
+    // pattern for updateDoc (Firebase's own docs only ever show deleteField()
+    // paired with updateDoc — never setDoc/merge). setDoc with merge:true and
+    // a computed 'owned.<key>' key is NOT documented anywhere and evidently
+    // does not reliably delete the nested field in practice (confirmed: the
+    // write resolved with no error, yet the field was still present on the
+    // very next read) — likely because merge:true's own field-mask semantics
+    // don't compose the way a literal dot-path assumes. updateDoc guarantees
+    // correct nested dot-path semantics, including deleteField().
+    // updateDoc fails on a doc that doesn't exist, so fall back to creating
+    // it first (first-ever write for a brand-new user).
+    try {
+      await updateDoc(ownedDocRef(_currentUid), { [fieldPath]: value });
+    } catch (inner) {
+      // Doc doesn't exist yet — only meaningful for an ADD (a REMOVE on a
+      // nonexistent doc is a no-op, there's nothing to delete).
+      if (inner.code === 'not-found' && action !== 'remove') {
+        await setDoc(ownedDocRef(_currentUid), { owned: { [key]: meta } }, { merge: true });
+      } else if (inner.code !== 'not-found') {
+        throw inner;
+      }
+    }
     console.log('[Firebase] delta write to ownedDocRef succeeded');
-    // Keep the public share doc (if one exists) live too. The share doc has
-    // no other fields nested under "owned" that could collide, so the same
-    // dot-notation delta approach applies here too.
+    // Keep the public share doc (if one exists) live too.
     if (_currentShareId) {
-      await setDoc(shareDocRef(_currentShareId), { ownerUid: _currentUid, [fieldPath]: value }, { merge: true });
+      try {
+        await updateDoc(shareDocRef(_currentShareId), { ownerUid: _currentUid, [fieldPath]: value });
+      } catch (inner) {
+        if (inner.code === 'not-found' && action !== 'remove') {
+          await setDoc(shareDocRef(_currentShareId), { ownerUid: _currentUid, owned: { [key]: meta } }, { merge: true });
+        } else if (inner.code !== 'not-found') {
+          throw inner;
+        }
+      }
       console.log('[Firebase] delta write to shareDocRef succeeded');
     }
+    // VERIFY (2026-07-30): force a fresh server read right after the write so
+    // the console tells us definitively whether the change actually landed,
+    // instead of inferring it from the write call resolving without error.
+    const verifySnap = await getDoc(ownedDocRef(_currentUid));
+    const verifyOwned = verifySnap.exists() ? (verifySnap.data().owned || {}) : {};
+    console.log('[Firebase] VERIFY after write — key still present?', Object.prototype.hasOwnProperty.call(verifyOwned, key), '| total keys=', Object.keys(verifyOwned).length);
   } catch(e) { console.warn('[Firebase] delta write FAILED', e); }
 }
 

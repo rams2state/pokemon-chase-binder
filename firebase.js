@@ -126,6 +126,17 @@ function toPlainObject(raw) {
 }
 
 async function mergeFirestoreToLocal(uid) {
+  // BUG FIX (2026-07-29): this used to always UNION local + remote data on
+  // every load ("owned on either side stays owned") — which has no way to
+  // represent a removal, so un-owning a card and refreshing would bring it
+  // right back (whichever side still had it would win, forever). Firestore
+  // is now treated as the single source of truth once it exists: on load,
+  // local storage is simply replaced with whatever Firestore says, full
+  // stop — no merging. The ONE exception is a brand-new user who has never
+  // synced before (no Firestore doc exists yet) but already has local-only
+  // data from using the app before signing in — that data would otherwise
+  // be silently lost, so in that specific case we push it up instead of
+  // discarding it. After that first sync, Firestore is authoritative.
   try {
     console.log('[Firebase] mergeFirestoreToLocal start, uid=', uid);
     const snap = await getDoc(ownedDocRef(uid));
@@ -133,22 +144,16 @@ async function mergeFirestoreToLocal(uid) {
     if (snap.exists()) {
       const data = snap.data();
       const remote = toPlainObject(data.owned ?? data.keys ?? []);
-      console.log('[Firebase] remote keys count=', Object.keys(remote).length);
-      const local = toPlainObject(JSON.parse(localStorage.getItem('pokemon-rarity-binder-owned') || '{}'));
-      // Merge: a card owned on either side stays owned. If both sides have
-      // it, keep whichever addedAt is EARLIER (the more likely true
-      // original add time — the other side's timestamp is just whenever
-      // that device happened to last write/migrate the record).
-      const merged = { ...remote };
-      for (const [key, meta] of Object.entries(local)) {
-        if (!merged[key] || (meta.addedAt && meta.addedAt < merged[key].addedAt)) {
-          merged[key] = meta;
-        }
-      }
-      localStorage.setItem('pokemon-rarity-binder-owned', JSON.stringify(merged));
-      console.log('[Firebase] merged count=', Object.keys(merged).length);
+      localStorage.setItem('pokemon-rarity-binder-owned', JSON.stringify(remote));
+      console.log('[Firebase] replaced local with remote, count=', Object.keys(remote).length);
     } else {
-      console.log('[Firebase] No Firestore doc found for this user');
+      const local = toPlainObject(JSON.parse(localStorage.getItem('pokemon-rarity-binder-owned') || '{}'));
+      if (Object.keys(local).length > 0) {
+        console.log('[Firebase] No Firestore doc yet — first sync, uploading existing local data, count=', Object.keys(local).length);
+        await setDoc(ownedDocRef(uid), { owned: local }, { merge: true });
+      } else {
+        console.log('[Firebase] No Firestore doc found for this user, and no local data to upload');
+      }
     }
   } catch(e) { console.warn('[Firebase] merge failed', e); }
 }

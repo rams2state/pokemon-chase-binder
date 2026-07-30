@@ -159,6 +159,18 @@ if ('serviceWorker' in navigator) {
         <button class="modal-own" id="mOwn" onclick="toggleFromModal()">＋ Mark as Owned</button>
         <a class="modal-buy" id="mBuy" href="#" target="_blank" rel="noopener">Find on TCGplayer →</a>
       </div>
+      <!-- FEATURE (2026-07-29): shown right after marking a card owned (from
+           either the list/grid checkbox or the button above) — prompts for
+           what was actually paid, purely optional (Skip leaves it blank). -->
+      <div class="modal-purchase-prompt" id="mPurchasePrompt" style="display:none;">
+        <label for="mPurchaseInput">What did you pay?</label>
+        <div class="modal-purchase-hint">Pulled it from a pack? Enter at least $1 so it's not mistaken for skipped.</div>
+        <div class="modal-purchase-row">
+          <input type="number" id="mPurchaseInput" placeholder="0.00" step="0.01" min="0" inputmode="decimal">
+          <button class="modal-purchase-save" onclick="savePurchasePrice()">Save</button>
+          <button class="modal-purchase-skip" onclick="skipPurchasePrice()">Skip</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>

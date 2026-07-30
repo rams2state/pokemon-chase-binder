@@ -35,14 +35,19 @@ function cardKey(c) {
 }
 function normalizeOwnedData(raw) {
   // raw is whatever came out of JSON.parse — either the old array-of-keys
-  // format, or the new { [key]: {addedAt} } object format.
+  // format, or the { [key]: {addedAt, purchasePrice?} } object format.
+  // purchasePrice is optional (2026-07-29 feature) — undefined/missing means
+  // the user hit Skip or hasn't been prompted (older data), never defaulted
+  // to a fabricated number.
   const map = new Map();
   if (Array.isArray(raw)) {
     const now = Date.now();
     for (const key of raw) map.set(key, { addedAt: now });
   } else if (raw && typeof raw === 'object') {
     for (const [key, meta] of Object.entries(raw)) {
-      map.set(key, { addedAt: (meta && meta.addedAt) || Date.now() });
+      const entry = { addedAt: (meta && meta.addedAt) || Date.now() };
+      if (meta && typeof meta.purchasePrice === 'number') entry.purchasePrice = meta.purchasePrice;
+      map.set(key, entry);
     }
   }
   return map;
@@ -58,16 +63,25 @@ function setOwned(owned) {
   for (const [key, meta] of owned) obj[key] = meta;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
 }
+// Returns true if the toggle just ADDED the card to owned (newly owned this
+// call) — false if it removed it. Used to decide whether to show the
+// purchase-price prompt (only on the owned-ADD transition, never on removal).
 function toggleOwned(c) {
-  if (READ_ONLY_SHARE) return; // visitors can't edit someone else's collection
+  if (READ_ONLY_SHARE) return false; // visitors can't edit someone else's collection
   const owned = getOwned();
   const key = cardKey(c);
-  if (owned.has(key)) owned.delete(key);
-  else owned.set(key, { addedAt: Date.now() });
+  let justAdded = false;
+  if (owned.has(key)) {
+    owned.delete(key);
+  } else {
+    owned.set(key, { addedAt: Date.now() });
+    justAdded = true;
+  }
   setOwned(owned);
   // Sync to Firestore via event (module script listens for this)
   window.dispatchEvent(new CustomEvent('owned-changed', { detail: { owned } }));
   updateCollectionValue();
+  return justAdded;
 }
 function isOwned(c) {
   return getOwned().has(cardKey(c));
@@ -77,6 +91,26 @@ function isOwned(c) {
 function ownedAddedAt(c) {
   const meta = getOwned().get(cardKey(c));
   return (meta && meta.addedAt) || 0;
+}
+// FEATURE (2026-07-29): records what was actually paid for an already-owned
+// card (set via the modal's purchase-price prompt). No-op if the card isn't
+// owned (shouldn't happen from the UI flow, but guards against stale calls).
+function setPurchasePrice(c, price) {
+  if (READ_ONLY_SHARE) return;
+  const owned = getOwned();
+  const key = cardKey(c);
+  const meta = owned.get(key);
+  if (!meta) return;
+  meta.purchasePrice = price;
+  owned.set(key, meta);
+  setOwned(owned);
+  window.dispatchEvent(new CustomEvent('owned-changed', { detail: { owned } }));
+}
+// Returns the recorded purchase price (number) for an owned card, or null if
+// not recorded (skipped, or an older card added before this feature).
+function ownedPurchasePrice(c) {
+  const meta = getOwned().get(cardKey(c));
+  return (meta && typeof meta.purchasePrice === 'number') ? meta.purchasePrice : null;
 }
 
 // Called by firebase.js once the shares/{shareId} doc loads (and again on
@@ -745,7 +779,23 @@ function resetFilters() {
   // the empty "search to explore" placeholder.
   if (currentView === 'grid') applyViewState('list');
   updateResetBtn();
-  render();
+
+  // BUG FIX (2026-07-29): Reset previously left you inside a set's detail
+  // page if one was open — it only cleared filters/sort/search, never
+  // _activeSet, so you'd land back on the (now unfiltered) same set instead
+  // of the main overview. Exit via history.back() rather than clearing
+  // _activeSet directly: entering a set pushes a history entry (see
+  // openSetDetail), and the popstate handler above already knows how to
+  // unwind that state correctly (clears _activeSet, resets view, restores
+  // overview scroll position) — going around it would leave a stale
+  // history entry that the browser back button would then mishandle.
+  // All filter state above is already cleared before this fires, so the
+  // popstate handler's render() call lands on a clean main overview.
+  if (_activeSet) {
+    history.back();
+  } else {
+    render();
+  }
 }
 
 // ─── FILTER + SORT ───────────────────────────────────────────────────────────
@@ -1432,7 +1482,7 @@ function renderGrid(cards, el) {
 }
 
 function handleToggle(c) {
-  toggleOwned(c);
+  const justAdded = toggleOwned(c);
   const key = cardKey(c).replace(/[^a-z0-9]/gi,'_');
   const owned = isOwned(c);
   // List row
@@ -1448,6 +1498,14 @@ function handleToggle(c) {
     tile.classList.toggle('owned', owned);
     const chk = tile.querySelector('.tile-check');
     if (chk) chk.textContent = owned ? '✓' : '';
+  }
+  // FEATURE (2026-07-29): checking a card owned from the list/grid (not just
+  // the in-modal button) also opens the modal with the purchase-price
+  // prompt, per the same flow as clicking "Mark as Owned" inside an already-
+  // open modal. Never triggered on un-owning (justAdded is false then).
+  if (justAdded) {
+    openModal(c);
+    showPurchasePrompt();
   }
 }
 
@@ -1492,6 +1550,11 @@ function updateNavState() {
 
 function openModal(c, updateList = true) {
   _modalCard = c;
+  // Always start with the purchase-price prompt hidden — it's only shown
+  // explicitly via showPurchasePrompt() right after marking a NEW card
+  // owned, never left over from whatever card was open before.
+  const promptEl = document.getElementById('mPurchasePrompt');
+  if (promptEl) promptEl.style.display = 'none';
   if (updateList) {
     // Use the set-detail page's own on-screen order (bucket + card-number
     // order) when opened from there, instead of the unrelated global
@@ -1543,6 +1606,13 @@ function openModal(c, updateList = true) {
   const seventyLabel = seventyPercentLabel(c);
   if (seventyLabel) {
     priceHtml += `<div class="modal-70pct" title="70% of market price">70%: ${seventyLabel}</div>`;
+  }
+  // FEATURE (2026-07-29): show what was actually paid, but ONLY if a real
+  // purchase price was recorded (Skip leaves it unset — never show "$0.00"
+  // or fabricate a value for older cards added before this feature).
+  const purchasePrice = ownedPurchasePrice(c);
+  if (purchasePrice !== null && purchasePrice > 0) {
+    priceHtml += `<div class="modal-purchase-price">Paid: $${purchasePrice.toFixed(2)}</div>`;
   }
   document.getElementById('mPrice').innerHTML = priceHtml;
 
@@ -1612,11 +1682,65 @@ function openModal(c, updateList = true) {
 
 function toggleFromModal() {
   if (!_modalCard) return;
-  handleToggle(_modalCard);
-  const owned = isOwned(_modalCard);
+  const c = _modalCard;
+  const justAdded = toggleOwned(c);
+  const owned = isOwned(c);
   const ownBtn = document.getElementById('mOwn');
   ownBtn.textContent = owned ? 'Owned' : '＋ Mark as Owned';
   ownBtn.classList.toggle('owned', owned);
+  // Also sync any visible list/grid row for this card, same as handleToggle()
+  // does — the modal can be reached from either view, and closing back out
+  // shouldn't reveal a stale (un-updated) checkmark underneath.
+  const key = cardKey(c).replace(/[^a-z0-9]/gi,'_');
+  const row = document.getElementById('row-' + key);
+  if (row) {
+    row.classList.toggle('owned', owned);
+    const chk = row.querySelector('.crow-check');
+    if (chk) { chk.textContent = owned ? '✓' : ''; chk.classList.toggle('owned', owned); }
+  }
+  const tile = document.getElementById('tile-' + key);
+  if (tile) {
+    tile.classList.toggle('owned', owned);
+    const chk = tile.querySelector('.tile-check');
+    if (chk) chk.textContent = owned ? '✓' : '';
+  }
+  // FEATURE (2026-07-29): show the purchase-price prompt right in this
+  // already-open modal when this action just marked the card owned (never
+  // on un-owning). No need to re-open the modal — we're already looking at it.
+  if (justAdded) showPurchasePrompt();
+}
+
+// ─── PURCHASE PRICE PROMPT ──────────────────────────────────────────────────
+// Shown after marking a card owned (from either the list/grid checkbox via
+// handleToggle(), or the in-modal button via toggleFromModal() above).
+// Purely optional — Skip leaves purchasePrice unset, same as any card added
+// before this feature existed.
+function showPurchasePrompt() {
+  const promptEl = document.getElementById('mPurchasePrompt');
+  const input = document.getElementById('mPurchaseInput');
+  if (!promptEl || !input) return;
+  input.value = '';
+  promptEl.style.display = '';
+  // Focus for quick typing, but don't fight the modal's own open animation —
+  // a microtask delay is enough for the display change above to take effect.
+  setTimeout(() => input.focus(), 0);
+}
+function hidePurchasePrompt() {
+  const promptEl = document.getElementById('mPurchasePrompt');
+  if (promptEl) promptEl.style.display = 'none';
+}
+function savePurchasePrice() {
+  if (!_modalCard) { hidePurchasePrompt(); return; }
+  const input = document.getElementById('mPurchaseInput');
+  const raw = input ? input.value.trim() : '';
+  const val = parseFloat(raw);
+  if (raw && !isNaN(val) && val >= 0) {
+    setPurchasePrice(_modalCard, val);
+  }
+  hidePurchasePrompt();
+}
+function skipPurchasePrice() {
+  hidePurchasePrompt();
 }
 
 function closeModal(restoreScroll = true) {

@@ -174,21 +174,34 @@ function startFirestoreListener(uid) {
 }
 
 async function pushOwnedToFirestore(ownedMap) {
-  if (!_currentUid) return;
+  console.log('[Firebase] pushOwnedToFirestore called, uid=', _currentUid, 'ownedMap size=', ownedMap ? ownedMap.size : 'null/undefined');
+  if (!_currentUid) {
+    console.warn('[Firebase] pushOwnedToFirestore: no _currentUid, write SKIPPED — this is likely the bug if you just toggled a card.');
+    return;
+  }
   try {
     // ownedMap is the Map from rarity-binder.js's getOwned()/toggleOwned() —
     // serialize to a plain { [key]: {addedAt} } object for Firestore.
     const owned = {};
     for (const [key, meta] of ownedMap) owned[key] = meta;
+    console.log('[Firebase] writing owned field, key count=', Object.keys(owned).length);
     // merge:true — this doc may also carry a shareId field (see _fbShare below),
     // and a plain setDoc would silently wipe that out on every owned-card toggle.
+    // NOTE: merge:true replaces the ENTIRE "owned" field wholesale (Firestore
+    // merge is shallow, top-level-field-only, not a deep merge into nested
+    // maps) — so this correctly drops stale/removed keys, it does not
+    // silently union them back in. If a removed card is coming back after
+    // refresh, the bug is upstream of this write (stale data being passed
+    // in), not in this write's merge behavior.
     await setDoc(ownedDocRef(_currentUid), { owned }, { merge: true });
+    console.log('[Firebase] write to ownedDocRef succeeded');
     // Keep the public share doc (if one exists) live too, so the shared link
     // always reflects current ownership rather than a frozen snapshot.
     if (_currentShareId) {
       await setDoc(shareDocRef(_currentShareId), { ownerUid: _currentUid, owned });
+      console.log('[Firebase] write to shareDocRef succeeded');
     }
-  } catch(e) { console.warn('Firebase write failed', e); }
+  } catch(e) { console.warn('[Firebase] write FAILED', e); }
 }
 
 // ── Listen for owned-changed events from the main script ────────────────────

@@ -70,6 +70,7 @@ function toggleOwned(c) {
   if (READ_ONLY_SHARE) return false; // visitors can't edit someone else's collection
   const owned = getOwned();
   const key = cardKey(c);
+  console.log('[DEBUG toggleOwned] key=', JSON.stringify(key), 'owned.has(key) BEFORE=', owned.has(key), 'owned.size BEFORE=', owned.size);
   let justAdded = false;
   if (owned.has(key)) {
     owned.delete(key);
@@ -77,7 +78,9 @@ function toggleOwned(c) {
     owned.set(key, { addedAt: Date.now() });
     justAdded = true;
   }
+  console.log('[DEBUG toggleOwned] owned.has(key) AFTER=', owned.has(key), 'owned.size AFTER=', owned.size, 'justAdded=', justAdded);
   setOwned(owned);
+  console.log('[DEBUG toggleOwned] localStorage right after setOwned=', localStorage.getItem(STORAGE_KEY));
   // Sync to Firestore via event (module script listens for this)
   window.dispatchEvent(new CustomEvent('owned-changed', { detail: { owned } }));
   updateCollectionValue();

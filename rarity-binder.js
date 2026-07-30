@@ -237,53 +237,59 @@ function shortRarity(r, name, num, subtypes, supertype) {
   if (!r) return '?';
   const isFull = isBeyondSetTotal(num);
   // Tag Team synthetic rarity — already rewritten in normalizeCard
-  if (r === 'Tag Team') return isFull ? 'FA Tag Team' : 'Tag Team';
+  if (r === 'Tag Team') return isFull ? 'TGTM' : 'TAG';
   // Rare Ultra: Full Art if beyond set total; otherwise defer to rareUltraBucket()
   // — the SAME classifier the rarity filter dropdown uses — so the pill shown
   // on a card always agrees with which filter bucket it falls into.
   if (r === 'Rare Ultra') {
-    if (isFull) return 'Full Art';
+    if (isFull) return 'FA';
     const bucket = rareUltraBucket({ name, subtypes, supertype });
     if (bucket === '__GX__') return 'GX';
     if (bucket === '__EX__') return 'EX';
-    if (bucket === '__FA_POKEMON__') return 'Full Art';
-    return 'FA Trainer';
+    if (bucket === '__FA_POKEMON__') return 'FA';
+    return 'FAT';
   }
   // Rare Rainbow: Full Art if beyond set total
   if (r === 'Rare Rainbow') {
-    if (isFull) return 'Full Art';
+    if (isFull) return 'FA';
   }
+  // FEATURE (2026-07-30): every rarity now maps to a distinct code, 4
+  // characters max (LV.X and the two ★-suffixed codes are the only
+  // exceptions, since those symbols/dots are already compact and
+  // well-established shorthand on their own). No two rarities share a code
+  // — verified by hand when this list was built; if you add a new rarity
+  // here, double-check it against every other value before committing.
   const map = {
     'MEGA_ATTACK_RARE':          'MAR',
     'Mega Attack Rare':          'MAR',
-    'Hyper Rare':                'Hyper Rare',
+    'Hyper Rare':                'HYPR',
     'Special Illustration Rare': 'SIR',
-    'Shiny Ultra Rare':          'Shiny UR',
-    'Rainbow Rare':              'Rainbow Rare',
-    'Rare Rainbow':              'Rainbow Rare',
+    'Shiny Ultra Rare':          'SHUR',
+    'Rainbow Rare':              'RBOW',
+    'Rare Rainbow':              'RBOW',
     'Galarian Gallery':          'GG',
     'Trainer Gallery Rare Holo': 'TG',
-    'ACE SPEC Rare':             'ACE SPEC',
-    'Classic Collection':        'Classic',
-    'Rare Shiny GX':             'Shiny GX',
-    'Rare Shiny':                'Shiny',
-    'Shiny Rare':                'Shiny R',
-    'Amazing Rare':              'Amazing Rare',
-    'Radiant Rare':              'Radiant Rare',
-    'Rare Secret':               'Secret Rare',
-    'Secret Rare':               'Secret Rare',
-    'Tag Team':                  'Tag Team GX',
+    'ACE SPEC Rare':             'ACE',
+    'Classic Collection':        'CLSC',
+    'Rare Shiny GX':             'SHGX',
+    'Rare Shiny':                'SHNY',
+    'Shiny Rare':                'SHYR',
+    'Amazing Rare':              'AMAZ',
+    'Radiant Rare':              'RADT',
+    'Rare Secret':               'SECR',
+    'Secret Rare':               'SECR',
+    'Tag Team':                  'TGTM',
     'Rare Ultra':                'EX/GX',
     'Illustration Rare':         'IR',
-    'Double Rare':               'Double Rare',
+    'Double Rare':               'DR',
     'Gold Star':                 '★',
-    'Rare Shining':              'Shining',
-    'LEGEND':                    'LEGEND',
+    'Rare Shining':              'SHNG',
+    'LEGEND':                    'LGND',
     'LV.X':                      'LV.X',
-    'Rare Prime':                'Prime',
-    'Rare BREAK':                'BREAK',
-    'Rare Holo Star':            'Holo ★',
-    'Rare Holo':                 'Rare Holo',
+    'Rare Prime':                'PRIM',
+    'Rare BREAK':                'BRK',
+    'Rare Holo Star':            'HO★',
+    'Rare Holo':                 'RH',
   };
   for (const [k, v] of Object.entries(map)) {
     if (r.includes(k)) return v;
@@ -1565,8 +1571,7 @@ function renderGridFlat(cards, el, title) {
         <div class="tile-name" title="${c.name||''}">${c.name||'—'}</div>
         <div class="tile-set" title="${c.set}">${c.set}</div>
         <div class="tile-footer">
-          <div class="tile-price-row"><span class="tile-price">${c.price!=='N/A'?c.price:'—'}</span>${changeBadge}</div>
-          ${seventyPercentBadgeHtml(c)}
+          <div class="tile-price-row"><span class="tile-price">${c.price!=='N/A'?c.price:'—'}</span>${seventyPercentBadgeHtml(c)}${changeBadge}</div>
           <span class="pill ${cls}">${short}</span>
         </div>
       </div>
@@ -1611,8 +1616,7 @@ function renderGrid(cards, el) {
           <div class="tile-name" title="${c.name||''}">${c.name||'—'}</div>
           <div class="tile-set" title="${c.set}">${c.set}</div>
           <div class="tile-footer">
-            <div class="tile-price-row"><span class="tile-price">${c.price!=='N/A'?c.price:'—'}</span>${changeBadge}</div>
-            ${seventyPercentBadgeHtml(c)}
+            <div class="tile-price-row"><span class="tile-price">${c.price!=='N/A'?c.price:'—'}</span>${seventyPercentBadgeHtml(c)}${changeBadge}</div>
             <span class="pill ${cls}">${short}</span>
           </div>
         </div>

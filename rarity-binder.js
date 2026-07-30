@@ -158,6 +158,17 @@ function updateCollectionValue() {
 function toggleOwnedFilter() {
   showOwnedOnly = !showOwnedOnly;
   document.getElementById('statOwnedBox').classList.toggle('active', showOwnedOnly);
+  // BUG FIX (2026-07-30): if the Owned filter is toggled ON while on the main
+  // page and you THEN enter a set, renderSetDetail only builds DOM rows for
+  // the (already owned-only-filtered) subset of cards. Toggling the filter
+  // back OFF while still in that same set previously hit the "same set
+  // already rendered" fast path (filterSetDetailInPlace), which only
+  // hides/shows EXISTING rows — it can't reveal cards that were never built
+  // into the DOM in the first place, so non-owned cards stayed missing.
+  // Forcing _lastRenderedSet = null here means the next render() always does
+  // a full rebuild instead of the in-place fast path, so every row for the
+  // set actually exists before hide/show logic runs.
+  _lastRenderedSet = null;
   render();
 }
 

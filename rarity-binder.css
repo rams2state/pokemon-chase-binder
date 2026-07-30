@@ -485,6 +485,11 @@
   .price-flat{color:var(--dim);}
   .price-stale{font-size:10.5px;font-weight:700;padding:1px 5px;border-radius:4px;display:inline-block;margin-left:4px;white-space:nowrap;background:#fbbf2422;color:#fbbf24;cursor:help;}
   .tile-price-row{display:flex;align-items:center;flex-wrap:wrap;gap:2px;}
+
+  /* "70%" price (70% of market price) — quiet secondary label, sits below/
+     beside the main price without competing with it visually. */
+  .price-70pct{font-size:10.5px;font-weight:600;color:var(--dim);white-space:nowrap;cursor:help;}
+  .modal-70pct{font-size:13px;font-weight:600;color:var(--dim);margin-top:2px;}
   /* List view change column */
   .td-change{font-size:12px;font-weight:700;white-space:nowrap;}
 

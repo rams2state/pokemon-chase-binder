@@ -65,13 +65,18 @@ function initReadOnlyShareView(shareId) {
   if (banner) banner.style.display = '';
 
   const applySnapshot = snap => {
-    const keys = snap.exists() ? (snap.data().keys || []) : [];
+    // FEATURE (2026-07-29): "owned" data is now { [key]: {addedAt} } rather
+    // than a plain array of keys (see cardKey/normalizeOwnedData in
+    // rarity-binder.js) — pass whatever's in the doc's "owned" field through
+    // as-is and let setSharedOwned()'s normalizeOwnedData() call handle
+    // both the new object format and any older plain-array data.
+    const raw = snap.exists() ? (snap.data().owned ?? snap.data().keys ?? []) : [];
     // setSharedOwned lives in rarity-binder.js. That script may not have run
     // yet (module scripts can execute before/after plain scripts), so retry
     // briefly rather than silently dropping the first snapshot.
     const tryApply = () => {
-      if (typeof window.setSharedOwned === 'function') window.setSharedOwned(keys);
-      else if (typeof setSharedOwned === 'function') setSharedOwned(keys);
+      if (typeof window.setSharedOwned === 'function') window.setSharedOwned(raw);
+      else if (typeof setSharedOwned === 'function') setSharedOwned(raw);
       else { setTimeout(tryApply, 50); return; }
     };
     tryApply();
@@ -102,18 +107,46 @@ function ownedDocRef(uid) {
   return doc(db, 'users', uid, 'data', 'owned');
 }
 
+// FEATURE (2026-07-29): owned data moved from a plain array of keys to
+// { [key]: {addedAt} } (see cardKey/normalizeOwnedData/getOwned in
+// rarity-binder.js). Firestore docs now store this under an "owned" field
+// (object), while "keys" (array) is kept ONLY as a read fallback for any
+// doc written before this change — new writes always use "owned".
+function toPlainObject(raw) {
+  // Accepts either the old array-of-keys format or the new object format
+  // (as read back from Firestore, which is already a plain object/array —
+  // no need for the Map machinery that lives in rarity-binder.js here).
+  if (Array.isArray(raw)) {
+    const now = Date.now();
+    const obj = {};
+    for (const key of raw) obj[key] = { addedAt: now };
+    return obj;
+  }
+  return raw && typeof raw === 'object' ? raw : {};
+}
+
 async function mergeFirestoreToLocal(uid) {
   try {
     console.log('[Firebase] mergeFirestoreToLocal start, uid=', uid);
     const snap = await getDoc(ownedDocRef(uid));
     console.log('[Firebase] snap.exists=', snap.exists());
     if (snap.exists()) {
-      const remote = snap.data().keys || [];
-      console.log('[Firebase] remote keys count=', remote.length);
-      const local = JSON.parse(localStorage.getItem('pokemon-rarity-binder-owned') || '[]');
-      const merged = [...new Set([...local, ...remote])];
+      const data = snap.data();
+      const remote = toPlainObject(data.owned ?? data.keys ?? []);
+      console.log('[Firebase] remote keys count=', Object.keys(remote).length);
+      const local = toPlainObject(JSON.parse(localStorage.getItem('pokemon-rarity-binder-owned') || '{}'));
+      // Merge: a card owned on either side stays owned. If both sides have
+      // it, keep whichever addedAt is EARLIER (the more likely true
+      // original add time — the other side's timestamp is just whenever
+      // that device happened to last write/migrate the record).
+      const merged = { ...remote };
+      for (const [key, meta] of Object.entries(local)) {
+        if (!merged[key] || (meta.addedAt && meta.addedAt < merged[key].addedAt)) {
+          merged[key] = meta;
+        }
+      }
       localStorage.setItem('pokemon-rarity-binder-owned', JSON.stringify(merged));
-      console.log('[Firebase] merged count=', merged.length);
+      console.log('[Firebase] merged count=', Object.keys(merged).length);
     } else {
       console.log('[Firebase] No Firestore doc found for this user');
     }
@@ -124,7 +157,8 @@ function startFirestoreListener(uid) {
   if (_firestoreUnsub) _firestoreUnsub();
   _firestoreUnsub = onSnapshot(ownedDocRef(uid), snap => {
     if (!snap.exists()) return;
-    const remote = snap.data().keys || [];
+    const data = snap.data();
+    const remote = toPlainObject(data.owned ?? data.keys ?? []);
     localStorage.setItem('pokemon-rarity-binder-owned', JSON.stringify(remote));
     // Only update UI if cards are already loaded — loadCards() will pick up
     // the correct localStorage state on its own if it runs after this
@@ -134,16 +168,20 @@ function startFirestoreListener(uid) {
   });
 }
 
-async function pushOwnedToFirestore(ownedSet) {
+async function pushOwnedToFirestore(ownedMap) {
   if (!_currentUid) return;
   try {
+    // ownedMap is the Map from rarity-binder.js's getOwned()/toggleOwned() —
+    // serialize to a plain { [key]: {addedAt} } object for Firestore.
+    const owned = {};
+    for (const [key, meta] of ownedMap) owned[key] = meta;
     // merge:true — this doc may also carry a shareId field (see _fbShare below),
     // and a plain setDoc would silently wipe that out on every owned-card toggle.
-    await setDoc(ownedDocRef(_currentUid), { keys: [...ownedSet] }, { merge: true });
+    await setDoc(ownedDocRef(_currentUid), { owned }, { merge: true });
     // Keep the public share doc (if one exists) live too, so the shared link
     // always reflects current ownership rather than a frozen snapshot.
     if (_currentShareId) {
-      await setDoc(shareDocRef(_currentShareId), { ownerUid: _currentUid, keys: [...ownedSet] });
+      await setDoc(shareDocRef(_currentShareId), { ownerUid: _currentUid, owned });
     }
   } catch(e) { console.warn('Firebase write failed', e); }
 }
@@ -200,12 +238,12 @@ window._fbShare = async () => {
   try {
     if (!_currentShareId) {
       _currentShareId = crypto.randomUUID();
-      // Save the new shareId onto the user's own doc (merge — don't clobber `keys`).
+      // Save the new shareId onto the user's own doc (merge — don't clobber `owned`).
       await setDoc(ownedDocRef(_currentUid), { shareId: _currentShareId }, { merge: true });
     }
     // Ensure the public share doc exists / is current before copying the link.
-    const owned = JSON.parse(localStorage.getItem('pokemon-rarity-binder-owned') || '[]');
-    await setDoc(shareDocRef(_currentShareId), { ownerUid: _currentUid, keys: owned });
+    const owned = toPlainObject(JSON.parse(localStorage.getItem('pokemon-rarity-binder-owned') || '{}'));
+    await setDoc(shareDocRef(_currentShareId), { ownerUid: _currentUid, owned });
 
     const url = shareUrlFor(_currentShareId);
     await navigator.clipboard.writeText(url);

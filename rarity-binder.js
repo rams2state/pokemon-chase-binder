@@ -16,23 +16,54 @@ const READ_ONLY_SHARE = !!SHARE_ID;
 let _sharedOwned = new Set(); // populated by firebase.js once the share doc loads
 
 // ─── OWNED COLLECTION (persisted to localStorage, unless viewing a share) ────
+// FEATURE (2026-07-29): owned cards now carry metadata (currently just
+// addedAt, a ms timestamp — foundation for the planned "recent purchases"
+// sort/filter, and for a future optional purchase-price field) instead of
+// just being a plain Set of key strings. Storage format is now an object
+// map { [cardKey]: { addedAt } } rather than an array of keys.
+// getOwned() returns a Map (key -> metadata) so existing `.has(key)` call
+// sites elsewhere in the file keep working unchanged.
+//
+// BACKWARD COMPAT: any pre-existing localStorage/Firestore data is still a
+// plain array of key strings (the old format). normalizeOwnedData() upgrades
+// that transparently on read — migrated cards get addedAt set to "now"
+// since their real add time was never recorded, which is the best available
+// answer (they'll just sort to the bottom of "recent purchases" over time
+// as newly-added cards push past them).
 function cardKey(c) {
   return `${c.set}||${c.num}||${c.name}`;
 }
+function normalizeOwnedData(raw) {
+  // raw is whatever came out of JSON.parse — either the old array-of-keys
+  // format, or the new { [key]: {addedAt} } object format.
+  const map = new Map();
+  if (Array.isArray(raw)) {
+    const now = Date.now();
+    for (const key of raw) map.set(key, { addedAt: now });
+  } else if (raw && typeof raw === 'object') {
+    for (const [key, meta] of Object.entries(raw)) {
+      map.set(key, { addedAt: (meta && meta.addedAt) || Date.now() });
+    }
+  }
+  return map;
+}
 function getOwned() {
   if (READ_ONLY_SHARE) return _sharedOwned;
-  try { return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')); }
-  catch(e) { return new Set(); }
+  try { return normalizeOwnedData(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')); }
+  catch(e) { return new Map(); }
 }
 function setOwned(owned) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify([...owned]));
+  // Serialize the Map back to the { [key]: {addedAt} } object format.
+  const obj = {};
+  for (const [key, meta] of owned) obj[key] = meta;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
 }
 function toggleOwned(c) {
   if (READ_ONLY_SHARE) return; // visitors can't edit someone else's collection
   const owned = getOwned();
   const key = cardKey(c);
   if (owned.has(key)) owned.delete(key);
-  else owned.add(key);
+  else owned.set(key, { addedAt: Date.now() });
   setOwned(owned);
   // Sync to Firestore via event (module script listens for this)
   window.dispatchEvent(new CustomEvent('owned-changed', { detail: { owned } }));
@@ -41,11 +72,17 @@ function toggleOwned(c) {
 function isOwned(c) {
   return getOwned().has(cardKey(c));
 }
+// Returns the addedAt timestamp (ms) for an owned card, or 0 if not owned /
+// unknown — used by the "Recent Purchases" sort.
+function ownedAddedAt(c) {
+  const meta = getOwned().get(cardKey(c));
+  return (meta && meta.addedAt) || 0;
+}
 
 // Called by firebase.js once the shares/{shareId} doc loads (and again on
 // every live update from its onSnapshot listener).
-function setSharedOwned(keys) {
-  _sharedOwned = new Set(keys || []);
+function setSharedOwned(raw) {
+  _sharedOwned = normalizeOwnedData(raw || []);
   updateCollectionValue();
   // Force a full rebuild rather than the cheap same-set hide/show fast path
   // in _doRender (see _lastRenderedSet) — that path only toggles row
@@ -492,6 +529,28 @@ function priceVal(p) {
   return parseFloat(p.replace(/[^0-9.]/g, '')) || 0;
 }
 
+// FEATURE (2026-07-29): "70%" price — exactly 70% of the current market
+// price. Computed on the fly from c.price at render time rather than stored
+// in the CSV: it's a single multiplication, always stays in sync with the
+// live market price with zero extra collector/storage cost, and needs no
+// schema change. Returns '' (nothing rendered) when there's no real market
+// price to base it on.
+function seventyPercentVal(c) {
+  const v = priceVal(c.price);
+  return v > 0 ? v * 0.7 : null;
+}
+function seventyPercentLabel(c) {
+  const v = seventyPercentVal(c);
+  return v !== null ? `$${v.toFixed(2)}` : null;
+}
+// Compact inline HTML badge — used in list rows / grid tiles where space is
+// tight, styled to sit quietly next to the main price rather than compete
+// with it.
+function seventyPercentBadgeHtml(c) {
+  const label = seventyPercentLabel(c);
+  return label ? `<span class="price-70pct" title="70% of market price">70%: ${label}</span>` : '';
+}
+
 // Returns HTML badge string for price change, or ''
 function priceChangeBadge(current, prev) {
   const cv = priceVal(current);
@@ -770,6 +829,13 @@ function getFiltered() {
       return av - bv;
     }
     if (sort === 'name-asc') return (a.name || '').localeCompare(b.name || '');
+    if (sort === 'recent-purchase') {
+      // Most-recently-marked-owned first. Unowned cards (addedAt 0) sort to
+      // the very end — this view is only meaningful for owned cards, but we
+      // don't hard-filter to owned-only here so it still composes normally
+      // with the existing "Owned" stat-box filter and other filters/search.
+      return ownedAddedAt(b) - ownedAddedAt(a);
+    }
     return 0;
   });
 
@@ -1007,6 +1073,7 @@ function renderTrend(el) {
         <span class="crow-price">${c.price!=='N/A'?c.price:'—'}</span>
         <div style="font-size:10px;color:var(--dim);text-align:right;">was ${c.prevPrice}</div>
         ${badge}
+        ${seventyPercentBadgeHtml(c)}
       </div>
     </div>`;
   });
@@ -1307,6 +1374,7 @@ function renderSetDetail(cards, el) {
         <span class="crow-name">${c.name||'—'}</span>
         <div class="crow-price-wrap">
           <span class="crow-price">${c.price!=='N/A'?c.price:'—'}</span>${changeBadge}
+          ${seventyPercentBadgeHtml(c)}
         </div>
       </div>`;
     }
@@ -1352,6 +1420,7 @@ function renderGrid(cards, el) {
           <div class="tile-set" title="${c.set}">${c.set}</div>
           <div class="tile-footer">
             <div class="tile-price-row"><span class="tile-price">${c.price!=='N/A'?c.price:'—'}</span>${changeBadge}</div>
+            ${seventyPercentBadgeHtml(c)}
             <span class="pill ${cls}">${short}</span>
           </div>
         </div>
@@ -1471,6 +1540,10 @@ function openModal(c, updateList = true) {
   }
   const staleBadge = stalePriceBadge(c);
   if (staleBadge) priceHtml += ' ' + staleBadge;
+  const seventyLabel = seventyPercentLabel(c);
+  if (seventyLabel) {
+    priceHtml += `<div class="modal-70pct" title="70% of market price">70%: ${seventyLabel}</div>`;
+  }
   document.getElementById('mPrice').innerHTML = priceHtml;
 
   const img = document.getElementById('mImg');

@@ -70,19 +70,28 @@ function toggleOwned(c) {
   if (READ_ONLY_SHARE) return false; // visitors can't edit someone else's collection
   const owned = getOwned();
   const key = cardKey(c);
-  console.log('[DEBUG toggleOwned] key=', JSON.stringify(key), 'owned.has(key) BEFORE=', owned.has(key), 'owned.size BEFORE=', owned.size);
   let justAdded = false;
+  let meta = null;
   if (owned.has(key)) {
     owned.delete(key);
   } else {
-    owned.set(key, { addedAt: Date.now() });
+    meta = { addedAt: Date.now() };
+    owned.set(key, meta);
     justAdded = true;
   }
-  console.log('[DEBUG toggleOwned] owned.has(key) AFTER=', owned.has(key), 'owned.size AFTER=', owned.size, 'justAdded=', justAdded);
   setOwned(owned);
-  console.log('[DEBUG toggleOwned] localStorage right after setOwned=', localStorage.getItem(STORAGE_KEY));
-  // Sync to Firestore via event (module script listens for this)
-  window.dispatchEvent(new CustomEvent('owned-changed', { detail: { owned } }));
+  // BUG FIX (2026-07-30): Sync to Firestore as a single-key DELTA, not the
+  // whole map. The old code sent the entire `owned` object on every toggle;
+  // if a stale client (a backgrounded tab/phone that hadn't picked up a
+  // recent removal yet) fired its own write afterward, it would silently
+  // resurrect every card it still thought was owned, because it always
+  // overwrote the whole field. Sending just {key, action} lets each write
+  // touch only the one field that actually changed, so no client can ever
+  // stomp another client's unrelated changes — see firebase.js's
+  // pushOwnedDelta, which uses dot-notation updates / deleteField().
+  window.dispatchEvent(new CustomEvent('owned-changed', {
+    detail: { owned, key, action: justAdded ? 'add' : 'remove', meta }
+  }));
   updateCollectionValue();
   return justAdded;
 }
@@ -107,7 +116,9 @@ function setPurchasePrice(c, price) {
   meta.purchasePrice = price;
   owned.set(key, meta);
   setOwned(owned);
-  window.dispatchEvent(new CustomEvent('owned-changed', { detail: { owned } }));
+  window.dispatchEvent(new CustomEvent('owned-changed', {
+    detail: { owned, key, action: 'add', meta }
+  }));
 }
 // Returns the recorded purchase price (number) for an owned card, or null if
 // not recorded (skipped, or an older card added before this feature).

@@ -1,7 +1,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { getFirestore, doc, setDoc, getDoc, onSnapshot }
+import { getFirestore, doc, setDoc, getDoc, onSnapshot, deleteField }
   from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -173,40 +173,57 @@ function startFirestoreListener(uid) {
   });
 }
 
-async function pushOwnedToFirestore(ownedMap) {
-  console.log('[Firebase] pushOwnedToFirestore called, uid=', _currentUid, 'ownedMap size=', ownedMap ? ownedMap.size : 'null/undefined');
+// BUG FIX (2026-07-30): writes ONLY the single card's field that changed,
+// using dot-notation ("owned.<key>") so Firestore merges it into the nested
+// map without touching any other key, and deleteField() to remove a key
+// cleanly. This replaces the old approach of re-sending the ENTIRE owned
+// object on every toggle.
+//
+// Root cause of "un-owned card reappears after refresh": with a full-object
+// write, ANY client that still had a stale in-memory copy of `owned` (e.g. a
+// backgrounded tab, or a second device like a phone left open) would, upon
+// firing its own write for an unrelated reason, silently resurrect every
+// card it still thought was owned — because its stale full snapshot
+// overwrote the entire field, including the removal you just made elsewhere.
+// The app's own success logs looked correct because THAT write really did
+// succeed and really did contain the right (shrinking) data; a DIFFERENT,
+// later write from a stale client is what clobbered it afterward, and that
+// second write never appeared in the tab you were watching.
+//
+// Per-key delta writes make every write commutative and order-independent:
+// no client can ever undo another client's change to a different key, and
+// even a very stale client re-sending an old ADD for a key you removed
+// elsewhere only affects that one key (still not perfect for true
+// last-write-wins conflicts on the SAME key from two clients, but that's a
+// far narrower, far rarer race than "any write from any stale tab wipes
+// everything").
+async function pushOwnedDelta(key, action, meta) {
+  console.log('[Firebase] pushOwnedDelta called, uid=', _currentUid, 'key=', key, 'action=', action);
   if (!_currentUid) {
-    console.warn('[Firebase] pushOwnedToFirestore: no _currentUid, write SKIPPED — this is likely the bug if you just toggled a card.');
+    console.warn('[Firebase] pushOwnedDelta: no _currentUid, write SKIPPED.');
     return;
   }
   try {
-    // ownedMap is the Map from rarity-binder.js's getOwned()/toggleOwned() —
-    // serialize to a plain { [key]: {addedAt} } object for Firestore.
-    const owned = {};
-    for (const [key, meta] of ownedMap) owned[key] = meta;
-    console.log('[Firebase] writing owned field, key count=', Object.keys(owned).length);
-    // merge:true — this doc may also carry a shareId field (see _fbShare below),
-    // and a plain setDoc would silently wipe that out on every owned-card toggle.
-    // NOTE: merge:true replaces the ENTIRE "owned" field wholesale (Firestore
-    // merge is shallow, top-level-field-only, not a deep merge into nested
-    // maps) — so this correctly drops stale/removed keys, it does not
-    // silently union them back in. If a removed card is coming back after
-    // refresh, the bug is upstream of this write (stale data being passed
-    // in), not in this write's merge behavior.
-    await setDoc(ownedDocRef(_currentUid), { owned }, { merge: true });
-    console.log('[Firebase] write to ownedDocRef succeeded');
-    // Keep the public share doc (if one exists) live too, so the shared link
-    // always reflects current ownership rather than a frozen snapshot.
+    const fieldPath = 'owned.' + key;
+    const value = action === 'remove' ? deleteField() : meta;
+    await setDoc(ownedDocRef(_currentUid), { [fieldPath]: value }, { merge: true });
+    console.log('[Firebase] delta write to ownedDocRef succeeded');
+    // Keep the public share doc (if one exists) live too. The share doc has
+    // no other fields nested under "owned" that could collide, so the same
+    // dot-notation delta approach applies here too.
     if (_currentShareId) {
-      await setDoc(shareDocRef(_currentShareId), { ownerUid: _currentUid, owned });
-      console.log('[Firebase] write to shareDocRef succeeded');
+      await setDoc(shareDocRef(_currentShareId), { ownerUid: _currentUid, [fieldPath]: value }, { merge: true });
+      console.log('[Firebase] delta write to shareDocRef succeeded');
     }
-  } catch(e) { console.warn('[Firebase] write FAILED', e); }
+  } catch(e) { console.warn('[Firebase] delta write FAILED', e); }
 }
 
 // ── Listen for owned-changed events from the main script ────────────────────
 window.addEventListener('owned-changed', e => {
-  pushOwnedToFirestore(e.detail.owned);
+  const { key, action, meta } = e.detail;
+  if (key && action) {
+    pushOwnedDelta(key, action, meta);
+  }
 });
 
 // ── Auth button handler ─────────────────────────────────────────────────────

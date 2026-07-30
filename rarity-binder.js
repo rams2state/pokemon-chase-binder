@@ -6,6 +6,20 @@ let showOwnedOnly = false;
 const STORAGE_KEY = 'pokemon-rarity-binder-owned';
 let _priceChart = null;  // Chart.js instance
 
+// FEATURE (2026-07-30): sorts that represent one global ordering across
+// every set (most recently purchased, or highest/lowest price) rather than
+// a within-set ordering. Both list view (renderFlatList) and grid view
+// (renderGridFlat) skip the normal era/set grouping for these — grouping
+// would chop the single global order back into per-set chunks, which is
+// exactly what these sorts are meant to avoid. Shared here so list and grid
+// can't drift out of sync on which sorts get flat treatment.
+const FLAT_SORTS = new Set(['recent-purchase', 'price-desc', 'price-asc']);
+const FLAT_SORT_TITLES = {
+  'recent-purchase': '🕐 Recent Purchases',
+  'price-desc': '💰 Price: High to Low',
+  'price-asc': '💰 Price: Low to High',
+};
+
 // ─── SHARED (READ-ONLY) VIEW ──────────────────────────────────────────────────
 // If the page was opened via a share link (?share=<id>), we're viewing someone
 // else's collection: card data still loads normally from the CSV (public,
@@ -1234,7 +1248,12 @@ function _doRender() {
         el.innerHTML = `<div class="empty"><div class="display">Search to explore</div><p>Type a card name, Pokémon, or set — or apply a filter — to see results in grid view.</p></div>`;
       } else {
         _lastRenderedSet = null;
-        renderGrid(cards, el);
+        const sortValueGrid = document.getElementById('sortBy').value;
+        if (FLAT_SORTS.has(sortValueGrid)) {
+          renderGridFlat(cards, el, FLAT_SORT_TITLES[sortValueGrid]);
+        } else {
+          renderGrid(cards, el);
+        }
       }
     }
     return;
@@ -1251,16 +1270,10 @@ function _doRender() {
   // price/recent order still makes sense grouped by that set alone via the
   // normal set-detail view.
   const sortValue = document.getElementById('sortBy').value;
-  const FLAT_SORTS = new Set(['recent-purchase', 'price-desc', 'price-asc']);
   if (FLAT_SORTS.has(sortValue) && !_activeSet) {
     _setDetailOrder = null;
     _lastRenderedSet = null;
-    const titles = {
-      'recent-purchase': '🕐 Recent Purchases',
-      'price-desc': '💰 Price: High to Low',
-      'price-asc': '💰 Price: Low to High',
-    };
-    renderFlatList(cards, el, titles[sortValue]);
+    renderFlatList(cards, el, FLAT_SORT_TITLES[sortValue]);
     return;
   }
   // If a set is active and still has cards in filtered result, show detail
@@ -1518,6 +1531,48 @@ function renderSetDetail(cards, el) {
     html += `</div></div>`; // detail-card-grid + rarity-group
   }
   _setDetailOrder = onScreenOrder;
+  el.innerHTML = html;
+}
+
+// FEATURE (2026-07-30): flat (ungrouped-by-era) grid — companion to
+// renderFlatList() for list view. Same reasoning: "Recent Purchases" and the
+// price sorts are one global ordering across every set, and renderGrid()'s
+// era-section bucketing would otherwise scatter that order back across
+// separate sections (e.g. your most-recent purchase could land in a section
+// far down the page while an older buy in a "newer" era shows first).
+function renderGridFlat(cards, el, title) {
+  let html = `<div class="era-section">
+      <div class="era-header">
+        <div class="era-title">${title}</div>
+        <div class="era-count">${cards.length} card${cards.length !== 1 ? 's' : ''}</div>
+      </div>
+      <div class="card-grid">`;
+  for (const c of cards) {
+    const cls = rarityClass(c.rarity, c.name, c.num);
+    const short = shortRarity(c.rarity, c.name, c.num, c.subtypes, c.supertype);
+    const owned = isOwned(c);
+    const cdata = JSON.stringify(c).replace(/'/g, '&#39;');
+    const key = cardKey(c).replace(/[^a-z0-9]/gi,'_');
+    const changeBadge = priceChangeBadge(c.price, c.prevPrice);
+    const imgSrc = c.pic && c.pic !== 'N/A' ? c.pic : '';
+    const imgTag = imgSrc
+      ? `<img src="${imgSrc}" alt="${c.name||''}" loading="lazy" onerror="this.style.background='var(--panel2)';this.removeAttribute('src')">`
+      : `<div style="aspect-ratio:2.5/3.5;background:var(--panel2);display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:12px;">No Image</div>`;
+    html += `<div class="card-tile${owned?' owned':''}" id="tile-${key}" onclick='openModal(${cdata})'>
+      ${imgTag}
+      <div class="tile-check" onclick='event.stopPropagation();handleToggle(${cdata})'>${owned?'✓':''}</div>
+      <div class="tile-info">
+        <div class="tile-name" title="${c.name||''}">${c.name||'—'}</div>
+        <div class="tile-set" title="${c.set}">${c.set}</div>
+        <div class="tile-footer">
+          <div class="tile-price-row"><span class="tile-price">${c.price!=='N/A'?c.price:'—'}</span>${changeBadge}</div>
+          ${seventyPercentBadgeHtml(c)}
+          <span class="pill ${cls}">${short}</span>
+        </div>
+      </div>
+    </div>`;
+  }
+  html += `</div></div>`;
   el.innerHTML = html;
 }
 

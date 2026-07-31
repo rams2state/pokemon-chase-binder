@@ -117,7 +117,8 @@ HISTORY_FILE = os.path.join(PROJECT_DIR, "card-price-history.json")
 #     - Special Illustration Rare (~1:72-86) — SIR/SAR, the painterly full-bleed chase tier
 #     - Illustration Rare (~1:10-12)    — IR, full-art borderless; included for artistic legacy
 #     - ACE SPEC Rare                   — 1-per-deck mechanic; low pull rate, high demand
-#     - Double Rare (select IDs only)   — Charizard ex OBF, Pikachu ex SSP; most DR ex are bulk
+#     - Double Rare — REMOVED (2026-07-30): even the one hand-picked chase
+#       exception (Charizard ex OBF) was dropped by request; not tracked at all now
 #
 #   SWORD & SHIELD ERA:
 #     - Hyper Rare (Rainbow Rare)       — rarest single-card pull in SWSH sets
@@ -183,11 +184,12 @@ QUERIES = [
     # Master Ball, Prime Catcher, Unfair Stamp sit $30-50+. SIR variants also captured by SIR query.
     'rarity:"ACE SPEC Rare"',
 
-    # Double Rare: NOT queried by rarity — produces too much bulk noise.
-    # Only the specific cards with genuine collector value are fetched by card ID.
-    # All IDs verified against the pokemontcg.io API (July 2026).
-    # Most Double Rare ex cards sit $1-6 market — only iconic/high-demand exceptions included.
-    'id:"sv3-125"',  # Charizard ex (Obsidian Flames) — Tera Dark variant; confirmed DR, $5-6
+    # Double Rare: REMOVED ENTIRELY (2026-07-30) — was NOT queried by rarity
+    # (too much bulk noise; most Double Rare ex cards sit $1-6 market), and
+    # the one hand-picked exception (sv3-125, Charizard ex Obsidian Flames)
+    # was removed by request — Double Rare is no longer treated as a chase
+    # rarity at all, and has also been removed from the rarity filter
+    # dropdown in the frontend (see populateFilters in rarity-binder.js).
     # sv8-57 removed: Pikachu ex (Surging Sparks) DR sits ~$4 market — not chase tier
     # sv1-* IDs removed: all were wrong (API IDs don't match expected cards)
     # sv3-223 removed: confirmed SIR, already captured by SIR query above
@@ -366,6 +368,27 @@ QUERIES = [
     'set.name:"Wizards Black Star Promos"',
 
     # ══════════════════════════════════════════════════════════════════════════
+    # MODERN-ERA BLACK STAR PROMOS (XY through SV) — fetched wholesale, price-
+    # floor-filtered downstream, NOT rarity-filtered upstream.
+    # ══════════════════════════════════════════════════════════════════════════
+    # FEATURE (2026-07-30): before this, ONLY WOTC-era promos (above) had any
+    # path into the app — every XY/SM/SWSH/SV Black Star Promo was completely
+    # invisible regardless of value. Confirmed via direct API check: 23 promo
+    # Charizard cards alone exist across these four sets, several $50-580
+    # market, and precisely zero were previously reachable. These sets are
+    # large (200-300+ cards each, mostly bulk league/prerelease-stamp promos
+    # worth $1-10), so we can't just whitelist the whole set like WOTC's
+    # smaller 53-card set — instead fetch every Promo-rarity card from each
+    # set here, and let is_chase()'s PROMO_PRICE_FLOOR check (see below) do
+    # the actual filtering by real market value, so only genuine chase-tier
+    # promos (low pull rate, real demand) make it into the final CSV instead
+    # of flooding in every $2 league promo ever printed.
+    'rarity:"Promo" set.id:xyp',    # XY Black Star Promos
+    'rarity:"Promo" set.id:smp',    # SM Black Star Promos
+    'rarity:"Promo" set.id:swshp',  # SWSH Black Star Promos
+    'rarity:"Promo" set.id:svp',    # Scarlet & Violet Black Star Promos
+
+    # ══════════════════════════════════════════════════════════════════════════
     # PALDEAN FATES — SHINY PULLS (SV era shiny set, 2024)
     # ══════════════════════════════════════════════════════════════════════════
 
@@ -451,32 +474,70 @@ def fetch_cards_by_query(query_string, api_key):
     return all_cards
 
 
+# Rough, hand-maintained EUR->USD rate for the Cardmarket price fallback
+# below (see parse_card_price). Not live/API-fetched — this is a coarse
+# estimate, fine for a hobby collection tracker, not for anything financial.
+# Update occasionally if it drifts noticeably (checked July 2026: ~1.15).
+EUR_TO_USD_RATE = 1.15
+
 def parse_card_price(card_data):
     """Extracts the best available market price. Returns (float_or_None, '$X.XX' or 'N/A')."""
     tcg_prices = card_data.get("tcgplayer", {}).get("prices", {})
-    if not tcg_prices:
-        return None, "N/A"
+    if tcg_prices:
+        # Priority order — 1st Edition first for Base Series cards
+        price_types = ["1stEditionHolofoil", "holofoil", "reverseHolofoil", "normal"]
+        # Pass 1: try market price across known types
+        for p_type in price_types:
+            if p_type in tcg_prices:
+                market_val = tcg_prices[p_type].get("market")
+                if market_val:
+                    return round(float(market_val), 2), f"${market_val:.2f}"
 
-    # Priority order — 1st Edition first for Base Series cards
-    price_types = ["1stEditionHolofoil", "holofoil", "reverseHolofoil", "normal"]
-    # Pass 1: try market price across known types
-    for p_type in price_types:
-        if p_type in tcg_prices:
-            market_val = tcg_prices[p_type].get("market")
+        # Pass 2: try ALL available price types for market price
+        for p_type, prices in tcg_prices.items():
+            market_val = prices.get("market")
             if market_val:
                 return round(float(market_val), 2), f"${market_val:.2f}"
 
-    # Pass 2: try ALL available price types for market price
-    for p_type, prices in tcg_prices.items():
-        market_val = prices.get("market")
-        if market_val:
-            return round(float(market_val), 2), f"${market_val:.2f}"
+        # Pass 3: fall back to mid price across all types
+        for p_type, prices in tcg_prices.items():
+            mid_val = prices.get("mid")
+            if mid_val:
+                return round(float(mid_val), 2), f"${mid_val:.2f}"
 
-    # Pass 3: fall back to mid price across all types
-    for p_type, prices in tcg_prices.items():
-        mid_val = prices.get("mid")
-        if mid_val:
-            return round(float(mid_val), 2), f"${mid_val:.2f}"
+    # BUG FIX (2026-07-30): a real, non-trivial chunk of cards (mostly the
+    # "a"/"b"-suffix alt-numbered Mega/secret variants, e.g. xy4-24a "M
+    # Manectric-EX", plus at least one vintage card, Base #8 Machamp) have NO
+    # tcgplayer.prices block at all in pokemontcg.io's data (confirmed via
+    # direct API queries) — TCGplayer apparently stopped tracking THIS
+    # SPECIFIC pokemontcg.io/TCGplayer product listing, even though the card
+    # is very much real and still actively traded (checked xy4-24a directly
+    # on tcgplayer.com — it's alive there under a separate "Alternate Art
+    # Promos (PR)" listing, $5.99-$13.99 market, just not the listing
+    # pokemontcg.io's price sync links to). Cardmarket, however, is a
+    # DIFFERENT marketplace (Europe-based) with its own independent buyer
+    # pool — its trendPrice for this card came back ~€50 (~$58), wildly
+    # higher than the real US TCGplayer price, almost certainly because
+    # European collectors value this particular promo variant differently.
+    # So: prefer the more conservative Cardmarket fields (lowPrice, then
+    # averageSellPrice) over trendPrice, since trendPrice is the field most
+    # prone to this kind of cross-market distortion — still an estimate, not
+    # a reliable stand-in for a real TCGplayer figure, but closer than
+    # trendPrice was. Converted to USD via the rough EUR_TO_USD_RATE above.
+    cardmarket_prices = card_data.get("cardmarket", {}).get("prices", {})
+    if cardmarket_prices:
+        low_eur = cardmarket_prices.get("lowPrice")
+        if low_eur:
+            usd = round(float(low_eur) * EUR_TO_USD_RATE, 2)
+            return usd, f"${usd:.2f}"
+        avg_eur = cardmarket_prices.get("averageSellPrice")
+        if avg_eur:
+            usd = round(float(avg_eur) * EUR_TO_USD_RATE, 2)
+            return usd, f"${usd:.2f}"
+        trend_eur = cardmarket_prices.get("trendPrice")
+        if trend_eur:
+            usd = round(float(trend_eur) * EUR_TO_USD_RATE, 2)
+            return usd, f"${usd:.2f}"
 
     return None, "N/A"
 
@@ -1192,7 +1253,9 @@ def main():
     # genuine chase cards (specific Double Rares, promos, etc.).
     PINNED_CARD_IDS = {
         "manual-ancient-mew",  # Ancient Mew — see MANUAL_SYNTHETIC_CARDS above.
-        "sv3-125",        # Charizard ex (Obsidian Flames) — Tera Dark Double Rare; ~$5-6 market
+        # sv3-125 (Charizard ex, Obsidian Flames, Double Rare) removed
+        # 2026-07-30 by request — Double Rare is no longer treated as a
+        # chase rarity anywhere in this app.
         "swshp-SWSH230",  # Radiant Eevee — SWSH Black Star Promo; Pokémon GO Premium Collection box
         "sma-SV41",       # Shiny Eevee (Hidden Fates Shiny Vault) — non-GX "Rare Shiny" tier is
                           # bulk overall (shiny Rowlet/Caterpie/Wooper etc. sit $1-5), but this
@@ -1203,6 +1266,22 @@ def main():
         "sma-SV9",        # Shiny Wooper (Hidden Fates Shiny Vault) — non-GX "Rare Shiny" tier,
                           # ~$27.74 TCGplayer market (July 2026) — clear standout vs. $1-5 bulk peers.
     }
+
+    # FEATURE (2026-07-30): every non-WOTC promo (XY/SM/SWSH/SV Black Star
+    # Promos, etc.) was previously excluded entirely unless individually
+    # pinned — only WOTC-era promos got an automatic pass via
+    # WOTC_PROMO_SET_NAMES. This left a real gap: promo Charizards alone
+    # ranged $50-580 market and NONE were in the app (confirmed via direct
+    # API check, 2026-07-30 — 23 promo Charizard cards exist, zero were
+    # previously included). The same gap almost certainly affects every
+    # other popular Pokémon's promos too (Pikachu, Mewtwo, Umbreon, etc.),
+    # not just Charizard, so fix it structurally rather than pinning cards
+    # one at a time. Any card with rarity "Promo" now passes if its price is
+    # above PROMO_PRICE_FLOOR — high enough that ordinary high-pull-rate
+    # promos (league/prerelease stamps, bulk set-code promos that come in
+    # nearly every product and stay $1-10) don't flood in, but genuine
+    # chase-tier promos (low pull rate, real secondary-market demand) do.
+    PROMO_PRICE_FLOOR = 15.00
 
     def is_chase(card):
         rarity = card.get("rarity", "")
@@ -1219,6 +1298,10 @@ def main():
             return True
         if any(s in ALLOWED_SUBTYPES for s in subtypes):
             return True
+        if rarity == "Promo":
+            price_num, _ = parse_card_price(card)
+            if price_num is not None and price_num >= PROMO_PRICE_FLOOR:
+                return True
         return False
 
     before = len(compiled_cards)

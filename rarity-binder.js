@@ -236,6 +236,18 @@ function rarityClass(r, name, num) {
 function shortRarity(r, name, num, subtypes, supertype) {
   if (!r) return '?';
   const isFull = isBeyondSetTotal(num);
+  // BUG FIX (2026-07-30): Trainer Gallery V / VMAX / VSTAR cards (raw rarity
+  // "Rare Holo V"/"Rare Holo VMAX"/"Rare Holo VSTAR") were falling through to
+  // the generic "Rare Holo" -> RH mapping below, since only the plain
+  // "Trainer Gallery Rare Holo" rarity string had its own map entry. The
+  // filter dropdown already correctly buckets ALL FOUR of these raw rarities
+  // into "Trainer Gallery" (see TG_RARITY_STRINGS) — so filtering by Trainer
+  // Gallery correctly returned these cards, but their pill still showed RH
+  // instead of TG. Card numbers in these Trainer Gallery subsets always
+  // carry a "TG" prefix (e.g. "TG12"), which is the same signal
+  // TG_RARITY_STRINGS-based logic relies on structurally, so check for it
+  // here too and force the TG label before falling into the generic map.
+  if (/^TG\d+$/i.test((num || '').trim()) && TG_RARITY_STRINGS.has(r)) return 'TG';
   // Tag Team synthetic rarity — already rewritten in normalizeCard
   if (r === 'Tag Team') return isFull ? 'TGTM' : 'TAG';
   // Rare Ultra: Full Art if beyond set total; otherwise defer to rareUltraBucket()
@@ -679,7 +691,6 @@ const RARITY_DISPLAY = {
   'Rare Shiny GX':            'Rare Shiny GX',
   'Amazing Rare':             'Amazing Rare',
   'Radiant Rare':             'Radiant Rare',
-  'Double Rare':              'Double Rare',
   'Rare Secret':              'Secret Rare',
   'Rare Ultra':               'Full Art (ex / GX)',
   'Gold Star':                'Gold Star',
@@ -945,7 +956,7 @@ const RARITY_ORDER = [
   'ACE SPEC Rare',             // ACE SPEC — 1-per-deck mechanic
   'Shiny Ultra Rare',          // Paldean Fates shiny ex
   'Illustration Rare',         // IR ~1:10-12
-  'Double Rare',               // SV Pokémon ex
+  // Double Rare removed 2026-07-30 — no longer a tracked chase rarity.
   // ── Sword & Shield era ───────────────────────────────────────────────────
   'Galarian Gallery',          // Crown Zenith GG (synthetic rarity)
   'Rare Holo VMAX',            // TG VMAX sub-tier
@@ -2003,9 +2014,25 @@ document.getElementById('clearSearch').addEventListener('click', function() {
   document.getElementById('searchWrap').classList.remove('has-text');
   render();
 });
-['eraFilter','rarityFilter','sortBy'].forEach(id =>
+['eraFilter','rarityFilter'].forEach(id =>
   document.getElementById(id).addEventListener('change', render)
 );
+document.getElementById('sortBy').addEventListener('change', handleSortChange);
+
+// FEATURE (2026-07-30): "Recent Purchases" only makes sense for owned cards
+// (unowned cards have no purchase date, they'd all pile up at the bottom) —
+// so selecting it auto-enables the "Owned" filter instead of making the
+// user turn it on separately every time. Only turns it ON; switching away
+// from Recent Purchases deliberately does NOT turn Owned back off, since the
+// user may have wanted it on anyway (e.g. they came from Owned+Price sort).
+function handleSortChange() {
+  const sortValue = document.getElementById('sortBy').value;
+  if (sortValue === 'recent-purchase' && !showOwnedOnly) {
+    showOwnedOnly = true;
+    document.getElementById('statOwnedBox').classList.toggle('active', true);
+  }
+  render();
+}
 
 // ─── MOBILE FILTER DRAWER ────────────────────────────────────────────────────
 function toggleFilterDrawer() {
@@ -2030,7 +2057,10 @@ function syncMobileFilters() {
 [['eraFilter','eraFilterM'],['rarityFilter','rarityFilterM'],['sortBy','sortByM']].forEach(([desk, mob]) => {
   document.getElementById(mob).addEventListener('change', function() {
     document.getElementById(desk).value = this.value;
-    render();
+    // sortBy needs the Recent-Purchases-auto-enables-Owned logic (see
+    // handleSortChange) — other filters just re-render directly.
+    if (desk === 'sortBy') handleSortChange();
+    else render();
   });
   document.getElementById(desk).addEventListener('change', function() {
     document.getElementById(mob).value = this.value;

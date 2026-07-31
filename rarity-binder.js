@@ -799,13 +799,18 @@ function populateFilters() {
     seenLabels.get(label).add(r);
   }
 
+  // FEATURE (2026-07-31): "Full Art Trainer" removed as a selectable filter
+  // option by request — cards in this bucket stay in the app (still
+  // findable via search or other filters) and still classify correctly
+  // everywhere else (pill labels, sort order), just no longer get their own
+  // dropdown entry. Simplest fix: drop __FA_TRAINER__ from this loop only;
+  // rareUltraBucket() itself is untouched, so nothing downstream breaks.
   const ULTRA_LABELS = {
     '__GX__':         'Full Art GX',
     '__EX__':         'Full Art EX',
     '__FA_POKEMON__': 'Full Art Pokémon',
-    '__FA_TRAINER__': 'Full Art Trainer',
   };
-  for (const bucket of ['__GX__', '__EX__', '__FA_POKEMON__', '__FA_TRAINER__']) {
+  for (const bucket of ['__GX__', '__EX__', '__FA_POKEMON__']) {
     if (seenUltraBuckets.has(bucket)) {
       seenLabels.set(ULTRA_LABELS[bucket], new Set([bucket]));
     }

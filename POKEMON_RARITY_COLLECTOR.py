@@ -254,9 +254,17 @@ QUERIES = [
     # Includes Rainbow Rare GX and Tag Team GX variants
     'rarity:"Rare Rainbow" supertype:"Pokémon"',
 
-    # Rare Ultra: Full Art GX, Full Art Tag Team GX, Full Art Supporters
-    # SM-era full-art treatment — covers Trainer Full Arts as well (intentional)
-    'rarity:"Rare Ultra" set.series:"Sun"',
+    # Rare Ultra: REMOVED ENTIRELY (2026-07-30) — confirmed via research this
+    # rarity (Full Art GX / Tag Team GX / Full Art Supporters/EX) pulls at
+    # roughly 1:20 packs, moderately uncommon but nowhere near the app's
+    # other apex chase tiers (SIR 1:72-86, Hyper Rare 1:1260). High dollar
+    # values on some cards in this tier (Latias & Latios-GX $3,783, Gengar-EX
+    # $759, etc.) come from character/demand popularity, not scarcity — user
+    # decided pull rate should be the deciding factor, not price, so the
+    # whole tier (~470 cards) was removed rather than adding a price floor.
+    # Also removed from ALLOWED_RARITIES and the frontend rarity filter
+    # dropdown (rareUltraBucket/__GX__/__EX__/__FA_* logic in rarity-binder.js
+    # is now dead code paths that will simply never match any card).
 
     # Rare Secret: gold-border non-holo Secret Rares in SM sets that are NOT
     # Rainbow or Ultra (e.g. Piplup (Secret), Cosmic Eclipse SM12) — these use
@@ -272,10 +280,8 @@ QUERIES = [
     'rarity:"Rare Secret" set.series:"Black & White"',
     'rarity:"Rare Secret" set.series:"XY"',
 
-    # Rare Ultra: Full Art Pokémon-EX, Mega EX Full Arts, Full Art Supporters (BW/XY)
-    # Genesis of the modern Full Art chase mechanic
-    'rarity:"Rare Ultra" set.series:"Black & White"',
-    'rarity:"Rare Ultra" set.series:"XY"',
+    # Rare Ultra (BW/XY Full Art EX / Full Art Supporters) — also removed,
+    # see the SM-era Rare Ultra removal note above; same tier, same reasoning.
 
     # ══════════════════════════════════════════════════════════════════════════
     # DIAMOND & PEARL / PLATINUM / HGSS ERA
@@ -1153,11 +1159,13 @@ def main():
         "Amazing Rare",              # Lightning/rainbow art — Vivid Voltage+
         "Rare Shiny GX",             # Shiny Vault GX (Hidden Fates / Shining Fates)
         # "Rare Shiny" excluded — non-GX shinies are bulk (shiny Caterpie etc.), not chase.
-        # Exception: Shiny Eevee (sma-SV41) pinned individually below — genuine outlier price.
+        # (No more pinned exceptions here — the 3 outlier shinies previously
+        # pinned individually were removed 2026-07-30; see PINNED_CARD_IDS.)
         "Radiant Rare",              # 1-per-deck SWSH mechanic
         # ── Sun & Moon ────────────────────────────────────────────────────────
         "Rare Rainbow",              # SM Rainbow Rare (distinct from SWSH Hyper Rare)
-        "Rare Ultra",                # Full Art GX / Tag Team GX / Full Art Supporters
+        # "Rare Ultra" REMOVED 2026-07-30 — ~1:20 pack pull rate, not a true
+        # chase rarity by this app's standards; see QUERIES section above.
         # ── BW / XY / DP / HGSS (Secret Rares) ──────────────────────────────
         "Rare Secret",               # Gold-border Secret Rares across all middle eras
         # ── DP / HGSS ─────────────────────────────────────────────────────────

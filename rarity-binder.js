@@ -365,8 +365,20 @@ function normalizeCard(raw) {
   const num = raw.card_number || raw['card_number'] || raw.number || '';
   const setTotal = raw['Set Total'] || raw.set_total || raw.setTotal || '';
   let rarity = raw.rarity || '';
-  const price = raw.price || 'N/A';
+  let price = raw.price || 'N/A';
   const prevPrice = raw.previous_price || raw['previous_price'] || 'N/A';
+  // BUG FIX (2026-07-31): when the collector's price source fails for a card
+  // on a given run (most commonly the TCG API's daily quota running out
+  // mid-fetch for Mega Evolution cards), the CSV can have "Price" = N/A even
+  // though "Previous Price" has a real, recent value. Fixing this in the
+  // collector script requires a fresh run + push before it's visible; fixing
+  // it here instead means it self-heals the moment the page loads, with no
+  // dependency on when the next collector run happens. Same principle used
+  // everywhere else in this app: show the last known-good number rather than
+  // blanking it out.
+  if (price === 'N/A' && prevPrice !== 'N/A') {
+    price = prevPrice;
+  }
   const cardId = raw.card_id || raw['card_id'] || '';
   const pic = raw.picture_url || raw['picture_url'] || raw.image || '';
   const setLogo = raw.set_logo || raw['set_logo'] || '';

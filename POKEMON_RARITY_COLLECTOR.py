@@ -1257,14 +1257,13 @@ def main():
         # 2026-07-30 by request — Double Rare is no longer treated as a
         # chase rarity anywhere in this app.
         "swshp-SWSH230",  # Radiant Eevee — SWSH Black Star Promo; Pokémon GO Premium Collection box
-        "sma-SV41",       # Shiny Eevee (Hidden Fates Shiny Vault) — non-GX "Rare Shiny" tier is
-                          # bulk overall (shiny Rowlet/Caterpie/Wooper etc. sit $1-5), but this
-                          # specific card is a genuine outlier: ~$54 TCGplayer market (July 2026).
-                          # Verified via API — plain (non-GX) rarity "Rare Shiny", confirmed real price.
-        "sma-SV6",        # Shiny Charmander (Hidden Fates Shiny Vault) — non-GX "Rare Shiny" tier,
-                          # ~$33.60 TCGplayer market (July 2026) — clear standout vs. $1-5 bulk peers.
-        "sma-SV9",        # Shiny Wooper (Hidden Fates Shiny Vault) — non-GX "Rare Shiny" tier,
-                          # ~$27.74 TCGplayer market (July 2026) — clear standout vs. $1-5 bulk peers.
+        # sma-SV41 (Shiny Eevee), sma-SV6 (Shiny Charmander), sma-SV9 (Shiny
+        # Wooper) — all removed 2026-07-30 by request. They were pinned as
+        # price outliers within the bulk "Rare Shiny" tier ($27-54 vs. $1-5
+        # peers), but visually they're plain Shiny Vault commons (flat
+        # pastel background, no holo/special treatment) that don't read as
+        # chase cards regardless of price — user felt they looked too common
+        # for the app and asked to drop them.
     }
 
     # FEATURE (2026-07-30): every non-WOTC promo (XY/SM/SWSH/SV Black Star

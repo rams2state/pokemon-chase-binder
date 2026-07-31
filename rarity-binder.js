@@ -284,7 +284,8 @@ function shortRarity(r, name, num, subtypes, supertype) {
     'ACE SPEC Rare':             'ACE',
     'Classic Collection':        'CLSC',
     'Rare Shiny GX':             'SHGX',
-    'Rare Shiny':                'SHNY',
+    // 'Rare Shiny' (plain, non-GX) removed 2026-07-30 — no longer a
+    // tracked chase rarity; see PINNED_CARD_IDS comment in the collector.
     'Shiny Rare':                'SHYR',
     'Amazing Rare':              'AMAZ',
     'Radiant Rare':              'RADT',
@@ -966,7 +967,7 @@ const RARITY_ORDER = [
   'Rainbow Rare',              // SWSH Rainbow Rare
   'Rare Rainbow',              // SM Rainbow Rare
   'Rare Shiny GX',             // Shiny Vault GX (Hidden/Shining Fates)
-  'Rare Shiny',                // Shiny Vault base (Hidden/Shining Fates)
+  // 'Rare Shiny' removed 2026-07-30 — no longer tracked (was bulk tier).
   'Amazing Rare',              // SWSH Amazing Rare
   // ── Sun & Moon era ───────────────────────────────────────────────────────
   'Tag Team',                  // SM Tag Team GX (synthetic)

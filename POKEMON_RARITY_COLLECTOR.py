@@ -116,7 +116,8 @@ HISTORY_FILE = os.path.join(PROJECT_DIR, "card-price-history.json")
 #     - Mega Hyper Rare (~1:1260)       — apex SV pull, rarest in modern TCG history
 #     - Special Illustration Rare (~1:72-86) — SIR/SAR, the painterly full-bleed chase tier
 #     - Illustration Rare (~1:10-12)    — IR, full-art borderless; included for artistic legacy
-#     - ACE SPEC Rare                   — 1-per-deck mechanic; low pull rate, high demand
+#     - ACE SPEC Rare — REMOVED (2026-07-30): competitive-utility mechanic,
+#       not collector scarcity; actual market is $0.30-$3 for most of it
 #     - Double Rare — REMOVED (2026-07-30): even the one hand-picked chase
 #       exception (Charizard ex OBF) was dropped by request; not tracked at all now
 #
@@ -154,9 +155,10 @@ HISTORY_FILE = os.path.join(PROJECT_DIR, "card-price-history.json")
 #     - Rare Holo (scoped by series)    — THE chase card of each vintage set
 #     - WotC Black Star Promos          — series:"Base" + set name "Wizards Black Star Promos"
 #
-# Trainer card note: Rare Ultra and Rare Secret queries include Trainers intentionally —
+# Trainer card note: Rare Secret queries include Trainers intentionally —
 # Full Art N, Full Art Lysandre, and Supporter SIRs (Iono, etc.) are legitimate high-end
-# chase targets. Filter by supertype in your UI if desired.
+# chase targets. Filter by supertype in your UI if desired. (Rare Ultra used
+# to be included here too, but was removed entirely 2026-07-30.)
 #
 # Rare BREAK (XY era): excluded — too common and low collectible value.
 # Rare ACE (older): excluded — not to be confused with ACE SPEC Rare (SV).
@@ -180,9 +182,19 @@ QUERIES = [
     # Illustration Rare (IR): ~1:10-12 packs — borderless full-art; included for artistic/legacy value
     'rarity:"Illustration Rare"',
 
-    # ACE SPEC Rare: 1-per-deck mechanic reintroduced in SV; low pull rate, real market demand
-    # Master Ball, Prime Catcher, Unfair Stamp sit $30-50+. SIR variants also captured by SIR query.
-    'rarity:"ACE SPEC Rare"',
+    # ACE SPEC Rare: REMOVED ENTIRELY (2026-07-30) — the old comment here
+    # claiming "$30-50+" for Master Ball/Prime Catcher/Unfair Stamp was
+    # WRONG; live data check found the actual market is $0.30-$3 for 31 of
+    # 33 cards, with only 2 clearing $19 (Neo Upper Energy, Hero's Cape).
+    # Pull rate is also ~1:20 packs (~5% per pack) — same range as the
+    # since-removed Rare Ultra tier. The reason ACE SPEC felt notable is
+    # competitive-play utility (1-per-deck deckbuilding mechanic; Prime
+    # Catcher especially is heavily played), NOT collector scarcity — a
+    # different axis than what this app tracks (chase/collector value). User
+    # confirmed: cheap because it's genuinely common, not worth keeping just
+    # for competitive relevance. SIR variants of these same effects (if any)
+    # remain covered by the separate SIR query above regardless.
+    # 'rarity:"ACE SPEC Rare"',
 
     # Double Rare: REMOVED ENTIRELY (2026-07-30) — was NOT queried by rarity
     # (too much bulk noise; most Double Rare ex cards sit $1-6 market), and
@@ -227,9 +239,11 @@ QUERIES = [
     # Every card in this set is a gallery chase card — simplest to pull the whole set
     'set.id:swsh12pt5gg',
 
-    # Amazing Rare: unique lightning/rainbow art treatment; Vivid Voltage, Evolving Skies, etc.
-    # Jirachi, Zacian, Rayquaza among top targets
-    'rarity:"Amazing Rare" supertype:"Pokémon"',
+    # Amazing Rare: REMOVED (2026-07-31) — only 9 cards exist total (Zamazenta,
+    # Jirachi, Rayquaza, Raikou, Zacian, Celebi, Reshiram, Kyogre, Yveltal),
+    # priced $1.77-$26.27, pulling at ~1:19 packs (common-tier). One-off art
+    # treatment (Vivid Voltage/Champion's Path) with no sustained demand
+    # pattern the way Illustration Rare has — doesn't clear the bar.
 
     # Hidden Fates / Shining Fates Shiny Vaults — queried by set ID to get all cards:
     # Rare Shiny (SV1–SV94 / SV001–SV122): non-GX shinies (shiny Eevee, Pikachu, etc.)
@@ -238,8 +252,11 @@ QUERIES = [
     'set.id:sma',       # Hidden Fates Shiny Vault (94 cards)
     'set.id:swsh45sv',  # Shining Fates Shiny Vault (122 cards)
 
-    # Radiant Rare: 1-per-deck mechanic; Radiant Charizard / Greninja tier
-    'rarity:"Radiant Rare" supertype:"Pokémon"',
+    # Radiant Rare: REMOVED (2026-07-31) — 15 cards, 13 of them under $2,
+    # only the two Radiant Charizard prints clear $10 ($19.00, $12.35). Same
+    # reasoning as ACE SPEC Rare: a 1-per-deck deckbuilding mechanic, not a
+    # print-scarcity mechanic. Pull rate ~1:16-20 packs, common-tier, and
+    # pricing across the board confirms it.
 
     # Radiant Eevee promo — SWSH Black Star Promo SWSH230; packaged in the
     # Pokémon GO Premium Collection—Radiant Eevee box (July 1 2022).
@@ -266,6 +283,19 @@ QUERIES = [
     # dropdown (rareUltraBucket/__GX__/__EX__/__FA_* logic in rarity-binder.js
     # is now dead code paths that will simply never match any card).
 
+    # TAG TEAM GX: carved back out as its own query, independent of rarity —
+    # these cards carry raw rarity "Rare Ultra" (same as the tier just
+    # removed above) but are a genuinely distinct, much smaller sub-pool with
+    # real chase-tier pull odds (the Full Art printings specifically were
+    # cited at ~1:500+ packs per specific card — rarer than SIR). Confirmed
+    # with user there's no clean data field to split "the rare printing" from
+    # "the common one" within a TAG TEAM pair (e.g. Team Up #164 vs #165 are
+    # separately-numbered cards, not variants of one card), so ALL TAG TEAM
+    # GX cards are kept, not just the priciest — see ALLOWED_SUBTYPES below,
+    # which is what actually lets these through is_chase() despite their
+    # "Rare Ultra" rarity string.
+    'subtypes:"TAG TEAM"',
+
     # Rare Secret: gold-border non-holo Secret Rares in SM sets that are NOT
     # Rainbow or Ultra (e.g. Piplup (Secret), Cosmic Eclipse SM12) — these use
     # the plain "Rare Secret" rarity string and were missed by the queries above.
@@ -276,7 +306,10 @@ QUERIES = [
     # ══════════════════════════════════════════════════════════════════════════
 
     # Rare Secret: gold-border Secret Rares — Items, Supporters, Pokémon (BW/XY/SM)
-    # Scoped here to BW+XY; SM Rare Secret captured by SM Rare Ultra / Rare Rainbow above
+    # Scoped here to BW+XY; SM Rare Secret is fetched by its own dedicated
+    # query above ('rarity:"Rare Secret" set.series:"Sun & Moon"') — that
+    # query is independent of the now-removed Rare Ultra query, so SM Secret
+    # Rares are unaffected by the Rare Ultra removal.
     'rarity:"Rare Secret" set.series:"Black & White"',
     'rarity:"Rare Secret" set.series:"XY"',
 
@@ -1147,7 +1180,9 @@ def main():
         "MEGA_ATTACK_RARE",          # secret-numbered SV chase tier (Ascended Heroes onward)
         "Special Illustration Rare", # SIR/SAR — painterly full-bleed apex
         "Illustration Rare",         # IR — borderless full-art
-        "ACE SPEC Rare",             # 1-per-deck SV mechanic; Master Ball, Prime Catcher tier
+        # "ACE SPEC Rare" REMOVED 2026-07-30 — competitive-play utility
+        # (1-per-deck mechanic), not collector scarcity; actual market is
+        # $0.30-$3 for 31 of 33 cards, ~1:20 pull rate (same as Rare Ultra).
         # "Double Rare" intentionally excluded — fetched by specific card ID only (see QUERIES above)
         # ── Paldean Fates (SV shiny set) ──────────────────────────────────────
         # "Shiny Rare" excluded — non-ex Paldean Fates shinies are bulk (Rowlet, Wooper etc.)
@@ -1156,12 +1191,14 @@ def main():
         "Hyper Rare",                # Rainbow Rare — rarest SWSH single-card pull
         "Trainer Gallery Rare Holo", # TG subset — Brilliant Stars through Crown Zenith
         "Rare Holo VSTAR",           # Crown Zenith Galarian Gallery GG35–GG66 VSTAR tier
-        "Amazing Rare",              # Lightning/rainbow art — Vivid Voltage+
+        # "Amazing Rare" REMOVED 2026-07-31 — only 9 cards exist, $1.77-$26.27,
+        # ~1:19 pack pull rate (common-tier), no sustained demand pattern.
         "Rare Shiny GX",             # Shiny Vault GX (Hidden Fates / Shining Fates)
         # "Rare Shiny" excluded — non-GX shinies are bulk (shiny Caterpie etc.), not chase.
         # (No more pinned exceptions here — the 3 outlier shinies previously
         # pinned individually were removed 2026-07-30; see PINNED_CARD_IDS.)
-        "Radiant Rare",              # 1-per-deck SWSH mechanic
+        # "Radiant Rare" REMOVED 2026-07-31 — 15 cards, 13 under $2; a 1-per-deck
+        # deckbuilding mechanic (like ACE SPEC Rare), not print-scarcity.
         # ── Sun & Moon ────────────────────────────────────────────────────────
         "Rare Rainbow",              # SM Rainbow Rare (distinct from SWSH Hyper Rare)
         # "Rare Ultra" REMOVED 2026-07-30 — ~1:20 pack pull rate, not a true
@@ -1181,7 +1218,19 @@ def main():
     }
     # BUG FIX (2026-07-24): "LV.X" corrected to "Level-Up" — that's the actual API
     # subtype value for LV.X cards ("LV.X" only appears in the card name field).
-    ALLOWED_SUBTYPES = {"Gold Star", "LEGEND", "Level-Up", "Crystal"}
+    # FEATURE (2026-07-30): "TAG TEAM" added after Rare Ultra was removed as a
+    # whole tier (see QUERIES section) — TAG TEAM GX cards (Latias & Latios-GX,
+    # Gengar & Mimikyu-GX, etc.) carry raw rarity "Rare Ultra" too and would
+    # otherwise have been swept out along with ordinary Full Art EX/GX cards.
+    # Checked and confirmed genuinely chase-tier: the alternate/Full Art
+    # TAG TEAM prints specifically pull as rare as ~1:500+ packs per specific
+    # card (rarer than Special Illustration Rare's 1:72-90), though pokemontcg.io
+    # doesn't expose a field distinguishing "the rare printing" from "the more
+    # common printing" within a TAG TEAM pair (e.g. Team Up #164 vs #165 are
+    # two separately-numbered cards, not a cheap/rare variant pair) — so ALL
+    # TAG TEAM GX cards are kept as a category, not just the priciest ones,
+    # by explicit user decision after confirming no clean way to split them.
+    ALLOWED_SUBTYPES = {"Gold Star", "LEGEND", "Level-Up", "Crystal", "TAG TEAM"}
 
     # WotC Black Star Promos: the set query may return commons/uncommons (Pikachu promos).
     # We keep ALL results from that set — they are individually significant as promos.
@@ -1195,6 +1244,25 @@ def main():
         "Astral Radiance Trainer Gallery",     # all 30 cards
         "Lost Origin Trainer Gallery",         # all 30 cards
         "Silver Tempest Trainer Gallery",      # all 30 cards
+        # FEATURE (2026-07-31): three cross-promotional sets confirmed via an
+        # exhaustive sweep across every pokemontcg.io set (they'd previously
+        # been invisible to this app entirely — pokemontcg.io buckets all
+        # one-off/cross-promo sets under series:"Other", which no existing
+        # QUERY ever scoped to, regardless of rarity or price). All three
+        # were individually price-checked against live API data before being
+        # added here — not included on assumption alone:
+        "Southern Islands",   # 2001 vacation-exclusive set (set.id "si1"), 18 cards,
+                               # every card real-priced $31-$468 (Mew $467.73, Slowking
+                               # $253.47, Marill $140.62) — confirmed live, not junk data.
+        "Best of Game",        # 2002 promo set (set.id "bp"), 9 cards, rarity "Promo",
+                               # all 9 clear this app's own $15 promo floor: $19.59-$1,450
+                               # (Rocket's Mewtwo $1,450, Rocket's Hitmonchan $220,
+                               # Dark Venusaur $131) — confirmed live via direct API pull.
+        "Pokémon Rumble",      # 2009 Wii-game-bundle promo set (set.id "ru1"), 16 cards,
+                               # $52-$750 each — corroborated across TWO independent price
+                               # sources (TCGplayer + Cardmarket both show real, non-trivial
+                               # prices), ruling out the kind of single-source junk "high"
+                               # outlier that got Legendary Collection correctly excluded.
     }
 
     # Sets explicitly excluded regardless of rarity — novelty/specialty sets with no chase value
@@ -1288,11 +1356,32 @@ def main():
     # promos (league/prerelease stamps, bulk set-code promos that come in
     # nearly every product and stay $1-10) don't flood in, but genuine
     # chase-tier promos (low pull rate, real secondary-market demand) do.
-    PROMO_PRICE_FLOOR = 15.00
+    PROMO_PRICE_FLOOR = 25.00
+
+    # FEATURE (2026-07-31): TAG TEAM subtype normally passes through
+    # regardless of raw rarity (see ALLOWED_SUBTYPES above), but 6 Sun & Moon
+    # era Supporter cards (Bellelba & Brycen-Man, Cynthia & Caitlin, Guzma &
+    # Hala, Mallow & Lana, Misty & Lorelei, Red & Blue) carry raw rarity
+    # "Uncommon" despite the TAG TEAM name — base-common pull rate, $0.74-
+    # $7.57 market, nothing chase about them. Explicitly blocked here so the
+    # TAG TEAM passthrough doesn't sweep them in.
+    BLOCKED_UNCOMMON_RARITIES = {"Uncommon", "Common"}
+
+    # FEATURE (2026-07-31): Hyper Rare and Rare Secret both mix genuinely
+    # chase Trainer/Energy alt-arts (Ultra Ball $698, Pokégear 3.0 $47,
+    # Viridian Forest $47) with ordinary $1-10 Trainer/Energy filler that
+    # just happens to share the rarity tier with Pokémon apex pulls. Since
+    # supertype alone can't cleanly separate them (price varies wildly
+    # within the same supertype+rarity combo), apply a price floor scoped to
+    # non-Pokémon supertypes in these two rarities only — same logic as the
+    # promo floor above.
+    NON_POKEMON_PRICE_FLOOR_RARITIES = {"Hyper Rare", "Rare Secret"}
+    NON_POKEMON_PRICE_FLOOR = 15.00
 
     def is_chase(card):
         rarity = card.get("rarity", "")
         subtypes = card.get("subtypes", [])
+        supertype = card.get("supertype", "")
         set_name = card.get("set", {}).get("name", "")
         card_id = card.get("id", "")
         if set_name in EXCLUDED_SET_NAMES:
@@ -1302,8 +1391,14 @@ def main():
         if set_name in WOTC_PROMO_SET_NAMES:
             return True
         if rarity in ALLOWED_RARITIES:
+            if (rarity in NON_POKEMON_PRICE_FLOOR_RARITIES
+                    and supertype != "Pokémon"):
+                price_num, _ = parse_card_price(card)
+                return price_num is not None and price_num >= NON_POKEMON_PRICE_FLOOR
             return True
         if any(s in ALLOWED_SUBTYPES for s in subtypes):
+            if rarity in BLOCKED_UNCOMMON_RARITIES:
+                return False
             return True
         if rarity == "Promo":
             price_num, _ = parse_card_price(card)

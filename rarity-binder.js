@@ -245,9 +245,20 @@ function shortRarity(r, name, num, subtypes, supertype) {
   // Gallery correctly returned these cards, but their pill still showed RH
   // instead of TG. Card numbers in these Trainer Gallery subsets always
   // carry a "TG" prefix (e.g. "TG12"), which is the same signal
-  // TG_RARITY_STRINGS-based logic relies on structurally, so check for it
-  // here too and force the TG label before falling into the generic map.
-  if (/^TG\d+$/i.test((num || '').trim()) && TG_RARITY_STRINGS.has(r)) return 'TG';
+  // TG_RARITY_STRINGS-based logic relies on structurally.
+  // BUG FIX (2026-07-31): full-art Trainer-supertype cards inside the SAME
+  // Trainer Gallery subsets (Allister, Bea, Nessa, Boss's Orders, etc. —
+  // numbered TG24-TG30 in Astral Radiance/Lost Origin) carry raw rarity
+  // "Rare Ultra", which was never added to TG_RARITY_STRINGS (deliberately —
+  // that set is also used elsewhere to classify ordinary non-TG Rare Ultra
+  // cards, like Full Art EX/GX, which must NOT get swept into "Trainer
+  // Gallery"). Gating on TG_RARITY_STRINGS membership caused these specific
+  // cards to fall through to their raw "Rare Ultra" pill instead of "TG".
+  // The TG\d+ card-number prefix alone is an unambiguous, structural signal
+  // for "this card lives in a Trainer Gallery subset" regardless of its raw
+  // rarity string, so it's now sufficient on its own — no rarity-string
+  // gate needed.
+  if (/^TG\d+$/i.test((num || '').trim())) return 'TG';
   // Tag Team synthetic rarity — already rewritten in normalizeCard
   if (r === 'Tag Team') return isFull ? 'TGTM' : 'TAG';
   // Rare Ultra: Full Art if beyond set total; otherwise defer to rareUltraBucket()
@@ -370,7 +381,18 @@ function normalizeCard(raw) {
   const subtypes = subtypesRaw ? subtypesRaw.split('|') : [];
   // Synthetic "Tag Team" rarity — Tag Team GX/EX cards always have & in the name.
   // This check takes priority over GX/EX classification — a card with & is always Tag Team.
-  if (name.includes('&') && (rarity === 'Rare Ultra' || rarity === 'Rare Rainbow')) {
+  // BUG FIX (2026-07-31): only checked rarity === 'Rare Ultra' or 'Rare
+  // Rainbow', so Sun & Moon era Tag Team GX cards (Celebi & Venusaur-GX,
+  // Gengar & Mimikyu-GX, etc.) — which carry raw rarity "Rare Holo GX", NOT
+  // "Rare Ultra" — never got normalized, and kept showing "Rare Holo GX" as
+  // their pill/filter bucket instead of being grouped with the rest of the
+  // TAG TEAM cards. The Subtypes field (ground truth from the API, already
+  // parsed above) is a more reliable signal than scanning the name for "&",
+  // so check subtypes.includes('TAG TEAM') directly rather than adding more
+  // rarity strings to the OR chain one at a time as new eras turn up.
+  if (subtypes.includes('TAG TEAM')) {
+    rarity = 'Tag Team';
+  } else if (name.includes('&') && (rarity === 'Rare Ultra' || rarity === 'Rare Rainbow')) {
     rarity = 'Tag Team';
   }
   // Synthetic "Galarian Gallery" rarity — Crown Zenith Galarian Gallery subset
@@ -881,9 +903,22 @@ function getFiltered() {
     if (era && c.series !== era) return false;
     if (rarityTokens) {
       const matches = rarityTokens.some(tok => {
-        if (tok === '__TG__') return TG_RARITY_STRINGS.has(c.rarity);
+        // BUG FIX (2026-07-31): the __TG__ bucket only matched cards whose
+        // raw rarity was one of the four strings in TG_RARITY_STRINGS — but
+        // full-art Trainer-supertype cards inside these same Trainer Gallery
+        // subsets (Allister, Bea, Boss's Orders, etc., numbered TG24-TG30)
+        // carry raw rarity "Rare Ultra" instead, which isn't in that set (by
+        // design — Rare Ultra is also used for ordinary non-TG Full Art
+        // EX/GX cards elsewhere, which must NOT get bucketed as Trainer
+        // Gallery). The TG\d+ card-number prefix is the structural signal
+        // that actually identifies "this card lives in a Trainer Gallery
+        // subset," independent of its raw rarity string — same fix applied
+        // to shortRarity() above, mirrored here so the filter dropdown and
+        // the pill label always agree on which cards count as TG.
+        if (tok === '__TG__') return /^TG\d+$/i.test((c.num || '').trim());
         if (tok === '__GX__' || tok === '__EX__' || tok === '__FA_POKEMON__' || tok === '__FA_TRAINER__') {
-          return c.rarity === 'Rare Ultra' && rareUltraBucket(c) === tok;
+          return c.rarity === 'Rare Ultra' && !/^TG\d+$/i.test((c.num || '').trim())
+              && rareUltraBucket(c) === tok;
         }
         return c.rarity === tok;
       });

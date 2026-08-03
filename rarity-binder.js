@@ -5,7 +5,8 @@
 // version number" — patch (last number) for normal fixes/tweaks, can climb
 // into the hundreds; minor/major bumped only if asked. History:
 //   1.0.0 — 2026-08-02 — initial version number introduced.
-const APP_VERSION = '1.0.0';
+//   1.0.1 — 2026-08-02 — bumped per request.
+const APP_VERSION = '1.0.1';
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
 let ALL_CARDS = [];
@@ -179,6 +180,10 @@ function updateCollectionValue() {
 }
 
 function toggleOwnedFilter() {
+  // FEATURE (2026-08-02): read-only share view is permanently locked to the
+  // owned-only grid (see loadCards()) — clicking the Owned stat box, or
+  // Reset, must not be able to turn it back off.
+  if (READ_ONLY_SHARE && showOwnedOnly) return;
   showOwnedOnly = !showOwnedOnly;
   document.getElementById('statOwnedBox').classList.toggle('active', showOwnedOnly);
   // BUG FIX (2026-07-30): if the Owned filter is toggled ON while on the main
@@ -922,7 +927,10 @@ function resetFilters() {
     const el = document.getElementById(id);
     if (el) el.value = id === 'sortByM' ? 'date-desc' : '';
   });
-  if (showOwnedOnly) toggleOwnedFilter();
+  // FEATURE (2026-08-02): read-only share view is permanently locked to the
+  // owned-only grid — Reset must not turn either of those off (toggleOwnedFilter()
+  // itself also guards against this, but skip the call entirely here too).
+  if (showOwnedOnly && !READ_ONLY_SHARE) toggleOwnedFilter();
   // Clear gainers/losers mode
   if (_trendMode) {
     _trendMode = null;
@@ -934,8 +942,9 @@ function resetFilters() {
   }
   // Reset always drops back to list view — grid view requires a search/filter
   // to render anything, so staying in grid after a reset would just show
-  // the empty "search to explore" placeholder.
-  if (currentView === 'grid') applyViewState('list');
+  // the empty "search to explore" placeholder. Read-only share view is the
+  // one exception: it's permanently locked to grid (see loadCards()).
+  if (currentView === 'grid' && !READ_ONLY_SHARE) applyViewState('list');
   updateResetBtn();
 
   // BUG FIX (2026-07-29): Reset previously left you inside a set's detail

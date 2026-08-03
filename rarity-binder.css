@@ -360,6 +360,11 @@
   body.read-only-share .card-tile.owned img { opacity:1; }
   body.read-only-share .card-tile.owned .tile-name { color:inherit; text-decoration:none; }
 
+  /* FEATURE (2026-08-02): "Total Cards" stat hidden in read-only share view —
+     next to the Owned button, it's a distracting distinction since this view
+     is permanently locked to the owned-only grid anyway. */
+  body.read-only-share #statCardsBox { display:none; }
+
   /* RARITY PILLS */
   .pill{
     font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;

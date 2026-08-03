@@ -554,6 +554,14 @@
   .price-stale{font-size:10.5px;font-weight:700;padding:1px 5px;border-radius:4px;display:inline-block;margin-left:4px;white-space:nowrap;background:#fbbf2422;color:#fbbf24;cursor:help;}
   .tile-price-row{display:flex;align-items:center;flex-wrap:wrap;gap:2px;}
 
+  /* FEATURE (2026-08-02): compact stale-price warning icon, sits inline right
+     next to the price in list rows / grid tiles (the .price-stale text pill
+     above stays modal-only, where there's room to spell out day counts).
+     Yellow at 7+ days unpriced (STALE_PRICE_DAYS), red at 30+ days
+     (STALE_PRICE_DAYS_SEVERE) — see staleWarningIcon() in rarity-binder.js. */
+  .price-stale-icon{font-size:12px;line-height:1;margin-left:3px;cursor:help;color:#fbbf24;display:inline-block;vertical-align:middle;}
+  .price-stale-icon.severe{color:#f87171;}
+
   /* "70%" price (70% of market price) — quiet secondary label, sits below/
      beside the main price without competing with it visually. */
   .price-70pct{font-size:10.5px;font-weight:600;color:var(--dim);white-space:nowrap;cursor:help;margin-left:4px;}

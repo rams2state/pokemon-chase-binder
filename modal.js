@@ -1,0 +1,341 @@
+// ─── VIEW SWITCH (no-op — kept for filter drawer mobile sync compat) ─────────
+
+// ─── MODAL ───────────────────────────────────────────────────────────────────
+let _modalCard = null;
+let _modalList = [];   // current filtered card list for prev/next navigation
+let _modalIdx  = -1;   // index of open card within _modalList
+
+// Flattened, on-screen order for the currently-rendered set detail page
+// (bucket order, then cardNumSort within each bucket — see renderSetDetail).
+// BUG FIX (2026-07-27): openModal() used to always rebuild _modalList from
+// getFiltered() (the global search/sort list), even when a card was opened
+// from the set-detail view — which displays cards in a totally different
+// order (grouped by rarity bucket, ascending card number within each). That
+// mismatch made Prev/Next silently jump through the wrong list, so the
+// buttons could visually appear to move backward relative to the numbers
+// on screen. Populated by renderSetDetail(); cleared elsewhere so the
+// global list is used everywhere else (main grid, price-movers, etc.).
+let _setDetailOrder = null;
+
+function modalNav(dir) {
+  const next = _modalIdx + dir;
+  if (next < 0 || next >= _modalList.length) return;
+  _modalIdx = next;
+  openModal(_modalList[_modalIdx], false);
+}
+
+function updateNavState() {
+  const prev = document.getElementById('mNavPrev');
+  const next = document.getElementById('mNavNext');
+  const counter = document.getElementById('mNavCounter');
+  if (prev) prev.classList.toggle('disabled', _modalIdx <= 0);
+  if (next) next.classList.toggle('disabled', _modalIdx >= _modalList.length - 1);
+  if (counter && _modalList.length > 1) {
+    counter.textContent = `${_modalIdx + 1} / ${_modalList.length}`;
+  } else if (counter) {
+    counter.textContent = '';
+  }
+}
+
+function openModal(c, updateList = true) {
+  _modalCard = c;
+  // Always start with the purchase-price prompt hidden — it's only shown
+  // explicitly via showPurchasePrompt() right after marking a NEW card
+  // owned, never left over from whatever card was open before.
+  const promptEl = document.getElementById('mPurchasePrompt');
+  if (promptEl) promptEl.style.display = 'none';
+  if (updateList) {
+    // Use the set-detail page's own on-screen order (bucket + card-number
+    // order) when opened from there, instead of the unrelated global
+    // search/sort list — see _setDetailOrder comment above for why.
+    _modalList = _setDetailOrder || getFiltered();
+    _modalIdx = _modalList.findIndex(x => x.cardId === c.cardId && x.num === c.num && x.set === c.set);
+    if (_modalIdx === -1) _modalIdx = 0;
+    // Save scroll position and push a history entry so back button closes modal
+    sessionStorage.setItem('binderScroll', window.scrollY);
+    history.pushState({ modal: true }, '');
+  }
+  updateNavState();
+  const nameStr = c.name || '(Unknown)';
+  document.getElementById('mName').textContent = nameStr;
+  // Rarity pill
+  const rarityPill = document.getElementById('mRarityPill');
+  if (rarityPill) {
+    const pillCls = rarityClass(c.rarity, c.name, c.num);
+    const pillLabel = shortRarity(c.rarity, c.name, c.num, c.subtypes, c.supertype);
+    rarityPill.className = `pill ${pillCls}`;
+    rarityPill.textContent = pillLabel;
+  }
+  // Card number under image — show as #num/total if total available
+  const cardNumEl = document.getElementById('mCardNum');
+  if (cardNumEl) {
+    if (c.num) {
+      cardNumEl.textContent = c.setTotal ? `#${c.num} / ${c.setTotal}` : `#${c.num}`;
+    } else {
+      cardNumEl.textContent = '';
+    }
+  }
+  // Condensed to one line (set · series · date) instead of three stacked lines,
+  // to free up vertical space for the card image and price chart.
+  document.getElementById('mMeta').innerHTML =
+    [c.set, c.series, formatDateDisplay(c.date)].filter(Boolean).join(' <span class="meta-dot">·</span> ');
+  // Price with change indicator in modal
+  const cv = priceVal(c.price), pv = priceVal(c.prevPrice);
+  let priceHtml = c.price && c.price !== 'N/A' ? c.price : 'Price N/A';
+  // FEATURE (2026-08-02): price-change % hidden entirely in read-only share view.
+  if (!READ_ONLY_SHARE && cv >= 0 && pv >= 0 && pv > 0) {
+    const delta = cv - pv;
+    const pct = (delta / pv * 100).toFixed(1);
+    const sign = delta >= 0 ? '+' : '';
+    const cls = delta >= 0 ? 'price-up' : 'price-down';
+    const arrow = delta >= 0 ? '↑' : '↓';
+    priceHtml += ` <span class="price-change ${cls}" style="font-size:13px;">${arrow} ${sign}${pct}%</span>`;
+  }
+  const staleBadge = stalePriceBadge(c);
+  if (staleBadge) priceHtml += ' ' + staleBadge;
+  // FEATURE (2026-08-02): both the 70%-of-market guidance and the recorded
+  // "Paid" price are hidden entirely in read-only share view — neither is
+  // useful or appropriate to show a visitor browsing someone else's collection.
+  if (!READ_ONLY_SHARE) {
+    const seventyLabel = seventyPercentLabel(c);
+    if (seventyLabel) {
+      priceHtml += `<div class="modal-70pct" title="70% of market price">70%: ${seventyLabel}</div>`;
+    }
+    // FEATURE (2026-07-29): show what was actually paid, but ONLY if a real
+    // purchase price was recorded (Skip leaves it unset — never show "$0.00"
+    // or fabricate a value for older cards added before this feature).
+    const purchasePrice = ownedPurchasePrice(c);
+    if (purchasePrice !== null && purchasePrice > 0) {
+      priceHtml += `<div class="modal-purchase-price">Paid: $${purchasePrice.toFixed(2)}</div>`;
+    }
+  }
+  document.getElementById('mPrice').innerHTML = priceHtml;
+
+  const img = document.getElementById('mImg');
+  const fallback = document.getElementById('mFallback');
+  if (c.pic && c.pic !== 'N/A') {
+    img.src = c.pic;
+    img.style.display = '';
+    fallback.style.display = 'none';
+  } else {
+    img.src = '';
+    img.style.display = 'none';
+    fallback.style.display = 'block';
+  }
+
+  // Map API set names → TCGplayer set names where they differ
+  const SET_NAME_MAP = {
+    'Base':                   'Base Set',
+    'Jungle':                 'Jungle',
+    'Fossil':                 'Fossil',
+    'Base Set 2':             'Base Set 2',
+    'Team Rocket':            'Team Rocket',
+    'Gym Heroes':             'Gym Heroes',
+    'Gym Challenge':          'Gym Challenge',
+    'Neo Genesis':            'Neo Genesis',
+    'Neo Discovery':          'Neo Discovery',
+    'Neo Revelation':         'Neo Revelation',
+    'Neo Destiny':            'Neo Destiny',
+    'Legendary Collection':   'Legendary Collection',
+    'Expedition Base Set':    'Expedition',
+    'Aquapolis':              'Aquapolis',
+    'Skyridge':               'Skyridge',
+    'EX Ruby & Sapphire':     'EX Ruby & Sapphire',
+    'EX Sandstorm':           'EX Sandstorm',
+    'EX Dragon':              'EX Dragon',
+    'EX Team Magma vs Team Aqua': 'EX Team Magma vs Team Aqua',
+    'EX Hidden Legends':      'EX Hidden Legends',
+    'EX FireRed & LeafGreen': 'EX FireRed & LeafGreen',
+    'EX Team Rocket Returns': 'EX Team Rocket Returns',
+    'EX Deoxys':              'EX Deoxys',
+    'EX Emerald':             'EX Emerald',
+    'EX Unseen Forces':       'EX Unseen Forces',
+    'EX Delta Species':       'EX Delta Species',
+    'EX Legend Maker':        'EX Legend Maker',
+    'EX Holon Phantoms':      'EX Holon Phantoms',
+    'EX Crystal Guardians':   'EX Crystal Guardians',
+    'EX Dragon Frontiers':    'EX Dragon Frontiers',
+    'EX Power Keepers':       'EX Power Keepers',
+  };
+  const tcgSet = SET_NAME_MAP[c.set] || c.set;
+  const tcgQuery = encodeURIComponent(`${nameStr} ${tcgSet}`);
+  document.getElementById('mBuy').href =
+    `https://www.tcgplayer.com/search/pokemon/product?q=${tcgQuery}&view=grid`;
+
+  // Update own button state (hidden entirely in read-only share view — see
+  // body.read-only-share CSS rules — but keep textContent harmless either way)
+  const ownBtn = document.getElementById('mOwn');
+  const owned = isOwned(c);
+  ownBtn.textContent = owned ? 'Owned' : '＋ Mark as Owned';
+  ownBtn.classList.toggle('owned', owned);
+
+  // FEATURE (2026-08-02): read-only share modal is trimmed to just image,
+  // name, rarity/set/series/date, price, and the TCGPlayer link — no price
+  // history chart (also hidden via CSS, this just skips the Chart.js work).
+  if (!READ_ONLY_SHARE) {
+    renderPriceChart(c.cardId || '');
+  }
+
+  document.getElementById('modalBackdrop').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function toggleFromModal() {
+  if (!_modalCard) return;
+  const c = _modalCard;
+  const justAdded = toggleOwned(c);
+  const owned = isOwned(c);
+  const ownBtn = document.getElementById('mOwn');
+  ownBtn.textContent = owned ? 'Owned' : '＋ Mark as Owned';
+  ownBtn.classList.toggle('owned', owned);
+  // Also sync any visible list/grid row for this card, same as handleToggle()
+  // does — the modal can be reached from either view, and closing back out
+  // shouldn't reveal a stale (un-updated) checkmark underneath.
+  const key = cardKey(c).replace(/[^a-z0-9]/gi,'_');
+  const row = document.getElementById('row-' + key);
+  if (row) {
+    row.classList.toggle('owned', owned);
+    const chk = row.querySelector('.crow-check');
+    if (chk) { chk.textContent = owned ? '✓' : ''; chk.classList.toggle('owned', owned); }
+  }
+  const tile = document.getElementById('tile-' + key);
+  if (tile) {
+    tile.classList.toggle('owned', owned);
+    const chk = tile.querySelector('.tile-check');
+    if (chk) chk.textContent = owned ? '✓' : '';
+  }
+  // FEATURE (2026-07-29): show the purchase-price prompt right in this
+  // already-open modal when this action just marked the card owned (never
+  // on un-owning). No need to re-open the modal — we're already looking at it.
+  if (justAdded) showPurchasePrompt();
+}
+
+// ─── PURCHASE PRICE PROMPT ──────────────────────────────────────────────────
+// Shown after marking a card owned (from either the list/grid checkbox via
+// handleToggle(), or the in-modal button via toggleFromModal() above).
+// Purely optional — Skip leaves purchasePrice unset, same as any card added
+// before this feature existed.
+function showPurchasePrompt() {
+  const promptEl = document.getElementById('mPurchasePrompt');
+  const input = document.getElementById('mPurchaseInput');
+  if (!promptEl || !input) return;
+  input.value = '';
+  promptEl.style.display = '';
+  // Focus for quick typing, but don't fight the modal's own open animation —
+  // a microtask delay is enough for the display change above to take effect.
+  setTimeout(() => input.focus(), 0);
+}
+function hidePurchasePrompt() {
+  const promptEl = document.getElementById('mPurchasePrompt');
+  if (promptEl) promptEl.style.display = 'none';
+}
+function savePurchasePrice() {
+  if (!_modalCard) { hidePurchasePrompt(); return; }
+  const input = document.getElementById('mPurchaseInput');
+  const raw = input ? input.value.trim() : '';
+  const val = parseFloat(raw);
+  if (raw && !isNaN(val) && val >= 0) {
+    setPurchasePrice(_modalCard, val);
+  }
+  hidePurchasePrompt();
+}
+function skipPurchasePrice() {
+  hidePurchasePrompt();
+}
+
+function closeModal(restoreScroll = true) {
+  document.getElementById('modalBackdrop').classList.remove('active');
+  document.body.style.overflow = '';
+  if (_priceChart) { _priceChart.destroy(); _priceChart = null; }
+  if (restoreScroll) {
+    const y = parseInt(sessionStorage.getItem('binderScroll') || '0', 10);
+    // Restore after paint — modal CSS transition briefly holds layout,
+    // so we wait two frames to ensure the scroll lands correctly
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      window.scrollTo({ top: y, behavior: 'instant' });
+    }));
+  }
+}
+
+// ─── PRICE HISTORY CHART ─────────────────────────────────────────────────────
+function renderPriceChart(cardId) {
+  const canvas = document.getElementById('priceChart');
+  const emptyMsg = document.getElementById('mChartEmpty');
+
+  // Destroy existing chart instance
+  if (_priceChart) { _priceChart.destroy(); _priceChart = null; }
+
+  const history = PRICE_HISTORY[cardId] || [];
+
+  if (history.length < 2) {
+    canvas.style.display = 'none';
+    emptyMsg.style.display = '';
+    return;
+  }
+
+  canvas.style.display = '';
+  emptyMsg.style.display = 'none';
+
+  const labels = history.map(e => e.d);
+  const prices = history.map(e => e.p);
+
+  const first = prices[0], last = prices[prices.length - 1];
+  const trending = last >= first ? '#4ade80' : '#f87171';
+
+  _priceChart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: prices,
+        borderColor: trending,
+        backgroundColor: trending + '18',
+        borderWidth: 2,
+        pointRadius: history.length <= 30 ? 3 : 0,
+        pointBackgroundColor: trending,
+        fill: true,
+        tension: 0.3,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: ctx => formatDateDisplay(ctx[0]?.label || ''),
+            label: ctx => `$${ctx.parsed.y.toFixed(2)}`,
+          },
+          backgroundColor: '#1f2330',
+          borderColor: '#2b2f3d',
+          borderWidth: 1,
+          titleColor: '#8b8fa3',
+          bodyColor: '#eae7dd',
+          padding: 8,
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: '#8b8fa3', font: { size: 9 }, maxTicksLimit: 6,
+            callback: function(value) {
+              const label = this.getLabelForValue(value);
+              return formatDateDisplay(label);
+            },
+          },
+          grid: { color: '#2b2f3d' },
+        },
+        y: {
+          ticks: {
+            color: '#8b8fa3',
+            font: { size: 9 },
+            callback: v => '$' + v.toFixed(0),
+          },
+          grid: { color: '#2b2f3d' },
+        }
+      }
+    }
+  });
+}

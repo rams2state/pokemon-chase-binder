@@ -695,6 +695,16 @@
     .modal-actions{margin-top:16px;gap:6px;}
     .modal-own,.modal-buy{padding:12px 16px;font-size:14px;}
 
+    /* FEATURE (2026-08-02): read-only share modal on mobile only — the
+       chart/own-button/purchase-prompt are hidden (see body.read-only-share
+       rules above), but .modal{height:100vh} still forced the sheet to fill
+       the full screen regardless, leaving a large empty gap below the
+       TCGPlayer button. Let the modal size to its (now shorter) content
+       instead, just for this view. Desktop/web is untouched by request. */
+    body.read-only-share .modal{
+      height:auto;max-height:94vh;
+    }
+
     /* Era headers */
     .era-title{font-size:18px;}
 

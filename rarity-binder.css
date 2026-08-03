@@ -83,11 +83,19 @@
     margin-right:auto;
   }
   .read-only-banner {
-    display:inline-block; position:static; margin:10px 0 0;
+    display:inline-block; position:static;
     background:rgba(250,204,21,.12); border:1px solid var(--gold);
     color:var(--gold-bright); padding:8px 14px; border-radius:8px;
     font-size:13px;
   }
+  /* FEATURE (2026-08-02): version tag placed just left of the read-only
+     banner pill (second copy — the header-row one is hidden along with the
+     rest of headerBtnRow in this view). See applyReadOnlyShareUI in
+     rarity-binder.js, which fills in #appVersionReadOnly's text. */
+  .read-only-row {
+    display:flex; align-items:center; gap:8px; margin:10px 0 0;
+  }
+  .app-version-readonly { margin-right:0; }
   @media (max-width:600px) {
     .header-btn-row { gap:6px; }
     .auth-btn { padding:6px 10px; font-size:12px; }

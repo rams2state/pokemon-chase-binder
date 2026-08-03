@@ -753,6 +753,11 @@ function applyReadOnlyShareUI() {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
+  // FEATURE (2026-08-02): the header-row version tag is hidden along with
+  // the rest of headerBtnRow above, so a second copy lives next to the
+  // read-only banner instead (#appVersionReadOnly, in #readOnlyRow).
+  const versionReadOnly = document.getElementById('appVersionReadOnly');
+  if (versionReadOnly) versionReadOnly.textContent = 'v' + APP_VERSION;
   // FEATURE (2026-08-02): hides the owned checkbox + owned "grayed out /
   // struck-through" styling on cards in read-only share view (see CSS rules
   // scoped under body.read-only-share). Since the default view here is

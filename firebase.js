@@ -56,13 +56,15 @@ if (_shareIdParam) {
 // ── Read-only shared-collection view ──────────────────────────────────────────
 function initReadOnlyShareView(shareId) {
   // Hide auth/share controls — neither makes sense when viewing someone else's
-  // collection — and show the read-only banner.
+  // collection — and show the read-only banner (wrapped with the version tag
+  // in #readOnlyRow — see POKEMON_RARITY_BINDER.html and applyReadOnlyShareUI
+  // in rarity-binder.js, which fills in #appVersionReadOnly's text).
   const authBtn = document.getElementById('authBtn');
   const shareBtn = document.getElementById('shareBtn');
-  const banner = document.getElementById('readOnlyBanner');
+  const readOnlyRow = document.getElementById('readOnlyRow');
   if (authBtn) authBtn.style.display = 'none';
   if (shareBtn) shareBtn.style.display = 'none';
-  if (banner) banner.style.display = '';
+  if (readOnlyRow) readOnlyRow.style.display = '';
 
   // Hides the header button row / Now button in read-only view. Lives in
   // rarity-binder.js (applyReadOnlyShareUI) since it also has to coordinate

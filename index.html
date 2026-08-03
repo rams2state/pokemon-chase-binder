@@ -35,7 +35,10 @@ if ('serviceWorker' in navigator) {
       <button id="shareBtn" class="auth-btn share-btn" style="display:none;" onclick="window._fbShare && window._fbShare()">🔗 Share</button>
       <button id="authBtn" class="auth-btn" onclick="window._fbSignIn && window._fbSignIn()">⬡ Sign in</button>
     </div>
-    <div id="readOnlyBanner" class="read-only-banner" style="display:none;">👁 Viewing a shared collection (read-only)</div>
+    <div class="read-only-row" id="readOnlyRow" style="display:none;">
+      <span class="app-version app-version-readonly" id="appVersionReadOnly"></span>
+      <div id="readOnlyBanner" class="read-only-banner">👁 Viewing a shared collection (read-only)</div>
+    </div>
     <div class="stats-row" id="statsRow">
       <div class="stat"><div class="n" id="statCards">—</div><div class="l">Total Cards</div></div>
       <div class="stat stat-owned" id="statOwnedBox" onclick="toggleOwnedFilter()" title="Click to show only owned cards">
@@ -174,7 +177,7 @@ if ('serviceWorker' in navigator) {
   </div>
 </div>
 
-<footer>Pokémon TCG Rarity Binder v2.0 · Data from Pokémon TCG API & TCGplayer</footer>
+<footer>Pokémon TCG Rarity Binder · Data from Pokémon TCG API & TCGplayer</footer>
 
 <!-- Firebase SDK -->
 <script type="module" src="firebase.js"></script>

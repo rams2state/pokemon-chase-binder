@@ -64,6 +64,16 @@ function initReadOnlyShareView(shareId) {
   if (shareBtn) shareBtn.style.display = 'none';
   if (banner) banner.style.display = '';
 
+  // Hides the header button row / Now button in read-only view. Lives in
+  // rarity-binder.js (applyReadOnlyShareUI) since it also has to coordinate
+  // with loadCards()'s default grid+owned view — that script may not have
+  // run yet, so retry briefly rather than silently no-op-ing.
+  const tryApplyReadOnlyUI = () => {
+    if (typeof window.applyReadOnlyShareUI === 'function') window.applyReadOnlyShareUI();
+    else setTimeout(tryApplyReadOnlyUI, 50);
+  };
+  tryApplyReadOnlyUI();
+
   const applySnapshot = snap => {
     // FEATURE (2026-07-29): "owned" data is now { [key]: {addedAt} } rather
     // than a plain array of keys (see cardKey/normalizeOwnedData in

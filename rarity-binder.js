@@ -673,12 +673,20 @@ function seventyPercentLabel(c) {
 // tight, styled to sit quietly next to the main price rather than compete
 // with it.
 function seventyPercentBadgeHtml(c) {
+  // FEATURE (2026-08-02): hidden entirely in read-only share view — a
+  // visitor browsing someone else's collection has no use for "what to pay"
+  // guidance on cards they don't own, and it's not the owner's info to show.
+  if (READ_ONLY_SHARE) return '';
   const label = seventyPercentLabel(c);
   return label ? `<span class="price-70pct" title="70% of market price">70%: ${label}</span>` : '';
 }
 
 // Returns HTML badge string for price change, or ''
 function priceChangeBadge(current, prev) {
+  // FEATURE (2026-08-02): price-change % hidden entirely in read-only share
+  // view, same reasoning as the 70%-of-market badge — not useful/appropriate
+  // to show a visitor browsing someone else's collection.
+  if (READ_ONLY_SHARE) return '';
   const cv = priceVal(current);
   const pv = priceVal(prev);
   if (cv < 0 || pv < 0 || pv === 0) return '';
@@ -702,8 +710,40 @@ function loadCards(rawCards) {
   document.getElementById('cardView').style.display = '';
   updateCollectionValue();
   showQuickRow();
-  setView('list'); // default to list view on load
+  if (READ_ONLY_SHARE) {
+    // FEATURE (2026-08-02): shared collections default to grid view, filtered
+    // to owned cards only — that's the whole point of sharing a collection,
+    // so skip straight to it instead of making a visitor click "Owned" + "Grid".
+    if (!showOwnedOnly) toggleOwnedFilter();
+    setView('grid');
+  } else {
+    setView('list'); // default to list view on load
+  }
 }
+
+// ─── READ-ONLY SHARE UI (header button row + Now button hidden) ─────────────
+// Called once from firebase.js's initReadOnlyShareView(). Hides the sign-in/
+// share controls and the "Now" trend button (gainers/drops don't make sense
+// browsing someone else's collection read-only). The numeric stats row
+// (Total Cards / Owned / Value) and the read-only banner stay visible — see
+// 2026-08-02 revert: the "{firstName}'s Collection" heading was tried and
+// then explicitly reverted by request, keep the top bar as the original
+// stats row instead.
+function applyReadOnlyShareUI() {
+  const headerBtnRow = document.getElementById('headerBtnRow');
+  if (headerBtnRow) headerBtnRow.style.display = 'none';
+  ['btnNow', 'btnNowDesktop'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  // FEATURE (2026-08-02): hides the owned checkbox + owned "grayed out /
+  // struck-through" styling on cards in read-only share view (see CSS rules
+  // scoped under body.read-only-share). Since the default view here is
+  // grid+owned-only, every visible card would otherwise show as checked/
+  // greyed, which reads as noise rather than useful signal to a visitor.
+  document.body.classList.add('read-only-share');
+}
+window.applyReadOnlyShareUI = applyReadOnlyShareUI;
 
 function updateStats() {
   document.getElementById('statCards').textContent = ALL_CARDS.length.toLocaleString();
@@ -1803,7 +1843,8 @@ function openModal(c, updateList = true) {
   // Price with change indicator in modal
   const cv = priceVal(c.price), pv = priceVal(c.prevPrice);
   let priceHtml = c.price && c.price !== 'N/A' ? c.price : 'Price N/A';
-  if (cv >= 0 && pv >= 0 && pv > 0) {
+  // FEATURE (2026-08-02): price-change % hidden entirely in read-only share view.
+  if (!READ_ONLY_SHARE && cv >= 0 && pv >= 0 && pv > 0) {
     const delta = cv - pv;
     const pct = (delta / pv * 100).toFixed(1);
     const sign = delta >= 0 ? '+' : '';
@@ -1813,16 +1854,21 @@ function openModal(c, updateList = true) {
   }
   const staleBadge = stalePriceBadge(c);
   if (staleBadge) priceHtml += ' ' + staleBadge;
-  const seventyLabel = seventyPercentLabel(c);
-  if (seventyLabel) {
-    priceHtml += `<div class="modal-70pct" title="70% of market price">70%: ${seventyLabel}</div>`;
-  }
-  // FEATURE (2026-07-29): show what was actually paid, but ONLY if a real
-  // purchase price was recorded (Skip leaves it unset — never show "$0.00"
-  // or fabricate a value for older cards added before this feature).
-  const purchasePrice = ownedPurchasePrice(c);
-  if (purchasePrice !== null && purchasePrice > 0) {
-    priceHtml += `<div class="modal-purchase-price">Paid: $${purchasePrice.toFixed(2)}</div>`;
+  // FEATURE (2026-08-02): both the 70%-of-market guidance and the recorded
+  // "Paid" price are hidden entirely in read-only share view — neither is
+  // useful or appropriate to show a visitor browsing someone else's collection.
+  if (!READ_ONLY_SHARE) {
+    const seventyLabel = seventyPercentLabel(c);
+    if (seventyLabel) {
+      priceHtml += `<div class="modal-70pct" title="70% of market price">70%: ${seventyLabel}</div>`;
+    }
+    // FEATURE (2026-07-29): show what was actually paid, but ONLY if a real
+    // purchase price was recorded (Skip leaves it unset — never show "$0.00"
+    // or fabricate a value for older cards added before this feature).
+    const purchasePrice = ownedPurchasePrice(c);
+    if (purchasePrice !== null && purchasePrice > 0) {
+      priceHtml += `<div class="modal-purchase-price">Paid: $${purchasePrice.toFixed(2)}</div>`;
+    }
   }
   document.getElementById('mPrice').innerHTML = priceHtml;
 
@@ -1877,14 +1923,19 @@ function openModal(c, updateList = true) {
   document.getElementById('mBuy').href =
     `https://www.tcgplayer.com/search/pokemon/product?q=${tcgQuery}&view=grid`;
 
-  // Update own button state
+  // Update own button state (hidden entirely in read-only share view — see
+  // body.read-only-share CSS rules — but keep textContent harmless either way)
   const ownBtn = document.getElementById('mOwn');
   const owned = isOwned(c);
   ownBtn.textContent = owned ? 'Owned' : '＋ Mark as Owned';
   ownBtn.classList.toggle('owned', owned);
 
-  // Render price history chart
-  renderPriceChart(c.cardId || '');
+  // FEATURE (2026-08-02): read-only share modal is trimmed to just image,
+  // name, rarity/set/series/date, price, and the TCGPlayer link — no price
+  // history chart (also hidden via CSS, this just skips the Chart.js work).
+  if (!READ_ONLY_SHARE) {
+    renderPriceChart(c.cardId || '');
+  }
 
   document.getElementById('modalBackdrop').classList.add('active');
   document.body.style.overflow = 'hidden';

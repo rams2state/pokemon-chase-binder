@@ -329,6 +329,19 @@
   }
   .card-tile.owned .tile-check{background:#4ade80;border-color:#4ade80;color:#0e1016;}
 
+  /* FEATURE (2026-08-02): read-only share view — hide the owned checkbox and
+     the "owned" greyed-out/struck-through styling entirely. Since this view
+     defaults to grid+owned-only, every card on screen is owned by
+     definition, so the checkbox/greying is just noise here rather than
+     useful signal. Cards render at full opacity/detail instead. */
+  body.read-only-share .crow-check,
+  body.read-only-share .tile-check { display:none; }
+  body.read-only-share .card-row.owned { opacity:1; }
+  body.read-only-share .card-row.owned .crow-name { text-decoration:none; color:inherit; }
+  body.read-only-share .card-tile.owned { border-color:var(--line); box-shadow:none; }
+  body.read-only-share .card-tile.owned img { opacity:1; }
+  body.read-only-share .card-tile.owned .tile-name { color:inherit; text-decoration:none; }
+
   /* RARITY PILLS */
   .pill{
     font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;
@@ -452,6 +465,13 @@
     font-size:14px;letter-spacing:0.01em;transition:all .2s;
   }
   .modal-buy:hover{background:var(--gold-bright);box-shadow:0 4px 16px rgba(255,203,5,0.3);}
+
+  /* FEATURE (2026-08-02): read-only share modal trimmed to just image, name,
+     rarity/set/series/date, price, and the TCGPlayer link — hide the price
+     history chart, "Mark as Owned" button, and purchase-price prompt. */
+  body.read-only-share .modal-chart-wrap,
+  body.read-only-share .modal-own,
+  body.read-only-share .modal-purchase-prompt { display:none !important; }
 
   /* Purchase-price prompt — shown right after marking a card owned */
   .modal-purchase-prompt{

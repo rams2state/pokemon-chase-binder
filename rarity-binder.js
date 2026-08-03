@@ -1,3 +1,12 @@
+// ─── APP VERSION ─────────────────────────────────────────────────────────────
+// FEATURE (2026-08-02): single source of truth for the version number shown
+// in the footer, so it's always obvious (without hard-refreshing) whether a
+// push actually landed. Bumped ONLY when explicitly asked to "bump the
+// version number" — patch (last number) for normal fixes/tweaks, can climb
+// into the hundreds; minor/major bumped only if asked. History:
+//   1.0.0 — 2026-08-02 — initial version number introduced.
+const APP_VERSION = '1.0.0';
+
 // ─── DATA ────────────────────────────────────────────────────────────────────
 let ALL_CARDS = [];
 let PRICE_HISTORY = {};  // card_id -> [{d: 'YYYY-MM-DD', p: 1.23}, ...]
@@ -698,6 +707,14 @@ function priceChangeBadge(current, prev) {
   const sign = delta > 0 ? '+' : '';
   return `<span class="price-change ${cls}">${arrow} ${sign}${pct.toFixed(1)}%</span>`;
 }
+
+// Render the version tag as soon as the DOM element exists — doesn't need to
+// wait for card data to load, so it's set immediately rather than inside
+// loadCards().
+(function initVersionTag() {
+  const el = document.getElementById('appVersion');
+  if (el) el.textContent = 'v' + APP_VERSION;
+})();
 
 // ─── LOAD DATA ───────────────────────────────────────────────────────────────
 function loadCards(rawCards) {

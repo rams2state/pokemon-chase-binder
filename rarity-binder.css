@@ -72,6 +72,16 @@
   .auth-btn:hover { border-color:var(--gold); color:var(--text); }
   .auth-btn.signed-in { border-color:#4ade80; color:#4ade80; }
   .share-btn.copied { border-color:var(--gold); color:var(--gold-bright); }
+  /* FEATURE (2026-08-02): version tag — pushed to the far left of the header
+     button row (margin-right:auto against the row's flex-end buttons), same
+     line as Share/Sign-in. See APP_VERSION in rarity-binder.js. Bumped only
+     when explicitly asked to "bump the version number", so it's always
+     obvious whether a push landed without needing to hard-refresh to compare. */
+  .app-version {
+    font-size:11px; color:var(--dim); font-family:inherit;
+    letter-spacing:0.02em; white-space:nowrap; opacity:0.7;
+    margin-right:auto;
+  }
   .read-only-banner {
     display:inline-block; position:static; margin:10px 0 0;
     background:rgba(250,204,21,.12); border:1px solid var(--gold);

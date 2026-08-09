@@ -287,6 +287,35 @@ function renderPriceChart(cardId) {
   const first = prices[0], last = prices[prices.length - 1];
   const trending = last >= first ? '#4ade80' : '#f87171';
 
+  // BUG FIX (2026-08-08): Chart.js's default auto-scaling picks "nice round"
+  // tick steps (e.g. $1 increments) based on the overall axis range it
+  // decides to show, not the actual min/max of the data — so a card that
+  // holds flat at $121 for weeks then dips to $120.50 got stretched across
+  // gridlines spanning a much wider band than the real price ever moved,
+  // making a totally ordinary $0.50-$1 move look like a cliff-edge crash.
+  // Fix: explicitly bound the y-axis to the REAL min/max of this card's own
+  // price history, with a small padding so points don't sit flush against
+  // the top/bottom edge. A flat/near-flat line (min === max, or a razor-thin
+  // range) gets a minimum $1 window so the axis doesn't collapse to zero
+  // height and the line doesn't look artificially jumpy from sub-cent noise.
+  const dataMin = Math.min(...prices);
+  const dataMax = Math.max(...prices);
+  const dataRange = dataMax - dataMin;
+  // Pad by 10% of the range on each side, but never less than $0.50 total
+  // padding so a genuinely flat price still renders with visible headroom.
+  const pad = Math.max(dataRange * 0.1, 0.5);
+  let yMin = dataMin - pad;
+  let yMax = dataMax + pad;
+  // Guard against a razor-thin or perfectly flat range collapsing the axis —
+  // enforce at least a $1 total window so gridlines/labels stay legible.
+  if (yMax - yMin < 1) {
+    const mid = (yMax + yMin) / 2;
+    yMin = mid - 0.5;
+    yMax = mid + 0.5;
+  }
+  // Prices are never negative — don't let padding push the floor below $0.
+  yMin = Math.max(yMin, 0);
+
   _priceChart = new Chart(canvas, {
     type: 'line',
     data: {
@@ -333,10 +362,20 @@ function renderPriceChart(cardId) {
           grid: { color: '#2b2f3d' },
         },
         y: {
+          // BUG FIX (2026-08-08): explicit min/max tied to this card's real
+          // price range (computed above) instead of Chart.js's auto-scaled
+          // "nice round number" default — see comment above for the full
+          // reasoning (a $0.50 move was rendering as a visual cliff).
+          min: yMin,
+          max: yMax,
           ticks: {
             color: '#8b8fa3',
             font: { size: 9 },
-            callback: v => '$' + v.toFixed(0),
+            // Show cents whenever the axis window is small enough that
+            // whole-dollar rounding would make every tick label look
+            // identical (e.g. a $120-$121 range with $1 whole-dollar
+            // rounding used to print "$120" six times in a row).
+            callback: v => (yMax - yMin) < 10 ? '$' + v.toFixed(2) : '$' + v.toFixed(0),
           },
           grid: { color: '#2b2f3d' },
         }

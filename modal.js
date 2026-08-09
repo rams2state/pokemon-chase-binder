@@ -80,12 +80,17 @@ function openModal(c, updateList = true) {
   document.getElementById('mMeta').innerHTML =
     [c.set, c.series, formatDateDisplay(c.date)].filter(Boolean).join(' <span class="meta-dot">·</span> ');
   // Price with change indicator in modal
-  const cv = priceVal(c.price), pv = priceVal(c.prevPrice);
+  const cv = priceVal(c.price);
   let priceHtml = c.price && c.price !== 'N/A' ? c.price : 'Price N/A';
-  // FEATURE (2026-08-02): price-change % hidden entirely in read-only share view.
-  if (!READ_ONLY_SHARE && cv >= 0 && pv >= 0 && pv > 0) {
-    const delta = cv - pv;
-    const pct = (delta / pv * 100).toFixed(1);
+  // FEATURE (2026-08-08): now compares against the price from 7 days ago
+  // (via PRICE_HISTORY, see getPriceNDaysAgo() in rarity.js) instead of
+  // yesterday's "Previous Price" — same 7-day window used everywhere else in
+  // the app (list rows, grid tiles). FEATURE (2026-08-02): still hidden
+  // entirely in read-only share view.
+  const pv7 = getPriceNDaysAgo(c.cardId, 7);
+  if (!READ_ONLY_SHARE && cv >= 0 && pv7 !== null && pv7 > 0) {
+    const delta = cv - pv7;
+    const pct = (delta / pv7 * 100).toFixed(1);
     const sign = delta >= 0 ? '+' : '';
     const cls = delta >= 0 ? 'price-up' : 'price-down';
     const arrow = delta >= 0 ? '↑' : '↓';

@@ -359,20 +359,26 @@ function setTrend(mode) {
 function renderTrend(el) {
   // Require both prices to be real values, and a minimum price to filter out bulk noise
   const MIN_PRICE = 2.00; // ignore cards under $2 — they create misleading % swings
+  // FEATURE (2026-08-08): Gainers/Losers now compares against the price from
+  // 7 days ago (via getPriceNDaysAgo(), same PRICE_HISTORY lookup used by
+  // priceChangeBadge() everywhere else in the app) instead of yesterday's
+  // single "Previous Price" value — a one-day move isn't a meaningful trend,
+  // and this keeps every price-change display in the app using the same
+  // window.
   const withChange = ALL_CARDS
-    .filter(c => {
-      const cv = priceVal(c.price), pv = priceVal(c.prevPrice);
-      return cv > 0 && pv > 0 && Math.max(cv, pv) >= MIN_PRICE;
-    })
     .map(c => {
-      const cv = priceVal(c.price), pv = priceVal(c.prevPrice);
-      const delta = cv - pv;
-      const pct = (delta / pv) * 100;
-      return { ...c, _delta: delta, _pct: pct, _cv: cv, _pv: pv };
+      const cv = priceVal(c.price), pv = getPriceNDaysAgo(c.cardId, 7);
+      return { ...c, _pv7: pv, _cv: cv };
+    })
+    .filter(c => c._cv > 0 && c._pv7 !== null && c._pv7 > 0 && Math.max(c._cv, c._pv7) >= MIN_PRICE)
+    .map(c => {
+      const delta = c._cv - c._pv7;
+      const pct = (delta / c._pv7) * 100;
+      return { ...c, _delta: delta, _pct: pct, _pv: c._pv7 };
     });
 
   if (withChange.length === 0) {
-    el.innerHTML = `<div class="empty"><div class="display">No price changes yet</div><p>Run the collector on two separate days to see price movement.</p></div>`;
+    el.innerHTML = `<div class="empty"><div class="display">No price changes yet</div><p>Run the collector daily for at least 7 days to see price movement.</p></div>`;
     return;
   }
 
@@ -400,7 +406,7 @@ function renderTrend(el) {
   }
 
   if (sorted.length === 0) {
-    el.innerHTML = `<div class="empty"><div class="display">${_trendMode === 'gainers' ? 'No gainers yet' : 'No losers yet'}</div><p>Run the collector on two separate days to see price movement.</p></div>`;
+    el.innerHTML = `<div class="empty"><div class="display">${_trendMode === 'gainers' ? 'No gainers yet' : 'No losers yet'}</div><p>Run the collector daily for at least 7 days to see price movement.</p></div>`;
     return;
   }
 
@@ -432,7 +438,7 @@ function renderTrend(el) {
       </div>
       <div class="crow-price-wrap">
         <span class="crow-price">${c.price!=='N/A'?c.price:'—'}</span>${staleWarningIcon(c)}
-        <div style="font-size:10px;color:var(--dim);text-align:right;">was ${c.prevPrice}</div>
+        <div style="font-size:10px;color:var(--dim);text-align:right;">was $${c._pv.toFixed(2)} (7d ago)</div>
         ${badge}
         ${seventyPercentBadgeHtml(c)}
       </div>
@@ -786,7 +792,7 @@ function renderSetDetail(cards, el) {
       const owned = isOwned(c);
       const cdata = JSON.stringify(c).replace(/'/g,'&#39;');
       const key = cardKey(c).replace(/[^a-z0-9]/gi,'_');
-      const changeBadge = priceChangeBadge(c.price, c.prevPrice);
+      const changeBadge = priceChangeBadge(c.price, c.cardId);
       const thumbHtml = c.pic && c.pic !== 'N/A'
         ? `<img class="crow-thumb" src="${c.pic}" alt="${c.name||''}" loading="lazy" onerror="this.style.display='none'">`
         : `<div class="crow-thumb-empty">?</div>`;
@@ -871,7 +877,7 @@ function renderGrid(cards, el) {
       const owned = isOwned(c);
       const cdata = JSON.stringify(c).replace(/'/g, '&#39;');
       const key = cardKey(c).replace(/[^a-z0-9]/gi,'_');
-      const changeBadge = priceChangeBadge(c.price, c.prevPrice);
+      const changeBadge = priceChangeBadge(c.price, c.cardId);
       const imgSrc = c.pic && c.pic !== 'N/A' ? c.pic : '';
       const imgTag = imgSrc
         ? `<img src="${imgSrc}" alt="${c.name||''}" loading="lazy" onerror="this.style.background='var(--panel2)';this.removeAttribute('src')">`

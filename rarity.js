@@ -229,17 +229,50 @@ function seventyPercentBadgeHtml(c) {
   return label ? `<span class="price-70pct" title="70% of market price">70%: ${label}</span>` : '';
 }
 
-// Returns HTML badge string for price change, or ''
-function priceChangeBadge(current, prev) {
+// FEATURE (2026-08-08): "% change" everywhere in the app now compares
+// today's price against the price from ~7 days ago, not against yesterday's
+// "Previous Price" column (which only ever reflects the single most recent
+// prior day the collector ran — a one-day-over-one-day comparison, not a
+// weekly trend). PRICE_HISTORY[cardId] (loaded from card-price-history.json,
+// see app.js's tryAutoLoad) holds a real per-day timeline, so the 7-day-ago
+// price can be looked up directly from it instead of adding a new CSV
+// column. Finds the history entry closest to (today - days) without going
+// OVER that many days back — i.e. the most recent entry that is at least
+// `days` old — so a slightly irregular collector schedule (a skipped day,
+// a late-night run) doesn't break the lookup. Returns null if there's no
+// history entry old enough yet (e.g. a card added to the app less than a
+// week ago) — callers should treat null the same as "no previous price".
+function getPriceNDaysAgo(cardId, days) {
+  const history = (typeof PRICE_HISTORY !== 'undefined' && PRICE_HISTORY[cardId]) || [];
+  if (history.length === 0) return null;
+  const cutoff = new Date();
+  cutoff.setHours(0, 0, 0, 0);
+  cutoff.setDate(cutoff.getDate() - days);
+  // history entries are appended in chronological order by the collector —
+  // walk backward from the end (most recent first) and take the first entry
+  // whose date is on or before the cutoff, i.e. the most recent one that's
+  // still at least `days` old.
+  for (let i = history.length - 1; i >= 0; i--) {
+    const entryDate = new Date(history[i].d + 'T00:00:00');
+    if (entryDate <= cutoff) return history[i].p;
+  }
+  // Every entry is more recent than the cutoff — no data old enough yet.
+  return null;
+}
+
+// Returns HTML badge string for price change, or ''. Compares the current
+// price against the price from 7 days ago (see getPriceNDaysAgo) rather than
+// yesterday's single prior value.
+function priceChangeBadge(current, cardId) {
   // FEATURE (2026-08-02): price-change % hidden entirely in read-only share
   // view, same reasoning as the 70%-of-market badge — not useful/appropriate
   // to show a visitor browsing someone else's collection.
   if (READ_ONLY_SHARE) return '';
   const cv = priceVal(current);
-  const pv = priceVal(prev);
-  if (cv < 0 || pv < 0 || pv === 0) return '';
-  const delta = cv - pv;
-  const pct = (delta / pv) * 100;
+  const pv7 = getPriceNDaysAgo(cardId, 7);
+  if (cv < 0 || pv7 === null || pv7 <= 0) return '';
+  const delta = cv - pv7;
+  const pct = (delta / pv7) * 100;
   if (Math.abs(delta) < 0.01) return '<span class="price-change price-flat">—</span>';
   const arrow = delta > 0 ? '↑' : '↓';
   const cls = delta > 0 ? 'price-up' : 'price-down';

@@ -378,6 +378,10 @@ const RARITY_ORDER = [
   // ── Vintage / Base-WOTC era ──────────────────────────────────────────────
   'Promo',                     // WOTC Black Star Promos
   'Rare Holo',                 // Standard Rare Holo (vintage & modern)
+  // ── Base rarity tiers (e.g. Legendary Collection reverse holos) ──────────
+  'Rare',                      // Base "Rare" tier — below Rare Holo
+  'Uncommon',                  // Below Rare
+  'Common',                    // Below Uncommon — least rare
 ];
 function rarityRank(r, subtypes) {
   if (subtypes && subtypes.includes && subtypes.includes('Gold Star')) return RARITY_ORDER.indexOf('Gold Star');
@@ -421,6 +425,9 @@ function rarityColor(r, name, num) {
     'Rare Holo Star':            '#5ce1e6',
     'Rare Shining':              '#b98aff',
     'Rare Holo':                 '#E8B914',
+    'Rare':                      '#c0c5d1',
+    'Uncommon':                  '#9aa5b8',
+    'Common':                    '#77808f',
   };
   return map[r] || '#8b8fa3';
 }

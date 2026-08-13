@@ -116,6 +116,30 @@ function openModal(c, updateList = true) {
   }
   document.getElementById('mPrice').innerHTML = priceHtml;
 
+  // FEATURE (2026-08-12): condition-tiered pricing (NM/LP/MP/HP/DMG), modal
+  // only — see conditionPrices()/CONDITION_TIERS in rarity.js for the
+  // formula and reasoning. Hidden in read-only share view, same as the 70%
+  // guidance and Paid price above — not useful or appropriate to show a
+  // visitor browsing someone else's collection.
+  const condEl = document.getElementById('mConditionPrices');
+  if (condEl) {
+    if (!READ_ONLY_SHARE) {
+      const tiers = conditionPrices(c);
+      if (tiers) {
+        condEl.innerHTML = tiers.map(t =>
+          `<div class="cond-row"><span class="cond-key" title="${t.label}">${t.key}</span><span class="cond-val">$${t.value.toFixed(2)}</span></div>`
+        ).join('');
+        condEl.style.display = '';
+      } else {
+        condEl.innerHTML = '';
+        condEl.style.display = 'none';
+      }
+    } else {
+      condEl.innerHTML = '';
+      condEl.style.display = 'none';
+    }
+  }
+
   const img = document.getElementById('mImg');
   const fallback = document.getElementById('mFallback');
   if (c.pic && c.pic !== 'N/A') {

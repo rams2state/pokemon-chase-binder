@@ -229,6 +229,43 @@ function seventyPercentBadgeHtml(c) {
   return label ? `<span class="price-70pct" title="70% of market price">70%: ${label}</span>` : '';
 }
 
+// FEATURE (2026-08-12): condition-tiered pricing (NM/LP/MP/HP/DMG), shown
+// only in the card detail modal (not list/grid — those stay single-price to
+// avoid crowding). No live per-condition API is used here — condition
+// pricing data from every source we evaluated (TCG API's Pro-tier endpoint,
+// JustTCG's free tier) was either paywalled or unreliable on thin-volume
+// vintage cards (e.g. a Base Set Shadowless Charizard whose "Moderately
+// Played" price came back at $10,000 — 40x its Near Mint price — clearly a
+// single bad/thin-sample listing dominating the number with no real trading
+// volume to correct it). Instead this is a flat, deterministic formula
+// applied to the market price we already have: condition_price = market
+// price × tier% × 0.70. The 0.70 factor is the SAME 70%-of-market vendor
+// discount as seventyPercentVal() above (NM here reuses that exact value —
+// they're the same number, not two independent calculations, so they never
+// drift out of sync). The tier percentages (NM 100%, LP 80%, MP 50%, HP 30%,
+// DMG 10%) are a standard collector/vendor rule-of-thumb ladder, not a
+// TCGplayer-published standard — real vintage/high-value cards can deviate
+// from flat percentages (e.g. HP+ demand often craters harder than 30% on
+// $1,000+ cards), but a flat ladder is the right first pass for a single
+// formula covering every card in the app uniformly.
+const CONDITION_TIERS = [
+  { key: 'NM',  label: 'Near Mint',        pct: 1.00 },
+  { key: 'LP',  label: 'Lightly Played',   pct: 0.80 },
+  { key: 'MP',  label: 'Moderately Played', pct: 0.50 },
+  { key: 'HP',  label: 'Heavily Played',   pct: 0.30 },
+  { key: 'DMG', label: 'Damaged',          pct: 0.10 },
+];
+function conditionPrices(c) {
+  const v = priceVal(c.price);
+  if (v <= 0) return null;
+  const base = v * 0.70; // same 70%-of-market factor as seventyPercentVal()
+  return CONDITION_TIERS.map(t => ({
+    key: t.key,
+    label: t.label,
+    value: base * t.pct,
+  }));
+}
+
 // FEATURE (2026-08-08): "% change" everywhere in the app now compares
 // today's price against the price from ~7 days ago, not against yesterday's
 // "Previous Price" column (which only ever reflects the single most recent

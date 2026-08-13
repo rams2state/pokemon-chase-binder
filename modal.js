@@ -392,13 +392,25 @@ function renderPriceChart(cardId) {
           // reasoning (a $0.50 move was rendering as a visual cliff).
           min: yMin,
           max: yMax,
+          // BUG FIX (2026-08-12): without a tick cap, Chart.js fills a
+          // narrow min/max window (e.g. the $1 fallback window for a
+          // perfectly flat price) with as many "nice" sub-ticks as fit —
+          // for a $1 range that's 10-cent steps, printing 11 near-identical
+          // gridlines like $9999.50, $9999.60, $9999.70... for a card that
+          // never actually moved. Capped to match the x-axis's own
+          // maxTicksLimit:6 so a flat/near-flat card shows a small, readable
+          // handful of labels instead of a wall of clutter.
           ticks: {
             color: '#8b8fa3',
             font: { size: 9 },
-            // Show cents whenever the axis window is small enough that
-            // whole-dollar rounding would make every tick label look
-            // identical (e.g. a $120-$121 range with $1 whole-dollar
-            // rounding used to print "$120" six times in a row).
+            maxTicksLimit: 6,
+            // Show cents only when the axis window is narrow AND there are
+            // few enough ticks that each one needs sub-dollar precision to
+            // stay distinguishable from its neighbors — otherwise a $1
+            // window with only ~4 ticks (after the cap above) would still
+            // show identical whole-dollar labels. Rounds to whichever
+            // precision keeps adjacent tick labels visually distinct without
+            // over-specifying cents on a card that moved by whole dollars.
             callback: v => (yMax - yMin) < 10 ? '$' + v.toFixed(2) : '$' + v.toFixed(0),
           },
           grid: { color: '#2b2f3d' },

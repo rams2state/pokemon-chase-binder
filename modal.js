@@ -126,7 +126,11 @@ function openModal(c, updateList = true) {
     if (!READ_ONLY_SHARE) {
       const tiers = conditionPrices(c);
       if (tiers) {
-        condEl.innerHTML = tiers.map(t =>
+        const isReal = tiers[0] && tiers[0].source === 'justtcg';
+        const sourceNote = isReal
+          ? '<div class="cond-source">Live market prices (JustTCG)</div>'
+          : '<div class="cond-source cond-source--estimate">Estimated (% of market)</div>';
+        condEl.innerHTML = sourceNote + tiers.map(t =>
           `<div class="cond-row"><span class="cond-key" title="${t.label}">${t.key}</span><span class="cond-val">$${t.value.toFixed(2)}</span></div>`
         ).join('');
         condEl.style.display = '';

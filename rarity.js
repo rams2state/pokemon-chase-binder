@@ -229,40 +229,59 @@ function seventyPercentBadgeHtml(c) {
   return label ? `<span class="price-70pct" title="70% of market price">70%: ${label}</span>` : '';
 }
 
-// FEATURE (2026-08-12): condition-tiered pricing (NM/LP/MP/HP/DMG), shown
-// only in the card detail modal (not list/grid — those stay single-price to
-// avoid crowding). No live per-condition API is used here — condition
-// pricing data from every source we evaluated (TCG API's Pro-tier endpoint,
-// JustTCG's free tier) was either paywalled or unreliable on thin-volume
-// vintage cards (e.g. a Base Set Shadowless Charizard whose "Moderately
-// Played" price came back at $10,000 — 40x its Near Mint price — clearly a
-// single bad/thin-sample listing dominating the number with no real trading
-// volume to correct it). Instead this is a flat, deterministic formula
-// applied to the market price we already have: condition_price = market
-// price × tier% × 0.70. The 0.70 factor is the SAME 70%-of-market vendor
-// discount as seventyPercentVal() above (NM here reuses that exact value —
-// they're the same number, not two independent calculations, so they never
-// drift out of sync). The tier percentages (NM 100%, LP 80%, MP 50%, HP 30%,
-// DMG 10%) are a standard collector/vendor rule-of-thumb ladder, not a
-// TCGplayer-published standard — real vintage/high-value cards can deviate
-// from flat percentages (e.g. HP+ demand often craters harder than 30% on
-// $1,000+ cards), but a flat ladder is the right first pass for a single
-// formula covering every card in the app uniformly.
+// FEATURE (2026-08-12 → updated): condition-tiered pricing (NM/LP/MP/HP/DMG),
+// shown only in the card detail modal (not list/grid — those stay single-price
+// to avoid crowding).
+//
+// PRIMARY SOURCE: real per-condition market prices from JustTCG, baked into
+// the CSV by the daily Python run (columns: Price NM/LP/MP/HP/DMG). These are
+// actual TCGplayer-backed condition prices — one price per condition per card,
+// updated daily alongside the main NM price.
+//
+// FALLBACK: when JustTCG data is absent for a card (set not indexed, new set,
+// promo single, etc.), fall back to the deterministic percentage formula:
+// condition_price = market_price × 0.70 × tier%. The 0.70 factor matches the
+// 70%-of-market vendor discount in seventyPercentVal(). Tier percentages
+// (NM 100%, LP 80%, MP 50%, HP 30%, DMG 10%) are a standard collector ladder.
 const CONDITION_TIERS = [
-  { key: 'NM',  label: 'Near Mint',        pct: 1.00 },
-  { key: 'LP',  label: 'Lightly Played',   pct: 0.80 },
-  { key: 'MP',  label: 'Moderately Played', pct: 0.50 },
-  { key: 'HP',  label: 'Heavily Played',   pct: 0.30 },
-  { key: 'DMG', label: 'Damaged',          pct: 0.10 },
+  { key: 'NM',  label: 'Near Mint',         pct: 1.00, field: 'priceNM'  },
+  { key: 'LP',  label: 'Lightly Played',    pct: 0.80, field: 'priceLP'  },
+  { key: 'MP',  label: 'Moderately Played', pct: 0.50, field: 'priceMP'  },
+  { key: 'HP',  label: 'Heavily Played',    pct: 0.30, field: 'priceHP'  },
+  { key: 'DMG', label: 'Damaged',           pct: 0.10, field: 'priceDMG' },
 ];
 function conditionPrices(c) {
+  // Check if JustTCG real prices are available (at least NM must be present).
+  const nmRaw = c.priceNM;
+  const hasRealPrices = nmRaw && nmRaw !== '' && nmRaw !== 'N/A';
+
+  if (hasRealPrices) {
+    // Real per-condition market prices from JustTCG — apply 70% vendor
+    // discount to each condition's own market price. NM's 70%-of-market
+    // value matches seventyPercentVal() exactly (same calculation, same
+    // number — they can't drift out of sync). LP/MP/HP/DMG each get 70%
+    // of their own condition market price, not 70% of NM scaled down.
+    const tiers = [];
+    for (const t of CONDITION_TIERS) {
+      const raw = c[t.field];
+      if (!raw || raw === '' || raw === 'N/A') continue;
+      const market = parseFloat(raw.replace('$', ''));
+      if (isNaN(market) || market <= 0) continue;
+      tiers.push({ key: t.key, label: t.label, value: market * 0.70, source: 'justtcg' });
+    }
+    if (tiers.length > 0) return tiers;
+    // If parsing failed for all conditions, fall through to formula
+  }
+
+  // Fallback: percentage formula applied to the card's main market price.
   const v = priceVal(c.price);
   if (v <= 0) return null;
-  const base = v * 0.70; // same 70%-of-market factor as seventyPercentVal()
+  const base = v * 0.70;
   return CONDITION_TIERS.map(t => ({
     key: t.key,
     label: t.label,
     value: base * t.pct,
+    source: 'formula',
   }));
 }
 

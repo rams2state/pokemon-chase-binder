@@ -319,7 +319,14 @@ function normalizeCard(raw) {
   if (rarity === 'Rare Holo LV.X') {
     rarity = 'LV.X';
   }
-  return { name, series, set, setCode, num, setTotal, rarity, price, prevPrice, cardId, pic, setLogo, setSymbol, date, lastChecked, lastPriced, supertype, subtypes };
+  // Per-condition prices from JustTCG (baked in by the daily Python run).
+  // Empty string means no data available for that condition.
+  const priceNM  = raw.price_nm  || raw['price_nm']  || '';
+  const priceLP  = raw.price_lp  || raw['price_lp']  || '';
+  const priceMP  = raw.price_mp  || raw['price_mp']  || '';
+  const priceHP  = raw.price_hp  || raw['price_hp']  || '';
+  const priceDMG = raw.price_dmg || raw['price_dmg'] || '';
+  return { name, series, set, setCode, num, setTotal, rarity, price, prevPrice, cardId, pic, setLogo, setSymbol, date, lastChecked, lastPriced, supertype, subtypes, priceNM, priceLP, priceMP, priceHP, priceDMG };
 }
 
 // Formats a release/history date for display as MM/DD/YYYY. Accepts either

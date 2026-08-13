@@ -310,11 +310,14 @@ function priceChangeBadge(current, cardId) {
   if (cv < 0 || pv7 === null || pv7 <= 0) return '';
   const delta = cv - pv7;
   const pct = (delta / pv7) * 100;
-  if (Math.abs(delta) < 0.01) return '<span class="price-change price-flat">—</span>';
+  if (Math.abs(delta) < 0.01) return '<span class="price-change price-flat"><span class="price-change-period">7D</span> —</span>';
   const arrow = delta > 0 ? '↑' : '↓';
   const cls = delta > 0 ? 'price-up' : 'price-down';
   const sign = delta > 0 ? '+' : '';
-  return `<span class="price-change ${cls}">${arrow} ${sign}${pct.toFixed(1)}%</span>`;
+  // FEATURE (2026-08-12): "7D" prefix on every price-change display in the
+  // app, so it's clear at a glance this is a 7-day comparison (see
+  // getPriceNDaysAgo above) and not a same-day/previous-run delta.
+  return `<span class="price-change ${cls}"><span class="price-change-period">7D</span> ${arrow} ${sign}${pct.toFixed(1)}%</span>`;
 }
 
 const RARITY_DISPLAY = {

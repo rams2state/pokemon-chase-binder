@@ -94,7 +94,7 @@ function openModal(c, updateList = true) {
     const sign = delta >= 0 ? '+' : '';
     const cls = delta >= 0 ? 'price-up' : 'price-down';
     const arrow = delta >= 0 ? '↑' : '↓';
-    priceHtml += ` <span class="price-change ${cls}" style="font-size:13px;">${arrow} ${sign}${pct}%</span>`;
+    priceHtml += ` <span class="price-change ${cls}" style="font-size:13px;"><span class="price-change-period">7D</span> ${arrow} ${sign}${pct}%</span>`;
   }
   const staleBadge = stalePriceBadge(c);
   if (staleBadge) priceHtml += ' ' + staleBadge;

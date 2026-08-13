@@ -548,6 +548,10 @@
 
   /* PRICE CHANGE BADGES */
   .price-change{font-size:10.5px;font-weight:700;padding:1px 5px;border-radius:4px;display:inline-block;margin-left:4px;white-space:nowrap;}
+  /* FEATURE (2026-08-12): quiet "7D" prefix so every price-change badge in
+     the app reads clearly as a 7-day comparison, not same-day. Dimmer/lighter
+     weight than the percentage itself so it doesn't compete for attention. */
+  .price-change-period{font-weight:600;opacity:0.65;margin-right:2px;}
   .price-up{background:#4ade8022;color:#4ade80;}
   .price-down{background:#f8717122;color:#f87171;}
   .price-flat{color:var(--dim);}

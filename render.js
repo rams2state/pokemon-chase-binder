@@ -423,7 +423,7 @@ function renderTrend(el) {
     const sign = c._delta >= 0 ? '+' : '';
     const cls = c._delta >= 0 ? 'price-up' : 'price-down';
     const arrow = c._delta >= 0 ? '↑' : '↓';
-    const badge = `<span class="price-change ${cls}">${arrow} ${sign}$${Math.abs(c._delta).toFixed(2)} (${sign}${c._pct.toFixed(1)}%)</span>`;
+    const badge = `<span class="price-change ${cls}"><span class="price-change-period">7D</span> ${arrow} ${sign}$${Math.abs(c._delta).toFixed(2)} (${sign}${c._pct.toFixed(1)}%)</span>`;
     const thumbHtml = c.pic && c.pic !== 'N/A'
       ? `<img class="crow-thumb" src="${c.pic}" alt="${c.name||''}" loading="lazy" onerror="this.style.display='none'">`
       : `<div class="crow-thumb-empty">?</div>`;

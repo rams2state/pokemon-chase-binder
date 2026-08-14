@@ -14,13 +14,27 @@
     --green:#4ade80;
   }
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
+  /* FEATURE (2026-08-13): blocks the browser's native edge-swipe-back
+     gesture (iOS Safari/Chrome) from firing on the same left-edge swipe
+     this app's own touch handler listens for (see the swipe-right IIFE in
+     app.js, EDGE_MAX:40). Without this, a swipe near the left edge could
+     trigger a full native page-history navigation INSTEAD OF (or racing
+     against) the in-app popstate handler that carefully restores set-detail
+     exit state (scroll position, active filters/search/sort) — the native
+     gesture bypasses all of that, which is what caused filters to appear to
+     "reset" and the page to jump to the top on swipe-back in set view. */
+  html,body{margin:0;padding:0;overscroll-behavior-x:none;}
   body{
     background:var(--ink);
     color:var(--text);
     font-family:'Manrope', sans-serif;
     font-size:18px;
     min-height:100vh;
+    /* Belt-and-suspenders alongside overscroll-behavior-x above — some iOS
+       Safari versions still honor the native edge-swipe-back gesture unless
+       touch-action explicitly restricts horizontal panning at the edge.
+       pan-y still allows normal vertical scrolling everywhere. */
+    touch-action:pan-y;
   }
   .display{font-family:'Luckiest Guy','Bebas Neue',sans-serif;letter-spacing:0.01em;}
 
@@ -588,6 +602,28 @@
   .cond-row{display:flex;flex-direction:column;align-items:center;gap:2px;}
   .cond-key{font-size:10px;font-weight:700;color:var(--dim);letter-spacing:0.3px;}
   .cond-val{font-size:13px;font-weight:700;color:var(--gold-bright);}
+  /* FEATURE (2026-08-13): 70%-of-market vendor-offer price, now shown as a
+     smaller secondary line underneath the real market price (cond-val)
+     rather than replacing it — see conditionPrices()/modal.js render for
+     the reasoning (vendor buy-low/sell-real math needs both numbers). */
+  .cond-val-70{font-size:10px;font-weight:600;color:var(--dim);}
+
+  /* FEATURE (2026-08-13): eBay verification fields, modal only — shown
+     alongside (never replacing) the TCGplayer price above. Verified eBay
+     (Raw) only appears when the price-gap variance trigger fired; TAG Slab
+     only for cards on the manual allowlist. Styled distinctly from the
+     condition-price grid so the two data sources (TCGplayer vs. eBay) read
+     as visually separate, not part of the same table. */
+  .modal-ebay-prices{
+    display:flex;flex-direction:column;gap:4px;
+    margin-top:8px;padding:8px 10px;
+    background:var(--panel,#1a1d27);border:1px solid var(--line);border-radius:8px;
+  }
+  .ebay-row{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .ebay-label{font-size:11px;font-weight:600;color:var(--dim);cursor:help;}
+  .ebay-val{font-size:13px;font-weight:700;color:#4ade80;}
+  .ebay-val--slab{color:#60a5fa;}
+
   /* List view change column */
   .td-change{font-size:12px;font-weight:700;white-space:nowrap;}
 
@@ -734,7 +770,14 @@
       gap:6px;
     }
     .modal-imgwrap img{
-      width:240px;max-width:100%;max-height:50vh;
+      /* FEATURE (2026-08-13): shrunk ~10% (240px -> 216px, 50vh -> 45vh) to
+         reclaim vertical space in the mobile bottom-sheet modal — the
+         "Find on TCGplayer" button was getting cut off/crowded once the
+         eBay verification block (Verified eBay Price / TAG Slab Price,
+         shown alongside the 70%-of-market condition grid) was added below
+         the price. Image is still the visual anchor of the modal, just
+         slightly smaller so everything else fits above the fold more often. */
+      width:216px;max-width:100%;max-height:45vh;
     }
     .modal-body{padding:6px 20px 20px;text-align:left;}
     .modal-name{font-size:20px;}
@@ -744,6 +787,10 @@
     .modal-condition-prices{gap:3px;padding:6px 2px;}
     .cond-key{font-size:9px;}
     .cond-val{font-size:11px;}
+    .cond-val-70{font-size:8.5px;}
+    .modal-ebay-prices{padding:6px 8px;}
+    .ebay-label{font-size:10px;}
+    .ebay-val{font-size:12px;}
     .modal-chart-wrap{margin-top:8px;}
     #priceChart{height:140px!important;}
     .modal-chart-label{font-size:9px;}

@@ -60,8 +60,8 @@ if ('serviceWorker' in navigator) {
   <select id="eraFilter"><option value="">All Eras</option></select>
   <select id="rarityFilter"><option value="">All Rarities</option></select>
   <select id="sortBy">
-    <option value="date-desc">Newest First</option>
     <option value="date-asc">Oldest First</option>
+    <option value="date-desc">Newest First</option>
     <option value="price-desc">Price: High to Low</option>
     <option value="price-asc">Price: Low to High</option>
     <option value="recent-purchase">Recent Purchases</option>
@@ -81,8 +81,8 @@ if ('serviceWorker' in navigator) {
   <select id="eraFilterM"><option value="">All Eras</option></select>
   <select id="rarityFilterM"><option value="">All Rarities</option></select>
   <select id="sortByM">
-    <option value="date-desc">Newest First</option>
     <option value="date-asc">Oldest First</option>
+    <option value="date-desc">Newest First</option>
     <option value="price-desc">Price: High to Low</option>
     <option value="price-asc">Price: Low to High</option>
     <option value="recent-purchase">Recent Purchases</option>
@@ -155,6 +155,13 @@ if ('serviceWorker' in navigator) {
       <!-- FEATURE (2026-08-12): condition-tiered pricing (NM/LP/MP/HP/DMG) —
            see conditionPrices() in rarity.js for the formula. Modal only. -->
       <div class="modal-condition-prices" id="mConditionPrices" style="display:none;"></div>
+      <!-- FEATURE (2026-08-13): eBay verification fields — shown ALONGSIDE
+           the TCGplayer price above (never replacing it), so a gap between
+           the two numbers is itself the signal. Verified eBay Price only
+           appears when the price-gap variance trigger fired for this card;
+           TAG Slab Price only appears for cards on the manual allowlist.
+           See ebay_daily_runner.py for the trigger/gating logic. -->
+      <div class="modal-ebay-prices" id="mEbayPrices" style="display:none;"></div>
       <div class="modal-chart-wrap" id="mChartWrap">
         <div class="modal-chart-label">Price History</div>
         <canvas id="priceChart"></canvas>

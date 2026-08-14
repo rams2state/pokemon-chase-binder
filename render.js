@@ -114,7 +114,9 @@ function isFiltersActive() {
   const era = document.getElementById('eraFilter').value;
   const rarity = document.getElementById('rarityFilter').value;
   const sort = document.getElementById('sortBy').value;
-  return search || era || rarity || sort !== 'date-desc' || showOwnedOnly || !!_trendMode;
+  // FEATURE (2026-08-13): default sort is now Oldest First (date-asc) — see
+  // resetFilters() / the <option> order in POKEMON_RARITY_BINDER.html.
+  return search || era || rarity || sort !== 'date-asc' || showOwnedOnly || !!_trendMode;
 }
 
 function updateResetBtn() {
@@ -139,11 +141,15 @@ function resetFilters() {
   document.getElementById('searchWrap').classList.remove('has-text');
   document.getElementById('eraFilter').value = '';
   document.getElementById('rarityFilter').value = '';
-  document.getElementById('sortBy').value = 'date-desc';
+  // FEATURE (2026-08-13): default sort changed from Newest First to Oldest
+  // First per Jordan's request — Reset must restore to the same default the
+  // app now loads with (see the <option> order in POKEMON_RARITY_BINDER.html,
+  // which is what actually determines the pre-JS default on first page load).
+  document.getElementById('sortBy').value = 'date-asc';
   // Sync mobile
   ['eraFilterM','rarityFilterM','sortByM'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.value = id === 'sortByM' ? 'date-desc' : '';
+    if (el) el.value = id === 'sortByM' ? 'date-asc' : '';
   });
   // FEATURE (2026-08-02): read-only share view is permanently locked to the
   // owned-only grid — Reset must not turn either of those off (toggleOwnedFilter()

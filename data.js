@@ -326,7 +326,22 @@ function normalizeCard(raw) {
   const priceMP  = raw.price_mp  || raw['price_mp']  || '';
   const priceHP  = raw.price_hp  || raw['price_hp']  || '';
   const priceDMG = raw.price_dmg || raw['price_dmg'] || '';
-  return { name, series, set, setCode, num, setTotal, rarity, price, prevPrice, cardId, pic, setLogo, setSymbol, date, lastChecked, lastPriced, supertype, subtypes, priceNM, priceLP, priceMP, priceHP, priceDMG };
+  // eBay verification fields (baked in by the daily Python run's price-gap
+  // variance trigger — see ebay_daily_runner.py). Both are empty strings
+  // when their respective check didn't fire/apply for this card:
+  //   - verifiedEbayPrice: only set when TCGplayer's lowPrice >= market * 1.25
+  //     triggered a raw (ungraded) eBay Buy-It-Now sold-listing average.
+  //     Shown ALONGSIDE the TCGplayer price, never replacing it — the gap
+  //     between the two numbers is itself the useful signal.
+  //   - tagSlabPrice: fully automatic for every card (no allowlist) — a
+  //     rolling average of recent TAG-10 (Technical Authentication Guaranty,
+  //     grade 10 only) sold listings. Paced via an alternating-half schedule
+  //     (every card checked every 2 days, not every card every day), so this
+  //     may be blank on a given day simply because that card's half didn't
+  //     run today, not because no TAG-10 comps exist.
+  const verifiedEbayPrice = raw.verified_ebay_price || raw['verified_ebay_price'] || '';
+  const tagSlabPrice      = raw.tag_slab_price       || raw['tag_slab_price']       || '';
+  return { name, series, set, setCode, num, setTotal, rarity, price, prevPrice, cardId, pic, setLogo, setSymbol, date, lastChecked, lastPriced, supertype, subtypes, priceNM, priceLP, priceMP, priceHP, priceDMG, verifiedEbayPrice, tagSlabPrice };
 }
 
 // Formats a release/history date for display as MM/DD/YYYY. Accepts either

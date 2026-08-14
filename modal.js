@@ -121,6 +121,14 @@ function openModal(c, updateList = true) {
   // formula and reasoning. Hidden in read-only share view, same as the 70%
   // guidance and Paid price above — not useful or appropriate to show a
   // visitor browsing someone else's collection.
+  //
+  // FEATURE (2026-08-13): now shows BOTH the real market price AND the 70%
+  // vendor-offer price per condition, stacked in one cell — previously only
+  // the 70% number was shown. Jordan (buying as a vendor, planning to flip
+  // at real value) needs the real number visible without having to reverse
+  // the 70% math in his head at the table. Market price is the larger/
+  // primary figure since that's the number with real-world resale meaning;
+  // the 70% offer price sits underneath as the smaller secondary figure.
   const condEl = document.getElementById('mConditionPrices');
   if (condEl) {
     if (!READ_ONLY_SHARE) {
@@ -130,9 +138,13 @@ function openModal(c, updateList = true) {
         const sourceNote = isReal
           ? '<div class="cond-source">Live market prices (JustTCG)</div>'
           : '<div class="cond-source cond-source--estimate">Estimated (% of market)</div>';
-        condEl.innerHTML = sourceNote + tiers.map(t =>
-          `<div class="cond-row"><span class="cond-key" title="${t.label}">${t.key}</span><span class="cond-val">$${t.value.toFixed(2)}</span></div>`
-        ).join('');
+        condEl.innerHTML = sourceNote + tiers.map(t => `
+          <div class="cond-row">
+            <span class="cond-key" title="${t.label}">${t.key}</span>
+            <span class="cond-val" title="Market price">$${t.marketValue.toFixed(2)}</span>
+            <span class="cond-val-70" title="70% (vendor offer price)">70%: $${t.value.toFixed(2)}</span>
+          </div>
+        `).join('');
         condEl.style.display = '';
       } else {
         condEl.innerHTML = '';
@@ -141,6 +153,39 @@ function openModal(c, updateList = true) {
     } else {
       condEl.innerHTML = '';
       condEl.style.display = 'none';
+    }
+  }
+
+  // FEATURE (2026-08-13): eBay verification fields — Verified eBay Price
+  // (raw/ungraded, only populated when the price-gap variance trigger fired
+  // for this card that day) and TAG Slab Price (TAG-10 only, fully automatic
+  // for every card via an alternating-half schedule — no allowlist; may be
+  // blank on a given day simply because this card's half didn't run today).
+  // See ebay_daily_runner.py for the pacing logic. Both shown ALONGSIDE the
+  // TCGplayer price above, never replacing it — a gap between the numbers is
+  // the useful signal. Hidden in read-only share view, same as condition
+  // prices/70% guidance/Paid price.
+  const ebayEl = document.getElementById('mEbayPrices');
+  if (ebayEl) {
+    if (!READ_ONLY_SHARE && (c.verifiedEbayPrice || c.tagSlabPrice)) {
+      let rows = '';
+      if (c.verifiedEbayPrice) {
+        rows += `<div class="ebay-row">
+          <span class="ebay-label" title="Rolling average of recent raw Buy It Now sold listings — triggered because TCGplayer's active inventory looked thin">Verified eBay (Raw)</span>
+          <span class="ebay-val">${c.verifiedEbayPrice}</span>
+        </div>`;
+      }
+      if (c.tagSlabPrice) {
+        rows += `<div class="ebay-row">
+          <span class="ebay-label" title="Rolling average of recent TAG-graded (Technical Authentication Guaranty) sold listings">TAG Slab</span>
+          <span class="ebay-val ebay-val--slab">${c.tagSlabPrice}</span>
+        </div>`;
+      }
+      ebayEl.innerHTML = rows;
+      ebayEl.style.display = '';
+    } else {
+      ebayEl.innerHTML = '';
+      ebayEl.style.display = 'none';
     }
   }
 

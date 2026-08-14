@@ -255,6 +255,13 @@ function conditionPrices(c) {
   const nmRaw = c.priceNM;
   const hasRealPrices = nmRaw && nmRaw !== '' && nmRaw !== 'N/A';
 
+  // FEATURE (2026-08-13): each tier now returns BOTH the real market price
+  // (marketValue) and the 70% vendor-offer price (value, field name kept
+  // as-is for backward compat with existing callers). Jordan pointed out
+  // that only ever seeing the 70% number makes the OTHER side of vendor
+  // math hard — buying at 70% then reselling at real market requires
+  // knowing the real number too, not just what to offer. Showing both
+  // means no mental "divide by 0.7" required at the table.
   if (hasRealPrices) {
     // Real per-condition market prices from JustTCG — apply 70% vendor
     // discount to each condition's own market price. NM's 70%-of-market
@@ -267,7 +274,13 @@ function conditionPrices(c) {
       if (!raw || raw === '' || raw === 'N/A') continue;
       const market = parseFloat(raw.replace('$', ''));
       if (isNaN(market) || market <= 0) continue;
-      tiers.push({ key: t.key, label: t.label, value: market * 0.70, source: 'justtcg' });
+      tiers.push({
+        key: t.key,
+        label: t.label,
+        marketValue: market,
+        value: market * 0.70,
+        source: 'justtcg',
+      });
     }
     if (tiers.length > 0) return tiers;
     // If parsing failed for all conditions, fall through to formula
@@ -280,6 +293,7 @@ function conditionPrices(c) {
   return CONDITION_TIERS.map(t => ({
     key: t.key,
     label: t.label,
+    marketValue: v * t.pct,
     value: base * t.pct,
     source: 'formula',
   }));

@@ -319,29 +319,56 @@ function normalizeCard(raw) {
   if (rarity === 'Rare Holo LV.X') {
     rarity = 'LV.X';
   }
-  // Per-condition prices from JustTCG (baked in by the daily Python run).
-  // Empty string means no data available for that condition.
+  // Per-condition prices — SOURCE VARIES PER CONDITION, PER CARD, PER DAY
+  // (see sourceNM/sourceLP/etc. below — changed 2026-08-13 from one shared
+  // source to per-condition tracking, since a triggered card's row can be
+  // genuinely mixed-source). Baked in by the daily Python run: JustTCG is
+  // the baseline for every condition; when a card's TCGplayer data looked
+  // stale/volatile that day (the price-gap variance trigger), each
+  // condition INDIVIDUALLY gets a chance to be replaced by a fresher eBay
+  // number (30-day window, 3+ clean sales required) — if eBay comes back
+  // too thin for a specific condition, that cell just keeps its JustTCG
+  // baseline instead of going blank. See ebay_daily_runner.py /
+  // POKEMON_RARITY_COLLECTOR.py. Empty string means neither source had
+  // data for that condition.
   const priceNM  = raw.price_nm  || raw['price_nm']  || '';
   const priceLP  = raw.price_lp  || raw['price_lp']  || '';
   const priceMP  = raw.price_mp  || raw['price_mp']  || '';
   const priceHP  = raw.price_hp  || raw['price_hp']  || '';
   const priceDMG = raw.price_dmg || raw['price_dmg'] || '';
+  // Which source produced EACH condition price above, independently:
+  // 'ebay' or 'justtcg' (empty string for older rows written before this
+  // column existed, or a condition with no data at all). Drives the
+  // per-cell "eBay" vs "JustTCG" label in the modal — see modal.js. A
+  // triggered card's row can legitimately show a mix, e.g. sourceNM/
+  // sourceLP === 'ebay' while sourceMP/sourceHP/sourceDMG === 'justtcg'.
+  const sourceNM  = raw.source_nm  || raw['source_nm']  || '';
+  const sourceLP  = raw.source_lp  || raw['source_lp']  || '';
+  const sourceMP  = raw.source_mp  || raw['source_mp']  || '';
+  const sourceHP  = raw.source_hp  || raw['source_hp']  || '';
+  const sourceDMG = raw.source_dmg || raw['source_dmg'] || '';
   // eBay verification fields (baked in by the daily Python run's price-gap
   // variance trigger — see ebay_daily_runner.py). Both are empty strings
   // when their respective check didn't fire/apply for this card:
-  //   - verifiedEbayPrice: only set when TCGplayer's lowPrice >= market * 1.25
-  //     triggered a raw (ungraded) eBay Buy-It-Now sold-listing average.
+  //   - ebayNM (renamed 2026-08-13 from verifiedEbayPrice/"Verified eBay
+  //     Price"): only set when TCGplayer's lowPrice >= market * 1.25
+  //     triggered the eBay pull AND eBay's own NM search cleared 3+ sales —
+  //     same NM figure as priceNM when sourceNM === 'ebay' for this card,
+  //     duplicated here so it's always shown next to the TCGplayer price
+  //     even if the condition grid UI section is collapsed/not visible.
   //     Shown ALONGSIDE the TCGplayer price, never replacing it — the gap
   //     between the two numbers is itself the useful signal.
   //   - tagSlabPrice: fully automatic for every card (no allowlist) — a
   //     rolling average of recent TAG-10 (Technical Authentication Guaranty,
-  //     grade 10 only) sold listings. Paced via an alternating-half schedule
-  //     (every card checked every 2 days, not every card every day), so this
-  //     may be blank on a given day simply because that card's half didn't
-  //     run today, not because no TAG-10 comps exist.
-  const verifiedEbayPrice = raw.verified_ebay_price || raw['verified_ebay_price'] || '';
-  const tagSlabPrice      = raw.tag_slab_price       || raw['tag_slab_price']       || '';
-  return { name, series, set, setCode, num, setTotal, rarity, price, prevPrice, cardId, pic, setLogo, setSymbol, date, lastChecked, lastPriced, supertype, subtypes, priceNM, priceLP, priceMP, priceHP, priceDMG, verifiedEbayPrice, tagSlabPrice };
+  //     grade 10 only) sold listings. Paced via an alternating-THIRDS
+  //     schedule (changed 2026-08-13 from halves — every card checked every
+  //     3 days, not every card every day), so this may be blank on a given
+  //     day simply because that card's third didn't run today, not because
+  //     no TAG-10 comps exist. No JustTCG fallback (JustTCG doesn't track
+  //     graded slabs), so this stays blank if eBay can't clear the bar.
+  const ebayNM       = raw.ebay_nm || raw['ebay_nm'] || raw.verified_ebay_price || raw['verified_ebay_price'] || '';
+  const tagSlabPrice = raw.tag_slab_price || raw['tag_slab_price'] || '';
+  return { name, series, set, setCode, num, setTotal, rarity, price, prevPrice, cardId, pic, setLogo, setSymbol, date, lastChecked, lastPriced, supertype, subtypes, priceNM, priceLP, priceMP, priceHP, priceDMG, sourceNM, sourceLP, sourceMP, sourceHP, sourceDMG, ebayNM, tagSlabPrice };
 }
 
 // Formats a release/history date for display as MM/DD/YYYY. Accepts either

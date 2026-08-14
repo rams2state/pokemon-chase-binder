@@ -244,14 +244,17 @@ function seventyPercentBadgeHtml(c) {
 // 70%-of-market vendor discount in seventyPercentVal(). Tier percentages
 // (NM 100%, LP 80%, MP 50%, HP 30%, DMG 10%) are a standard collector ladder.
 const CONDITION_TIERS = [
-  { key: 'NM',  label: 'Near Mint',         pct: 1.00, field: 'priceNM'  },
-  { key: 'LP',  label: 'Lightly Played',    pct: 0.80, field: 'priceLP'  },
-  { key: 'MP',  label: 'Moderately Played', pct: 0.50, field: 'priceMP'  },
-  { key: 'HP',  label: 'Heavily Played',    pct: 0.30, field: 'priceHP'  },
-  { key: 'DMG', label: 'Damaged',           pct: 0.10, field: 'priceDMG' },
+  { key: 'NM',  label: 'Near Mint',         pct: 1.00, field: 'priceNM',  sourceField: 'sourceNM'  },
+  { key: 'LP',  label: 'Lightly Played',    pct: 0.80, field: 'priceLP',  sourceField: 'sourceLP'  },
+  { key: 'MP',  label: 'Moderately Played', pct: 0.50, field: 'priceMP',  sourceField: 'sourceMP'  },
+  { key: 'HP',  label: 'Heavily Played',    pct: 0.30, field: 'priceHP',  sourceField: 'sourceHP'  },
+  { key: 'DMG', label: 'Damaged',           pct: 0.10, field: 'priceDMG', sourceField: 'sourceDMG' },
 ];
 function conditionPrices(c) {
-  // Check if JustTCG real prices are available (at least NM must be present).
+  // Check if real prices are available (at least NM must be present) — from
+  // EITHER JustTCG (the common case) or eBay (when the price-gap variance
+  // trigger fired for this card AND that specific condition cleared eBay's
+  // 3-sale/30-day bar — see per-tier sourceField below).
   const nmRaw = c.priceNM;
   const hasRealPrices = nmRaw && nmRaw !== '' && nmRaw !== 'N/A';
 
@@ -262,24 +265,34 @@ function conditionPrices(c) {
   // math hard — buying at 70% then reselling at real market requires
   // knowing the real number too, not just what to offer. Showing both
   // means no mental "divide by 0.7" required at the table.
+  //
+  // FEATURE (2026-08-13, revised same day): source is now read PER TIER
+  // from c[t.sourceField] (e.g. c.sourceNM, c.sourceLP — baked in by the
+  // daily Python run, 'ebay' or 'justtcg' independently per condition)
+  // instead of one shared source for the whole row. A triggered card can
+  // legitimately end up mixed — e.g. NM/LP from eBay (deep, liquid market,
+  // clears the 3-sale bar easily), MP/HP/DMG from JustTCG (eBay came back
+  // too thin for those, so the existing JustTCG number was kept rather
+  // than left blank). This is intentional, confirmed with Jordan.
   if (hasRealPrices) {
-    // Real per-condition market prices from JustTCG — apply 70% vendor
-    // discount to each condition's own market price. NM's 70%-of-market
-    // value matches seventyPercentVal() exactly (same calculation, same
-    // number — they can't drift out of sync). LP/MP/HP/DMG each get 70%
-    // of their own condition market price, not 70% of NM scaled down.
+    // Real per-condition market prices — apply 70% vendor discount to each
+    // condition's own market price. NM's 70%-of-market value matches
+    // seventyPercentVal() exactly (same calculation, same number — they
+    // can't drift out of sync). LP/MP/HP/DMG each get 70% of their own
+    // condition market price, not 70% of NM scaled down.
     const tiers = [];
     for (const t of CONDITION_TIERS) {
       const raw = c[t.field];
       if (!raw || raw === '' || raw === 'N/A') continue;
       const market = parseFloat(raw.replace('$', ''));
       if (isNaN(market) || market <= 0) continue;
+      const source = c[t.sourceField] === 'ebay' ? 'ebay' : 'justtcg';
       tiers.push({
         key: t.key,
         label: t.label,
         marketValue: market,
         value: market * 0.70,
-        source: 'justtcg',
+        source,
       });
     }
     if (tiers.length > 0) return tiers;

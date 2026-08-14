@@ -134,17 +134,33 @@ function openModal(c, updateList = true) {
     if (!READ_ONLY_SHARE) {
       const tiers = conditionPrices(c);
       if (tiers) {
-        const isReal = tiers[0] && tiers[0].source === 'justtcg';
-        const sourceNote = isReal
-          ? '<div class="cond-source">Live market prices (JustTCG)</div>'
-          : '<div class="cond-source cond-source--estimate">Estimated (% of market)</div>';
-        condEl.innerHTML = sourceNote + tiers.map(t => `
-          <div class="cond-row">
-            <span class="cond-key" title="${t.label}">${t.key}</span>
-            <span class="cond-val" title="Market price">$${t.marketValue.toFixed(2)}</span>
-            <span class="cond-val-70" title="70% (vendor offer price)">70%: $${t.value.toFixed(2)}</span>
-          </div>
-        `).join('');
+        // FEATURE (2026-08-13, revised same day): source is now PER CELL,
+        // not one banner for the whole row — a triggered card can
+        // legitimately be mixed-source (e.g. NM/LP from eBay, MP/HP/DMG
+        // from JustTCG, if eBay came back too thin for the latter three).
+        // A small colored dot + tooltip on each cell shows its actual
+        // source instead of one row-wide claim that would be wrong for a
+        // mixed row. 'formula' (fallback estimate, no real data at all)
+        // still gets the row-wide banner below since in that case EVERY
+        // cell is the same estimate, not a per-cell mix.
+        const allFormula = tiers.every(t => t.source === 'formula');
+        const sourceNote = allFormula
+          ? '<div class="cond-source cond-source--estimate">Estimated (% of market)</div>'
+          : '';
+        condEl.innerHTML = sourceNote + tiers.map(t => {
+          const dotClass = t.source === 'ebay' ? 'cond-dot--ebay'
+            : t.source === 'justtcg' ? 'cond-dot--justtcg' : '';
+          const dotTitle = t.source === 'ebay' ? 'eBay (30-day sold listings)'
+            : t.source === 'justtcg' ? 'JustTCG' : '';
+          const dot = dotClass ? `<span class="cond-dot ${dotClass}" title="${dotTitle}"></span>` : '';
+          return `
+            <div class="cond-row">
+              <span class="cond-key" title="${t.label}">${t.key}${dot}</span>
+              <span class="cond-val" title="Market price">$${t.marketValue.toFixed(2)}</span>
+              <span class="cond-val-70" title="70% (vendor offer price)">70%: $${t.value.toFixed(2)}</span>
+            </div>
+          `;
+        }).join('');
         condEl.style.display = '';
       } else {
         condEl.innerHTML = '';
@@ -156,28 +172,31 @@ function openModal(c, updateList = true) {
     }
   }
 
-  // FEATURE (2026-08-13): eBay verification fields — Verified eBay Price
-  // (raw/ungraded, only populated when the price-gap variance trigger fired
-  // for this card that day) and TAG Slab Price (TAG-10 only, fully automatic
-  // for every card via an alternating-half schedule — no allowlist; may be
-  // blank on a given day simply because this card's half didn't run today).
-  // See ebay_daily_runner.py for the pacing logic. Both shown ALONGSIDE the
-  // TCGplayer price above, never replacing it — a gap between the numbers is
-  // the useful signal. Hidden in read-only share view, same as condition
-  // prices/70% guidance/Paid price.
+  // FEATURE (2026-08-13): eBay verification fields — eBay NM (renamed from
+  // Verified eBay Price; raw/ungraded, only populated when the price-gap
+  // variance trigger fired AND eBay's own NM search cleared 3+ sales in 30
+  // days — same NM figure already shown in the condition grid above when
+  // sourceNM is 'ebay') and TAG Slab Price (TAG-10 only, fully automatic
+  // for every card via an alternating-THIRDS schedule — changed from
+  // halves 2026-08-13, no allowlist; may be blank on a given day simply
+  // because this card's third didn't run today). See ebay_daily_runner.py
+  // for the pacing logic. Both shown ALONGSIDE the TCGplayer price above,
+  // never replacing it — a gap between the numbers is the useful signal.
+  // Hidden in read-only share view, same as condition prices/70%
+  // guidance/Paid price.
   const ebayEl = document.getElementById('mEbayPrices');
   if (ebayEl) {
-    if (!READ_ONLY_SHARE && (c.verifiedEbayPrice || c.tagSlabPrice)) {
+    if (!READ_ONLY_SHARE && (c.ebayNM || c.tagSlabPrice)) {
       let rows = '';
-      if (c.verifiedEbayPrice) {
+      if (c.ebayNM) {
         rows += `<div class="ebay-row">
-          <span class="ebay-label" title="Rolling average of recent raw Buy It Now sold listings — triggered because TCGplayer's active inventory looked thin">Verified eBay (Raw)</span>
-          <span class="ebay-val">${c.verifiedEbayPrice}</span>
+          <span class="ebay-label" title="5-sale rolling average of recent raw Near Mint Buy It Now sold listings — triggered because TCGplayer's active inventory looked thin">eBay NM</span>
+          <span class="ebay-val">${c.ebayNM}</span>
         </div>`;
       }
       if (c.tagSlabPrice) {
         rows += `<div class="ebay-row">
-          <span class="ebay-label" title="Rolling average of recent TAG-graded (Technical Authentication Guaranty) sold listings">TAG Slab</span>
+          <span class="ebay-label" title="Rolling average of recent TAG 10-graded (Technical Authentication Guaranty) sold listings">TAG Slab</span>
           <span class="ebay-val ebay-val--slab">${c.tagSlabPrice}</span>
         </div>`;
       }

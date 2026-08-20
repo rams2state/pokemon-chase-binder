@@ -254,7 +254,10 @@ function conditionPrices(c) {
   // Check if real prices are available (at least NM must be present) — from
   // EITHER JustTCG (the common case) or eBay (when the price-gap variance
   // trigger fired for this card AND that specific condition cleared eBay's
-  // 3-sale/30-day bar — see per-tier sourceField below).
+  // 3-active-listing bar — see per-tier sourceField below). REDESIGN
+  // (2026-08-18): eBay's number is now an active-listing asking-price floor
+  // (lowest 3 Buy-It-Now listings, averaged), not a sold-listing average —
+  // see ebay_pricing.py's module docstring for why.
   const nmRaw = c.priceNM;
   const hasRealPrices = nmRaw && nmRaw !== '' && nmRaw !== 'N/A';
 
@@ -271,9 +274,9 @@ function conditionPrices(c) {
   // daily Python run, 'ebay' or 'justtcg' independently per condition)
   // instead of one shared source for the whole row. A triggered card can
   // legitimately end up mixed — e.g. NM/LP from eBay (deep, liquid market,
-  // clears the 3-sale bar easily), MP/HP/DMG from JustTCG (eBay came back
-  // too thin for those, so the existing JustTCG number was kept rather
-  // than left blank). This is intentional, confirmed with Jordan.
+  // clears the 3-active-listing bar easily), MP/HP/DMG from JustTCG (eBay
+  // came back too thin for those, so the existing JustTCG number was kept
+  // rather than left blank). This is intentional, confirmed with Jordan.
   if (hasRealPrices) {
     // Real per-condition market prices — apply 70% vendor discount to each
     // condition's own market price. NM's 70%-of-market value matches

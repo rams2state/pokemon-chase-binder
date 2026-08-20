@@ -147,10 +147,17 @@ function openModal(c, updateList = true) {
         const sourceNote = allFormula
           ? '<div class="cond-source cond-source--estimate">Estimated (% of market)</div>'
           : '';
+        // REDESIGN (2026-08-18): eBay's number is an ACTIVE-listing
+        // asking-price floor (cheapest 3 current Buy-It-Now listings,
+        // averaged), not a sold-listing average — the tooltip is worded to
+        // reflect that ("active listings", not "sold listings"). See
+        // ebay_pricing.py's module docstring for why the earlier
+        // sold-listing design never actually worked against this app's API
+        // access.
         condEl.innerHTML = sourceNote + tiers.map(t => {
           const dotClass = t.source === 'ebay' ? 'cond-dot--ebay'
             : t.source === 'justtcg' ? 'cond-dot--justtcg' : '';
-          const dotTitle = t.source === 'ebay' ? 'eBay (30-day sold listings)'
+          const dotTitle = t.source === 'ebay' ? 'eBay (lowest active listings)'
             : t.source === 'justtcg' ? 'JustTCG' : '';
           const dot = dotClass ? `<span class="cond-dot ${dotClass}" title="${dotTitle}"></span>` : '';
           return `
@@ -174,29 +181,41 @@ function openModal(c, updateList = true) {
 
   // FEATURE (2026-08-13): eBay verification fields — eBay NM (renamed from
   // Verified eBay Price; raw/ungraded, only populated when the price-gap
-  // variance trigger fired AND eBay's own NM search cleared 3+ sales in 30
-  // days — same NM figure already shown in the condition grid above when
-  // sourceNM is 'ebay') and TAG Slab Price (TAG-10 only, fully automatic
-  // for every card via an alternating-THIRDS schedule — changed from
-  // halves 2026-08-13, no allowlist; may be blank on a given day simply
-  // because this card's third didn't run today). See ebay_daily_runner.py
-  // for the pacing logic. Both shown ALONGSIDE the TCGplayer price above,
-  // never replacing it — a gap between the numbers is the useful signal.
-  // Hidden in read-only share view, same as condition prices/70%
-  // guidance/Paid price.
+  // variance trigger fired AND eBay's own NM search cleared 3+ active
+  // listings — same NM figure already shown in the condition grid above
+  // when sourceNM is 'ebay') and TAG Slab Price (TAG-10 only, fully
+  // automatic for every card via an alternating-THIRDS schedule — changed
+  // from halves 2026-08-13, no allowlist; may be blank on a given day
+  // simply because this card's third didn't run today, or because TAG-10
+  // active listings are genuinely thin for that card). See
+  // ebay_daily_runner.py for the pacing logic. Both shown ALONGSIDE the
+  // TCGplayer price above, never replacing it — a gap between the numbers
+  // is the useful signal. Hidden in read-only share view, same as
+  // condition prices/70% guidance/Paid price.
+  //
+  // REDESIGN (2026-08-18): both values are the average of the 3 CHEAPEST
+  // currently-ACTIVE Buy-It-Now listings — an asking-price floor, i.e.
+  // "what would this cost me on eBay right now" — NOT an average of recent
+  // sold listings. eBay's Browse API (the only Buy API this app's
+  // Production keyset has access to) can only search active listings, not
+  // sold/historical ones; see ebay_pricing.py's module docstring for the
+  // full story of why the original sold-listing design never actually
+  // worked in production. Labels below say "active listings" and "asking",
+  // never "sold", to keep this distinction clear to Jordan when reading
+  // these numbers for a real buy/flip decision.
   const ebayEl = document.getElementById('mEbayPrices');
   if (ebayEl) {
     if (!READ_ONLY_SHARE && (c.ebayNM || c.tagSlabPrice)) {
       let rows = '';
       if (c.ebayNM) {
         rows += `<div class="ebay-row">
-          <span class="ebay-label" title="5-sale rolling average of recent raw Near Mint Buy It Now sold listings — triggered because TCGplayer's active inventory looked thin">eBay NM</span>
+          <span class="ebay-label" title="Average of the 3 cheapest currently-active raw Near Mint Buy It Now listings on eBay — an asking-price floor, not a sold price — triggered because TCGplayer's active inventory looked thin">eBay NM (ask)</span>
           <span class="ebay-val">${c.ebayNM}</span>
         </div>`;
       }
       if (c.tagSlabPrice) {
         rows += `<div class="ebay-row">
-          <span class="ebay-label" title="Rolling average of recent TAG 10-graded (Technical Authentication Guaranty) sold listings">TAG Slab</span>
+          <span class="ebay-label" title="Average of the 3 cheapest currently-active TAG 10-graded (Technical Authentication Guaranty) Buy It Now listings on eBay — an asking-price floor, not a sold price">TAG Slab (ask)</span>
           <span class="ebay-val ebay-val--slab">${c.tagSlabPrice}</span>
         </div>`;
       }

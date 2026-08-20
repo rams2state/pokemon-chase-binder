@@ -325,12 +325,23 @@ function normalizeCard(raw) {
   // genuinely mixed-source). Baked in by the daily Python run: JustTCG is
   // the baseline for every condition; when a card's TCGplayer data looked
   // stale/volatile that day (the price-gap variance trigger), each
-  // condition INDIVIDUALLY gets a chance to be replaced by a fresher eBay
-  // number (30-day window, 3+ clean sales required) — if eBay comes back
-  // too thin for a specific condition, that cell just keeps its JustTCG
-  // baseline instead of going blank. See ebay_daily_runner.py /
-  // POKEMON_RARITY_COLLECTOR.py. Empty string means neither source had
-  // data for that condition.
+  // condition INDIVIDUALLY gets a chance to be replaced by an eBay number —
+  // if eBay comes back too thin for a specific condition, that cell just
+  // keeps its JustTCG baseline instead of going blank. See
+  // ebay_daily_runner.py / POKEMON_RARITY_COLLECTOR.py. Empty string means
+  // neither source had data for that condition.
+  //
+  // REDESIGN (2026-08-18): the eBay number for a condition is now the
+  // average of the 3 CHEAPEST currently-ACTIVE Buy-It-Now listings for that
+  // condition, NOT an average of recent sold listings — eBay's Browse API
+  // (the only API this app has access to) can only search active listings,
+  // never sold/historical ones (see ebay_pricing.py's module docstring for
+  // the full story of why the earlier sold-listing design never actually
+  // worked). This is effectively "what would this cost me on eBay right
+  // now" rather than "what did this recently sell for" — a deliberately
+  // different, and for a buy/flip use case arguably more directly useful,
+  // number. Still requires 3+ qualifying active listings to populate a
+  // cell at all (see ebay_pricing.MIN_LISTINGS_REQUIRED).
   const priceNM  = raw.price_nm  || raw['price_nm']  || '';
   const priceLP  = raw.price_lp  || raw['price_lp']  || '';
   const priceMP  = raw.price_mp  || raw['price_mp']  || '';
@@ -349,23 +360,31 @@ function normalizeCard(raw) {
   const sourceDMG = raw.source_dmg || raw['source_dmg'] || '';
   // eBay verification fields (baked in by the daily Python run's price-gap
   // variance trigger — see ebay_daily_runner.py). Both are empty strings
-  // when their respective check didn't fire/apply for this card:
+  // when their respective check didn't fire/apply for this card. Both are
+  // ACTIVE-LISTING asking-price floors (lowest 3 Buy-It-Now listings,
+  // averaged), not sold-comp averages — see the REDESIGN note above and
+  // ebay_pricing.py's module docstring for why:
   //   - ebayNM (renamed 2026-08-13 from verifiedEbayPrice/"Verified eBay
   //     Price"): only set when TCGplayer's lowPrice >= market * 1.25
-  //     triggered the eBay pull AND eBay's own NM search cleared 3+ sales —
-  //     same NM figure as priceNM when sourceNM === 'ebay' for this card,
-  //     duplicated here so it's always shown next to the TCGplayer price
-  //     even if the condition grid UI section is collapsed/not visible.
-  //     Shown ALONGSIDE the TCGplayer price, never replacing it — the gap
-  //     between the two numbers is itself the useful signal.
-  //   - tagSlabPrice: fully automatic for every card (no allowlist) — a
-  //     rolling average of recent TAG-10 (Technical Authentication Guaranty,
-  //     grade 10 only) sold listings. Paced via an alternating-THIRDS
-  //     schedule (changed 2026-08-13 from halves — every card checked every
-  //     3 days, not every card every day), so this may be blank on a given
-  //     day simply because that card's third didn't run today, not because
-  //     no TAG-10 comps exist. No JustTCG fallback (JustTCG doesn't track
-  //     graded slabs), so this stays blank if eBay can't clear the bar.
+  //     triggered the eBay pull AND eBay's own NM search cleared 3+ active
+  //     listings — same NM figure as priceNM when sourceNM === 'ebay' for
+  //     this card, duplicated here so it's always shown next to the
+  //     TCGplayer price even if the condition grid UI section is
+  //     collapsed/not visible. Shown ALONGSIDE the TCGplayer price, never
+  //     replacing it — the gap between the two numbers is itself the
+  //     useful signal.
+  //   - tagSlabPrice: fully automatic for every card (no allowlist) — the
+  //     asking-price floor (lowest 3 active listings, averaged) for TAG-10
+  //     (Technical Authentication Guaranty, grade 10 only) graded slabs.
+  //     Paced via an alternating-THIRDS schedule (changed 2026-08-13 from
+  //     halves — every card checked every 3 days, not every card every
+  //     day), so this may be blank on a given day simply because that
+  //     card's third didn't run today, not because no TAG-10 listings
+  //     exist. Also commonly blank even ON a checked day — TAG-10 is a
+  //     genuinely thin active-listing market, so 3+ qualifying listings for
+  //     one specific card is a real bar, not a rare edge case. No JustTCG
+  //     fallback (JustTCG doesn't track graded slabs), so this stays blank
+  //     if eBay can't clear MIN_LISTINGS_REQUIRED.
   const ebayNM       = raw.ebay_nm || raw['ebay_nm'] || raw.verified_ebay_price || raw['verified_ebay_price'] || '';
   const tagSlabPrice = raw.tag_slab_price || raw['tag_slab_price'] || '';
   return { name, series, set, setCode, num, setTotal, rarity, price, prevPrice, cardId, pic, setLogo, setSymbol, date, lastChecked, lastPriced, supertype, subtypes, priceNM, priceLP, priceMP, priceHP, priceDMG, sourceNM, sourceLP, sourceMP, sourceHP, sourceDMG, ebayNM, tagSlabPrice };

@@ -620,6 +620,10 @@ function buildSetGroups(cards) {
 
 function renderSetOverview(cards, el) {
   const { byEra, eraOrder, setOrderByEra } = buildSetGroups(cards);
+  // English sets that now have a real Japanese tile grouped under them —
+  // their old decorative JP badge is suppressed in favor of the new tile
+  // (see jpSymbolsFor()/jpTileFor() in data.js).
+  const jpSuppressed = englishSetsWithJpTile(cards);
   let html = '';
   for (const era of eraOrder) {
     const eraTotal = cards.filter(c => (c.series||'Unknown Era') === era).length;
@@ -674,15 +678,25 @@ function renderSetOverview(cards, el) {
       // corner badge. Falls back to nothing if no JP equivalent is confirmed
       // (Emerald, Chaos Rising — wait, Chaos Rising has one — and the two
       // Black Star Promos sets, which were intentionally left unmapped).
-      const jpSymbols = jpSymbolsFor(set);
+      // Suppressed when a real Japanese tile now exists for this English set
+      // (jpSuppressed) — the badge moves to live on that tile instead (below).
+      const jpSymbols = jpSymbolsFor(set, jpSuppressed);
       const jpLogoHtml = jpSymbols
         ? `<span class="jp-ov-logo-wrap">${jpSymbols.map(jp => `<img class="jp-ov-logo" src="${jp.symbol}" alt="${jp.name}" title="${jp.name}" loading="lazy" onerror="this.style.display='none'">`).join('')}</span>`
+        : '';
+      // If THIS tile is itself a real Japanese-card tile, show its own
+      // single confirmed JP symbol here — the specific one for this exact
+      // Japanese product, not the full array of JP alternatives.
+      const ownJpTile = jpTileFor(set);
+      const ownJpLogoHtml = ownJpTile
+        ? `<span class="jp-ov-logo-wrap"><img class="jp-ov-logo" src="${ownJpTile.symbol}" alt="${ownJpTile.name}" title="${ownJpTile.name}" loading="lazy" onerror="this.style.display='none'"></span>`
         : '';
       html += `<div class="set-ov-card" onclick="openSetDetail('${eraEnc}','${setEnc}')">
         <div class="set-ov-top">
           <div class="set-ov-left">
             ${symbolHtml}
             ${jpLogoHtml}
+            ${ownJpLogoHtml}
           </div>
           <span class="set-ov-year">${setYear}</span>
         </div>
@@ -716,9 +730,18 @@ function renderSetDetail(cards, el) {
   const symbolHtml = firstCard.setSymbol && firstCard.setSymbol !== 'N/A'
     ? `<span class="symbol-chip symbol-chip-lg"><img class="set-detail-symbol" src="${firstCard.setSymbol}" alt="" onerror="this.style.display='none'"></span>`
     : '';
-  const jpSymbolsDetail = jpSymbolsFor(set);
+  // Suppressed here too when a real Japanese tile now exists for this
+  // English set (see renderSetOverview's jpSuppressed for the same logic).
+  const jpSuppressedDetail = englishSetsWithJpTile(cards);
+  const jpSymbolsDetail = jpSymbolsFor(set, jpSuppressedDetail);
   const jpBadgesDetailHtml = jpSymbolsDetail
     ? `<span class="jp-badges">${jpSymbolsDetail.map(jp => `<img class="jp-symbol-mini" src="${jp.symbol}" alt="${jp.name}" title="${jp.name}" loading="lazy" onerror="this.style.display='none'">`).join('')}</span>`
+    : '';
+  // If this set IS a real Japanese tile, show its own single confirmed
+  // symbol here instead (same pattern as renderSetOverview's ownJpLogoHtml).
+  const ownJpTileDetail = jpTileFor(set);
+  const ownJpBadgeDetailHtml = ownJpTileDetail
+    ? `<span class="jp-badges"><img class="jp-symbol-mini" src="${ownJpTileDetail.symbol}" alt="${ownJpTileDetail.name}" title="${ownJpTileDetail.name}" loading="lazy" onerror="this.style.display='none'"></span>`
     : '';
   const setYear = firstCard.date ? firstCard.date.slice(0,4) : '';
   // Sort helper: parse prefixed card numbers like TG01, GG30, SWSH123 numerically
@@ -767,6 +790,7 @@ function renderSetDetail(cards, el) {
     <button class="set-detail-back" onclick="history.back()">← All Sets</button>
     ${symbolHtml}
     ${jpBadgesDetailHtml}
+    ${ownJpBadgeDetailHtml}
     <div class="set-detail-info">
       <div class="set-detail-era">${era} · ${setYear}</div>
       <div class="set-detail-name">${set}</div>

@@ -154,17 +154,34 @@ function openModal(c, updateList = true) {
         // ebay_pricing.py's module docstring for why the earlier
         // sold-listing design never actually worked against this app's API
         // access.
+        // FEATURE (2026-08-22): "is there a way that if a condition is
+        // clicked it can go to the site (either tcgplayer or ebay) and have
+        // the parameters passed in to confirm price?" — each condition key
+        // is now two small clickable links (eBay / TCG) instead of plain
+        // text, opening a pre-filled search for that exact card + condition
+        // (+ print/edition where it matters) so any cell can be manually
+        // spot-checked in one click. See verify_links.js for the query
+        // construction, which mirrors ebay_pricing.py's own logic.
         condEl.innerHTML = sourceNote + tiers.map(t => {
           const dotClass = t.source === 'ebay' ? 'cond-dot--ebay'
             : t.source === 'justtcg' ? 'cond-dot--justtcg' : '';
           const dotTitle = t.source === 'ebay' ? 'eBay (lowest active listings)'
             : t.source === 'justtcg' ? 'JustTCG' : '';
           const dot = dotClass ? `<span class="cond-dot ${dotClass}" title="${dotTitle}"></span>` : '';
+          const ebayUrl = buildEbayVerifyUrl(c, t.key);
+          const tcgUrl = buildTcgplayerVerifyUrl(c, t.key);
+          const verifyLinks = `
+            <span class="cond-verify">
+              <a href="${ebayUrl}" target="_blank" rel="noopener" title="Search eBay for this exact card and condition">eBay</a>
+              <a href="${tcgUrl}" target="_blank" rel="noopener" title="Search TCGplayer for this card">TCG</a>
+            </span>
+          `;
           return `
             <div class="cond-row">
               <span class="cond-key" title="${t.label}">${t.key}${dot}</span>
               <span class="cond-val" title="Market price">$${t.marketValue.toFixed(2)}</span>
               <span class="cond-val-70" title="70% (vendor offer price)">70%: $${t.value.toFixed(2)}</span>
+              ${verifyLinks}
             </div>
           `;
         }).join('');

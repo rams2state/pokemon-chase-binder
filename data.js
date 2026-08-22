@@ -387,7 +387,19 @@ function normalizeCard(raw) {
   //     if eBay can't clear MIN_LISTINGS_REQUIRED.
   const ebayNM       = raw.ebay_nm || raw['ebay_nm'] || raw.verified_ebay_price || raw['verified_ebay_price'] || '';
   const tagSlabPrice = raw.tag_slab_price || raw['tag_slab_price'] || '';
-  return { name, series, set, setCode, num, setTotal, rarity, price, prevPrice, cardId, pic, setLogo, setSymbol, date, lastChecked, lastPriced, supertype, subtypes, priceNM, priceLP, priceMP, priceHP, priceDMG, sourceNM, sourceLP, sourceMP, sourceHP, sourceDMG, ebayNM, tagSlabPrice };
+  // ADDED 2026-08-22: real per-card evidence of whether THIS card's own
+  // stored price is drawn from a 1st Edition print — written by
+  // POKEMON_RARITY_COLLECTOR.py (checks tcgplayer.prices for a
+  // "1stEditionHolofoil" key, same check ebay_daily_runner.py's
+  // _infer_printing_type() already does server-side to decide the eBay
+  // query). Used by verify_links.js to build an accurate per-condition
+  // "verify this price" link — only claims 1st Edition in the search text
+  // when this is explicitly "true", never guessed. Blank/anything else
+  // (including rows written before this column existed) means "don't know
+  // — don't claim it," the same safe default used everywhere else in this
+  // app when a signal is missing.
+  const is1stEditionHolofoil = (raw.is_1st_edition || raw['is_1st_edition'] || '').toLowerCase() === 'true';
+  return { name, series, set, setCode, num, setTotal, rarity, price, prevPrice, cardId, pic, setLogo, setSymbol, date, lastChecked, lastPriced, supertype, subtypes, priceNM, priceLP, priceMP, priceHP, priceDMG, sourceNM, sourceLP, sourceMP, sourceHP, sourceDMG, ebayNM, tagSlabPrice, _is1stEditionHolofoil: is1stEditionHolofoil };
 }
 
 // Formats a release/history date for display as MM/DD/YYYY. Accepts either

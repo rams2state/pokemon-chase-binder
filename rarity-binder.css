@@ -502,6 +502,12 @@
     font-size:14px;letter-spacing:0.01em;transition:all .2s;
   }
   .modal-buy:hover{background:var(--gold-bright);box-shadow:0 4px 16px rgba(255,203,5,0.3);}
+  /* FEATURE (2026-08-22): "Find on eBay" button, same shape/size as the
+     TCGplayer button above (.modal-buy) but in eBay's blue — same accent
+     color already used elsewhere for eBay-sourced figures (cond-dot--ebay,
+     etc.) so this reads as visually related to eBay across the app. */
+  .modal-buy--ebay{background:#60a5fa;color:#0a1a2e;}
+  .modal-buy--ebay:hover{background:#7cb8fb;box-shadow:0 4px 16px rgba(96,165,250,0.35);}
 
   /* FEATURE (2026-08-02): read-only share modal trimmed to just image, name,
      rarity/set/series/date, price, and the TCGPlayer link — hide the price

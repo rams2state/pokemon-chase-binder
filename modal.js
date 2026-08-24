@@ -116,85 +116,16 @@ function openModal(c, updateList = true) {
   }
   document.getElementById('mPrice').innerHTML = priceHtml;
 
-  // FEATURE (2026-08-12): condition-tiered pricing (NM/LP/MP/HP/DMG), modal
-  // only — see conditionPrices()/CONDITION_TIERS in rarity.js for the
-  // formula and reasoning. Hidden in read-only share view, same as the 70%
-  // guidance and Paid price above — not useful or appropriate to show a
-  // visitor browsing someone else's collection.
-  //
-  // FEATURE (2026-08-13): now shows BOTH the real market price AND the 70%
-  // vendor-offer price per condition, stacked in one cell — previously only
-  // the 70% number was shown. Jordan (buying as a vendor, planning to flip
-  // at real value) needs the real number visible without having to reverse
-  // the 70% math in his head at the table. Market price is the larger/
-  // primary figure since that's the number with real-world resale meaning;
-  // the 70% offer price sits underneath as the smaller secondary figure.
-  const condEl = document.getElementById('mConditionPrices');
-  if (condEl) {
-    if (!READ_ONLY_SHARE) {
-      const tiers = conditionPrices(c);
-      if (tiers) {
-        // FEATURE (2026-08-13, revised same day): source is now PER CELL,
-        // not one banner for the whole row — a triggered card can
-        // legitimately be mixed-source (e.g. NM/LP from eBay, MP/HP/DMG
-        // from JustTCG, if eBay came back too thin for the latter three).
-        // A small colored dot + tooltip on each cell shows its actual
-        // source instead of one row-wide claim that would be wrong for a
-        // mixed row. 'formula' (fallback estimate, no real data at all)
-        // still gets the row-wide banner below since in that case EVERY
-        // cell is the same estimate, not a per-cell mix.
-        const allFormula = tiers.every(t => t.source === 'formula');
-        const sourceNote = allFormula
-          ? '<div class="cond-source cond-source--estimate">Estimated (% of market)</div>'
-          : '';
-        // REDESIGN (2026-08-18): eBay's number is an ACTIVE-listing
-        // asking-price floor (cheapest 3 current Buy-It-Now listings,
-        // averaged), not a sold-listing average — the tooltip is worded to
-        // reflect that ("active listings", not "sold listings"). See
-        // ebay_pricing.py's module docstring for why the earlier
-        // sold-listing design never actually worked against this app's API
-        // access.
-        // FEATURE (2026-08-22): "is there a way that if a condition is
-        // clicked it can go to the site (either tcgplayer or ebay) and have
-        // the parameters passed in to confirm price?" — each condition key
-        // is now two small clickable links (eBay / TCG) instead of plain
-        // text, opening a pre-filled search for that exact card + condition
-        // (+ print/edition where it matters) so any cell can be manually
-        // spot-checked in one click. See verify_links.js for the query
-        // construction, which mirrors ebay_pricing.py's own logic.
-        condEl.innerHTML = sourceNote + tiers.map(t => {
-          const dotClass = t.source === 'ebay' ? 'cond-dot--ebay'
-            : t.source === 'justtcg' ? 'cond-dot--justtcg' : '';
-          const dotTitle = t.source === 'ebay' ? 'eBay (lowest active listings)'
-            : t.source === 'justtcg' ? 'JustTCG' : '';
-          const dot = dotClass ? `<span class="cond-dot ${dotClass}" title="${dotTitle}"></span>` : '';
-          const ebayUrl = buildEbayVerifyUrl(c, t.key);
-          const tcgUrl = buildTcgplayerVerifyUrl(c, t.key);
-          const verifyLinks = `
-            <span class="cond-verify">
-              <a href="${ebayUrl}" target="_blank" rel="noopener" title="Search eBay for this exact card and condition">eBay</a>
-              <a href="${tcgUrl}" target="_blank" rel="noopener" title="Search TCGplayer for this card">TCG</a>
-            </span>
-          `;
-          return `
-            <div class="cond-row">
-              <span class="cond-key" title="${t.label}">${t.key}${dot}</span>
-              <span class="cond-val" title="Market price">$${t.marketValue.toFixed(2)}</span>
-              <span class="cond-val-70" title="70% (vendor offer price)">70%: $${t.value.toFixed(2)}</span>
-              ${verifyLinks}
-            </div>
-          `;
-        }).join('');
-        condEl.style.display = '';
-      } else {
-        condEl.innerHTML = '';
-        condEl.style.display = 'none';
-      }
-    } else {
-      condEl.innerHTML = '';
-      condEl.style.display = 'none';
-    }
-  }
+  // REMOVED (2026-08-22): the per-condition (NM/LP/MP/HP/DMG) pricing grid
+  // that used to render here — Jordan: "lets not have condition pricing
+  // anymore. just near mint from ebay and tcgplayer will do, so you can
+  // remove the condition pricing row entirely." Replaced by the "Find on
+  // eBay" button below (next to the existing "Find on TCGplayer" button),
+  // which opens a live NM-condition, print-aware search instead of showing
+  // a computed price. conditionPrices()/CONDITION_TIERS still exist in
+  // rarity.js (harmless, unused) in case this is ever revisited. The eBay
+  // NM (verification) / TAG Slab fields just below are a SEPARATE feature
+  // (not the condition grid) and are unaffected by this removal.
 
   // FEATURE (2026-08-13): eBay verification fields — eBay NM (renamed from
   // Verified eBay Price; raw/ungraded, only populated when the price-gap
@@ -294,6 +225,20 @@ function openModal(c, updateList = true) {
   const tcgQuery = encodeURIComponent(`${nameStr} ${tcgSet}`);
   document.getElementById('mBuy').href =
     `https://www.tcgplayer.com/search/pokemon/product?q=${tcgQuery}&view=grid`;
+
+  // FEATURE (2026-08-22): "Find on eBay" button, same place/style as the
+  // TCGplayer button above — replaces the removed per-condition verify
+  // links (see the removed condition-pricing block earlier in this
+  // function). Fixed to NM ("just near mint from ebay and tcgplayer will
+  // do") — reuses verify_links.js's buildEbayVerifyUrl(), same era/print-
+  // aware query construction (1st Edition, Japanese phrasing, Holo + card
+  // number for vintage cards, etc.) already built and tested for the
+  // condition grid, just always called with 'NM' now instead of once per
+  // condition tier.
+  const mBuyEbay = document.getElementById('mBuyEbay');
+  if (mBuyEbay) {
+    mBuyEbay.href = buildEbayVerifyUrl(c, 'NM');
+  }
 
   // Update own button state (hidden entirely in read-only share view — see
   // body.read-only-share CSS rules — but keep textContent harmless either way)

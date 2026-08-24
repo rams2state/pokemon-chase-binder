@@ -152,9 +152,6 @@ if ('serviceWorker' in navigator) {
         <div class="modal-meta" id="mMeta"></div>
       </div>
       <div class="modal-price" id="mPrice"></div>
-      <!-- FEATURE (2026-08-12): condition-tiered pricing (NM/LP/MP/HP/DMG) —
-           see conditionPrices() in rarity.js for the formula. Modal only. -->
-      <div class="modal-condition-prices" id="mConditionPrices" style="display:none;"></div>
       <!-- FEATURE (2026-08-13): eBay verification fields — shown ALONGSIDE
            the TCGplayer price above (never replacing it), so a gap between
            the two numbers is itself the signal. Verified eBay Price only
@@ -170,6 +167,14 @@ if ('serviceWorker' in navigator) {
       <div class="modal-actions">
         <button class="modal-own" id="mOwn" onclick="toggleFromModal()">＋ Mark as Owned</button>
         <a class="modal-buy" id="mBuy" href="#" target="_blank" rel="noopener">Find on TCGplayer →</a>
+        <!-- FEATURE (2026-08-22): "I do want a find on ebay button similar
+             to find on tcgplayer button" — replaces the removed per-
+             condition verify links (NM/LP/MP/HP/DMG grid is gone; "just
+             near mint from ebay and tcgplayer will do") with one button
+             here, same place/style as the TCGplayer button. See
+             verify_links.js for the query construction (NM condition,
+             era/print-aware). -->
+        <a class="modal-buy modal-buy--ebay" id="mBuyEbay" href="#" target="_blank" rel="noopener">Find on eBay →</a>
       </div>
       <!-- FEATURE (2026-07-29): shown right after marking a card owned (from
            either the list/grid checkbox or the button above) — prompts for

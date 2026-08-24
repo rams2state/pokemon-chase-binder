@@ -665,7 +665,24 @@ function renderSetOverview(cards, el) {
         return `<span class="set-ov-pill" style="background:${color}22;color:${color};">${cnt} ${label}</span>`;
       }).join('');
 
-      const eraEnc = encodeURIComponent(era), setEnc = encodeURIComponent(set);
+      // BUG FIX (2026-08-22): "cant open some sets ... Leader's Stadium,
+      // Pt1: Galactic". Root cause: encodeURIComponent() deliberately
+      // leaves apostrophes (') un-escaped per the JS spec (it's one of the
+      // "always safe" characters), but the result is embedded here inside a
+      // SINGLE-quoted onclick="openSetDetail('...','...')" JS string
+      // literal — any set name with a real apostrophe (Leaders' Stadium,
+      // Pt1: Galactic's Conquest, both genuine Japanese set names) breaks
+      // the string right at the apostrophe, leaving the rest as invalid
+      // trailing JS tokens: SyntaxError: Invalid or unexpected token —
+      // exactly what showed up in the console. Pre-existing bug, not
+      // introduced this session — just newly exposed because these two
+      // Japanese sets (real apostrophes in their names) are recent
+      // additions. Fixed by also percent-encoding any apostrophe left
+      // behind; decodeURIComponent() in openSetDetail() below still
+      // correctly reconstructs the original string from %27, so nothing
+      // downstream needs to change.
+      const eraEnc = encodeURIComponent(era).replace(/'/g, '%27'),
+            setEnc = encodeURIComponent(set).replace(/'/g, '%27');
       const symbolUrl = firstCard?.setSymbol || '';
       // Symbol icons are drawn dark-on-transparent (meant for light backgrounds),
       // so instead of inverting the icon's own colors, give it a small light

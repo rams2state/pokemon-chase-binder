@@ -874,8 +874,9 @@ function renderGridFlat(cards, el, title) {
       </div>
       <div class="card-grid">`;
   for (const c of cards) {
-    const cls = rarityClass(c.rarity, c.name, c.num);
-    const short = shortRarity(c.rarity, c.name, c.num, c.subtypes, c.supertype);
+    // REMOVED (2026-08-24): rarityClass/shortRarity (cls/short) were only
+    // used to build the rarity pill below, now removed from grid tiles —
+    // see the tile-footer comment further down.
     const owned = isOwned(c);
     const cdata = JSON.stringify(c).replace(/'/g, '&#39;');
     const key = cardKey(c).replace(/[^a-z0-9]/gi,'_');
@@ -892,7 +893,7 @@ function renderGridFlat(cards, el, title) {
         <div class="tile-set" title="${c.set}">${c.set}</div>
         <div class="tile-footer">
           <div class="tile-price-row"><span class="tile-price">${c.price!=='N/A'?c.price:'—'}</span>${priceVolatileIcon(c)}${seventyPercentBadgeHtml(c)}${changeBadge}</div>
-          <span class="pill ${cls}">${short}</span>
+          ${tilePsa10Html(c)}
         </div>
       </div>
     </div>`;
@@ -919,8 +920,9 @@ function renderGrid(cards, el) {
       </div>
       <div class="card-grid">`;
     for (const c of eraCards) {
-      const cls = rarityClass(c.rarity, c.name, c.num);
-      const short = shortRarity(c.rarity, c.name, c.num, c.subtypes, c.supertype);
+      // REMOVED (2026-08-24): rarityClass/shortRarity (cls/short) were only
+      // used to build the rarity pill below, now removed from grid tiles —
+      // see the tile-footer comment further down.
       const owned = isOwned(c);
       const cdata = JSON.stringify(c).replace(/'/g, '&#39;');
       const key = cardKey(c).replace(/[^a-z0-9]/gi,'_');
@@ -937,7 +939,7 @@ function renderGrid(cards, el) {
           <div class="tile-set" title="${c.set}">${c.set}</div>
           <div class="tile-footer">
             <div class="tile-price-row"><span class="tile-price">${c.price!=='N/A'?c.price:'—'}</span>${staleWarningIcon(c)}${priceVolatileIcon(c)}${seventyPercentBadgeHtml(c)}${changeBadge}</div>
-            <span class="pill ${cls}">${short}</span>
+            ${tilePsa10Html(c)}
           </div>
         </div>
       </div>`;

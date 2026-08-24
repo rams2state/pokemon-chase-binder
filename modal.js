@@ -109,10 +109,28 @@ function openModal(c, updateList = true) {
   // FEATURE (2026-08-02): both the 70%-of-market guidance and the recorded
   // "Paid" price are hidden entirely in read-only share view — neither is
   // useful or appropriate to show a visitor browsing someone else's collection.
+  //
+  // REDESIGN (2026-08-24): PSA-10 (ask) moved onto the SAME line as the 70%
+  // label, to its right — Jordan: "i also want the psa 10 price to go to
+  // the right of 70% price in the card modal view." Previously PSA-10 lived
+  // in a separate standalone box below (see the REMOVED block that used to
+  // sit here, and #mEbayPrices in POKEMON_RARITY_BINDER.html, also
+  // removed). eBay NM (ask) is gone entirely — "ebay nm ask should not
+  // exist anymore" — NM pricing is JustTCG/TCGplayer only now (see
+  // ebay_pricing.py's 2026-08-24 REDESIGN section for why: eBay's Browse
+  // API can only ever return active asking prices, never sold comps, so
+  // eBay's job was narrowed to PSA-10 slabs — the one thing JustTCG can't
+  // provide at all). Still an asking-price floor (average of the 3
+  // cheapest currently-active PSA-10 Buy It Now listings), not a sold
+  // price — see ebay_pricing.py's module docstring.
   if (!READ_ONLY_SHARE) {
     const seventyLabel = seventyPercentLabel(c);
-    if (seventyLabel) {
-      priceHtml += `<div class="modal-70pct" title="70% of market price">70%: ${seventyLabel}</div>`;
+    if (seventyLabel || c.psa10Price) {
+      let line = `70%: ${seventyLabel || '—'}`;
+      if (c.psa10Price) {
+        line += `<span class="modal-70pct-psa10" title="PSA 10 (ask) — average of the 3 cheapest currently-active PSA 10-graded (Professional Sports Authenticator) Buy It Now listings on eBay, not a sold price">PSA 10: ${c.psa10Price}</span>`;
+      }
+      priceHtml += `<div class="modal-70pct">${line}</div>`;
     }
     // FEATURE (2026-07-29): show what was actually paid, but ONLY if a real
     // purchase price was recorded (Skip leaves it unset — never show "$0.00"
@@ -131,59 +149,11 @@ function openModal(c, updateList = true) {
   // eBay" button below (next to the existing "Find on TCGplayer" button),
   // which opens a live NM-condition, print-aware search instead of showing
   // a computed price. conditionPrices()/CONDITION_TIERS still exist in
-  // rarity.js (harmless, unused) in case this is ever revisited. The eBay
-  // NM (verification) / PSA-10 Slab fields just below are a SEPARATE
-  // feature (not the condition grid) and are unaffected by this removal.
-
-  // FEATURE (2026-08-13): eBay verification fields — eBay NM (renamed from
-  // Verified eBay Price; raw/ungraded) and PSA10 Slab Price (RENAMED
-  // 2026-08-22, was TAG Slab Price/TAG-10 — PSA-10 only now, fully
-  // automatic for every card). REDESIGNED 2026-08-22: both fields are now
-  // driven by a single day-alternating schedule — every collector run is
-  // either an "NM day" (every card gets an eBay NM check, unconditional)
-  // or a "PSA day" (every card gets a PSA-10 slab check, unconditional),
-  // alternating each run. So on any given day exactly one of eBay NM /
-  // PSA10 Slab may be freshly populated and the other will simply carry
-  // forward whatever was last recorded (may be blank if that card has
-  // never cleared 3+ qualifying active listings). See
-  // ebay_daily_runner.py for the pacing logic. Both shown ALONGSIDE the
-  // TCGplayer price above, never replacing it — a gap between the numbers
-  // is the useful signal. Hidden in read-only share view, same as
-  // condition prices/70% guidance/Paid price.
+  // rarity.js (harmless, unused) in case this is ever revisited.
   //
-  // REDESIGN (2026-08-18): both values are the average of the 3 CHEAPEST
-  // currently-ACTIVE Buy-It-Now listings — an asking-price floor, i.e.
-  // "what would this cost me on eBay right now" — NOT an average of recent
-  // sold listings. eBay's Browse API (the only Buy API this app's
-  // Production keyset has access to) can only search active listings, not
-  // sold/historical ones; see ebay_pricing.py's module docstring for the
-  // full story of why the original sold-listing design never actually
-  // worked in production. Labels below say "active listings" and "asking",
-  // never "sold", to keep this distinction clear to Jordan when reading
-  // these numbers for a real buy/flip decision.
-  const ebayEl = document.getElementById('mEbayPrices');
-  if (ebayEl) {
-    if (!READ_ONLY_SHARE && (c.ebayNM || c.psa10Price)) {
-      let rows = '';
-      if (c.ebayNM) {
-        rows += `<div class="ebay-row">
-          <span class="ebay-label" title="Average of the 3 cheapest currently-active raw Near Mint Buy It Now listings on eBay — an asking-price floor, not a sold price">eBay NM (ask)</span>
-          <span class="ebay-val">${c.ebayNM}</span>
-        </div>`;
-      }
-      if (c.psa10Price) {
-        rows += `<div class="ebay-row">
-          <span class="ebay-label" title="Average of the 3 cheapest currently-active PSA 10-graded (Professional Sports Authenticator) Buy It Now listings on eBay — an asking-price floor, not a sold price">PSA 10 (ask)</span>
-          <span class="ebay-val ebay-val--slab">${c.psa10Price}</span>
-        </div>`;
-      }
-      ebayEl.innerHTML = rows;
-      ebayEl.style.display = '';
-    } else {
-      ebayEl.innerHTML = '';
-      ebayEl.style.display = 'none';
-    }
-  }
+  // REMOVED (2026-08-24): the standalone "eBay verification fields" box
+  // (#mEbayPrices) that used to render here — eBay NM is gone entirely and
+  // PSA-10 moved inline next to 70% above (see that block's comment).
 
   const img = document.getElementById('mImg');
   const fallback = document.getElementById('mFallback');

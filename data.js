@@ -358,37 +358,27 @@ function normalizeCard(raw) {
   const sourceMP  = raw.source_mp  || raw['source_mp']  || '';
   const sourceHP  = raw.source_hp  || raw['source_hp']  || '';
   const sourceDMG = raw.source_dmg || raw['source_dmg'] || '';
-  // eBay verification fields (baked in by the daily Python run's price-gap
-  // variance trigger — see ebay_daily_runner.py). Both are empty strings
-  // when their respective check didn't fire/apply for this card. Both are
-  // ACTIVE-LISTING asking-price floors (lowest 3 Buy-It-Now listings,
-  // averaged), not sold-comp averages — see the REDESIGN note above and
-  // ebay_pricing.py's module docstring for why:
-  //   - ebayNM (renamed 2026-08-13 from verifiedEbayPrice/"Verified eBay
-  //     Price"): only set when TCGplayer's lowPrice >= market * 1.25
-  //     triggered the eBay pull AND eBay's own NM search cleared 3+ active
-  //     listings — same NM figure as priceNM when sourceNM === 'ebay' for
-  //     this card, duplicated here so it's always shown next to the
-  //     TCGplayer price even if the condition grid UI section is
-  //     collapsed/not visible. Shown ALONGSIDE the TCGplayer price, never
-  //     replacing it — the gap between the two numbers is itself the
-  //     useful signal.
-  //   - psa10Price (renamed 2026-08-22, was tagSlabPrice / "TAG Slab
-  //     Price"): fully automatic for every card (no allowlist) — the
-  //     asking-price floor (lowest 3 active listings, averaged) for PSA-10
-  //     (Professional Sports Authenticator, grade 10 only) graded slabs.
-  //     Paced via a day-alternating schedule (changed 2026-08-22 — see
-  //     ebay_daily_runner.py's module docstring): every OTHER collector
-  //     run is a "PSA day" where every card gets checked, alternating with
-  //     "NM days" where the raw NM price gets checked instead. So this may
-  //     be blank on a given day simply because today was an NM day, not
-  //     because no PSA-10 listings exist. Also commonly blank even on a
-  //     PSA day — PSA-10 is a genuinely thin active-listing market, so 3+
-  //     qualifying listings for one specific card is a real bar, not a
-  //     rare edge case. No JustTCG fallback (JustTCG doesn't track graded
-  //     slabs), so this stays blank if eBay can't clear
-  //     MIN_LISTINGS_REQUIRED.
-  const ebayNM    = raw.ebay_nm || raw['ebay_nm'] || raw.verified_ebay_price || raw['verified_ebay_price'] || '';
+  // REMOVED (2026-08-24): ebayNM ("eBay NM (ask)") — Jordan: "ebay nm ask
+  // should not exist anymore." eBay's raw-NM check is retired entirely (see
+  // ebay_pricing.py's 2026-08-24 REDESIGN section) — NM pricing is
+  // JustTCG/TCGplayer only now (priceNM/sourceNM above). The CSV's "eBay
+  // NM" column still exists (always blank going forward, kept for backward
+  // compat — see POKEMON_RARITY_COLLECTOR.py), so simply not parsing it
+  // here is enough; no downstream code references raw.ebay_nm any more.
+  //
+  // psa10Price (renamed 2026-08-22, was tagSlabPrice / "TAG Slab Price"):
+  // an ACTIVE-LISTING asking-price floor (lowest 3 currently-active PSA-10
+  // Buy It Now listings, averaged), not a sold-comp average — see
+  // ebay_pricing.py's module docstring for why. REDESIGN (2026-08-24): now
+  // fetched for EVERY card, EVERY collector run (no more day-alternating
+  // with an NM check — see ebay_daily_runner.py's module docstring), so a
+  // blank value here means PSA-10 is a genuinely thin active-listing market
+  // for this specific card (a real, common outcome), not "wrong day/mode."
+  // No JustTCG fallback (JustTCG doesn't track graded slabs), so this stays
+  // blank if eBay can't clear MIN_LISTINGS_REQUIRED. Shown inline next to
+  // the 70%-of-market price in the modal (see modal.js) — never in the
+  // grid/list rows, only the modal and grid tiles (see tilePsa10Html() in
+  // rarity.js).
   const psa10Price = raw.psa10_slab_price || raw['psa10_slab_price'] || raw.tag_slab_price || raw['tag_slab_price'] || '';
   // ADDED 2026-08-22: real per-card evidence of whether THIS card's own
   // stored price is drawn from a 1st Edition print — written by
@@ -418,7 +408,7 @@ function normalizeCard(raw) {
   // this column existed — same "don't guess when there's no real data"
   // default used everywhere else in this app.
   const priceVolatile = (raw.price_volatile || raw['price_volatile'] || '').toLowerCase() === 'true';
-  return { name, series, set, setCode, num, setTotal, rarity, price, prevPrice, cardId, pic, setLogo, setSymbol, date, lastChecked, lastPriced, supertype, subtypes, priceNM, priceLP, priceMP, priceHP, priceDMG, sourceNM, sourceLP, sourceMP, sourceHP, sourceDMG, ebayNM, psa10Price, priceVolatile, _is1stEditionHolofoil: is1stEditionHolofoil };
+  return { name, series, set, setCode, num, setTotal, rarity, price, prevPrice, cardId, pic, setLogo, setSymbol, date, lastChecked, lastPriced, supertype, subtypes, priceNM, priceLP, priceMP, priceHP, priceDMG, sourceNM, sourceLP, sourceMP, sourceHP, sourceDMG, psa10Price, priceVolatile, _is1stEditionHolofoil: is1stEditionHolofoil };
 }
 
 // Formats a release/history date for display as MM/DD/YYYY. Accepts either

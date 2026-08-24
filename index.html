@@ -151,14 +151,10 @@ if ('serviceWorker' in navigator) {
         <span class="pill" id="mRarityPill"></span>
         <div class="modal-meta" id="mMeta"></div>
       </div>
+      <!-- REMOVED (2026-08-24): the standalone #mEbayPrices box (eBay NM /
+           PSA-10 fields) — eBay NM is gone entirely and PSA-10 now renders
+           inline inside #mPrice, next to the 70% line (see modal.js). -->
       <div class="modal-price" id="mPrice"></div>
-      <!-- FEATURE (2026-08-13): eBay verification fields — shown ALONGSIDE
-           the TCGplayer price above (never replacing it), so a gap between
-           the two numbers is itself the signal. Verified eBay Price only
-           appears when the price-gap variance trigger fired for this card;
-           TAG Slab Price only appears for cards on the manual allowlist.
-           See ebay_daily_runner.py for the trigger/gating logic. -->
-      <div class="modal-ebay-prices" id="mEbayPrices" style="display:none;"></div>
       <div class="modal-chart-wrap" id="mChartWrap">
         <div class="modal-chart-label">Price History</div>
         <canvas id="priceChart"></canvas>

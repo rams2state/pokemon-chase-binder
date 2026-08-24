@@ -353,6 +353,15 @@
   .tile-footer{display:flex;justify-content:space-between;align-items:center;}
   .tile-price-row{display:flex;align-items:center;flex-wrap:wrap;gap:2px;}
   .tile-price{font-size:12px;font-weight:800;color:var(--gold-bright);}
+  /* ADDED 2026-08-24: PSA-10 (ask) price on grid tiles, taking the spot the
+     rarity pill used to sit in — Jordan: "can we remove rarity pills so
+     that we can show psa 10 price comfortably on grid view?" Rarity pill
+     stays in the modal (see #mRarityPill, untouched) — this is grid tiles
+     only (renderGrid/renderGridFlat in render.js), list view is unaffected.
+     Same violet as .modal-70pct-psa10 so PSA-10 numbers read as one
+     consistent signal across the app, distinct from the tile-price gold and
+     the blue stale/volatile icons that can sit in the same row. */
+  .tile-psa10{font-size:11px;font-weight:800;color:#c084fc;white-space:nowrap;}
   .tile-check{
     position:absolute;top:7px;right:7px;width:28px;height:28px;
     background:rgba(14,16,22,0.75);border:2px solid var(--line);border-radius:6px;
@@ -601,6 +610,14 @@
   .price-70pct{font-size:10.5px;font-weight:600;color:var(--dim);white-space:nowrap;cursor:help;margin-left:4px;}
   .modal-70pct{font-size:13px;font-weight:600;color:var(--dim);margin-top:2px;}
   .modal-purchase-price{font-size:13px;font-weight:700;color:#4ade80;margin-top:2px;}
+  /* ADDED 2026-08-24: PSA-10 (ask) price, moved here from its own standalone
+     "eBay verification fields" block below the price (Jordan: "i also want
+     the psa 10 price to go to the right of 70% price in the card modal
+     view") — sits inline on the same line as the 70% label instead of in a
+     separate box. Distinct violet from the blue already used for the
+     stale-price/price-volatile icons above the price, so a PSA-10 badge
+     next to either of those reads as a separate signal, not a duplicate. */
+  .modal-70pct-psa10{color:#c084fc;font-weight:700;margin-left:8px;cursor:help;}
 
   /* FEATURE (2026-08-12): condition-tiered pricing (NM/LP/MP/HP/DMG) grid,
      modal only — see conditionPrices() in rarity.js. Quiet, compact 5-across
@@ -649,21 +666,12 @@
   }
   .cond-verify a:hover{color:var(--gold-bright);border-color:var(--gold-bright);}
 
-  /* FEATURE (2026-08-13): eBay verification fields, modal only — shown
-     alongside (never replacing) the TCGplayer price above. Verified eBay
-     (Raw) only appears when the price-gap variance trigger fired; TAG Slab
-     only for cards on the manual allowlist. Styled distinctly from the
-     condition-price grid so the two data sources (TCGplayer vs. eBay) read
-     as visually separate, not part of the same table. */
-  .modal-ebay-prices{
-    display:flex;flex-direction:column;gap:4px;
-    margin-top:8px;padding:8px 10px;
-    background:var(--panel,#1a1d27);border:1px solid var(--line);border-radius:8px;
-  }
-  .ebay-row{display:flex;justify-content:space-between;align-items:center;gap:8px;}
-  .ebay-label{font-size:11px;font-weight:600;color:var(--dim);cursor:help;}
-  .ebay-val{font-size:13px;font-weight:700;color:#4ade80;}
-  .ebay-val--slab{color:#60a5fa;}
+  /* REMOVED (2026-08-24): the standalone "eBay verification fields" box
+     (.modal-ebay-prices/.ebay-row/.ebay-label/.ebay-val/.ebay-val--slab) —
+     "ebay nm ask should not exist anymore" and PSA-10 moved inline next to
+     the 70% price (see .modal-70pct-psa10 above), so this separate block
+     has nothing left to show. mEbayPrices was also removed from
+     POKEMON_RARITY_BINDER.html and modal.js. */
 
   /* List view change column */
   .td-change{font-size:12px;font-weight:700;white-space:nowrap;}
@@ -829,9 +837,7 @@
     .cond-key{font-size:9px;}
     .cond-val{font-size:11px;}
     .cond-val-70{font-size:8.5px;}
-    .modal-ebay-prices{padding:6px 8px;}
-    .ebay-label{font-size:10px;}
-    .ebay-val{font-size:12px;}
+    .modal-70pct-psa10{font-size:12px;}
     .modal-chart-wrap{margin-top:8px;}
     #priceChart{height:140px!important;}
     .modal-chart-label{font-size:9px;}

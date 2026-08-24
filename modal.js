@@ -98,6 +98,14 @@ function openModal(c, updateList = true) {
   }
   const staleBadge = stalePriceBadge(c);
   if (staleBadge) priceHtml += ' ' + staleBadge;
+  // ADDED 2026-08-24: "Verify price" badge — see priceVolatileBadge() in
+  // rarity-binder.js for the full rationale (TCGplayer's own price-gap
+  // trigger, now surfaced as a standalone flag since eBay checks no longer
+  // gate on it).
+  if (!READ_ONLY_SHARE) {
+    const volatileBadge = priceVolatileBadge(c);
+    if (volatileBadge) priceHtml += ' ' + volatileBadge;
+  }
   // FEATURE (2026-08-02): both the 70%-of-market guidance and the recorded
   // "Paid" price are hidden entirely in read-only share view — neither is
   // useful or appropriate to show a visitor browsing someone else's collection.
@@ -124,18 +132,20 @@ function openModal(c, updateList = true) {
   // which opens a live NM-condition, print-aware search instead of showing
   // a computed price. conditionPrices()/CONDITION_TIERS still exist in
   // rarity.js (harmless, unused) in case this is ever revisited. The eBay
-  // NM (verification) / TAG Slab fields just below are a SEPARATE feature
-  // (not the condition grid) and are unaffected by this removal.
+  // NM (verification) / PSA-10 Slab fields just below are a SEPARATE
+  // feature (not the condition grid) and are unaffected by this removal.
 
   // FEATURE (2026-08-13): eBay verification fields — eBay NM (renamed from
-  // Verified eBay Price; raw/ungraded, only populated when the price-gap
-  // variance trigger fired AND eBay's own NM search cleared 3+ active
-  // listings — same NM figure already shown in the condition grid above
-  // when sourceNM is 'ebay') and TAG Slab Price (TAG-10 only, fully
-  // automatic for every card via an alternating-THIRDS schedule — changed
-  // from halves 2026-08-13, no allowlist; may be blank on a given day
-  // simply because this card's third didn't run today, or because TAG-10
-  // active listings are genuinely thin for that card). See
+  // Verified eBay Price; raw/ungraded) and PSA10 Slab Price (RENAMED
+  // 2026-08-22, was TAG Slab Price/TAG-10 — PSA-10 only now, fully
+  // automatic for every card). REDESIGNED 2026-08-22: both fields are now
+  // driven by a single day-alternating schedule — every collector run is
+  // either an "NM day" (every card gets an eBay NM check, unconditional)
+  // or a "PSA day" (every card gets a PSA-10 slab check, unconditional),
+  // alternating each run. So on any given day exactly one of eBay NM /
+  // PSA10 Slab may be freshly populated and the other will simply carry
+  // forward whatever was last recorded (may be blank if that card has
+  // never cleared 3+ qualifying active listings). See
   // ebay_daily_runner.py for the pacing logic. Both shown ALONGSIDE the
   // TCGplayer price above, never replacing it — a gap between the numbers
   // is the useful signal. Hidden in read-only share view, same as
@@ -153,18 +163,18 @@ function openModal(c, updateList = true) {
   // these numbers for a real buy/flip decision.
   const ebayEl = document.getElementById('mEbayPrices');
   if (ebayEl) {
-    if (!READ_ONLY_SHARE && (c.ebayNM || c.tagSlabPrice)) {
+    if (!READ_ONLY_SHARE && (c.ebayNM || c.psa10Price)) {
       let rows = '';
       if (c.ebayNM) {
         rows += `<div class="ebay-row">
-          <span class="ebay-label" title="Average of the 3 cheapest currently-active raw Near Mint Buy It Now listings on eBay — an asking-price floor, not a sold price — triggered because TCGplayer's active inventory looked thin">eBay NM (ask)</span>
+          <span class="ebay-label" title="Average of the 3 cheapest currently-active raw Near Mint Buy It Now listings on eBay — an asking-price floor, not a sold price">eBay NM (ask)</span>
           <span class="ebay-val">${c.ebayNM}</span>
         </div>`;
       }
-      if (c.tagSlabPrice) {
+      if (c.psa10Price) {
         rows += `<div class="ebay-row">
-          <span class="ebay-label" title="Average of the 3 cheapest currently-active TAG 10-graded (Technical Authentication Guaranty) Buy It Now listings on eBay — an asking-price floor, not a sold price">TAG Slab (ask)</span>
-          <span class="ebay-val ebay-val--slab">${c.tagSlabPrice}</span>
+          <span class="ebay-label" title="Average of the 3 cheapest currently-active PSA 10-graded (Professional Sports Authenticator) Buy It Now listings on eBay — an asking-price floor, not a sold price">PSA 10 (ask)</span>
+          <span class="ebay-val ebay-val--slab">${c.psa10Price}</span>
         </div>`;
       }
       ebayEl.innerHTML = rows;

@@ -198,6 +198,38 @@ function staleWarningIcon(c) {
   return '';
 }
 
+// ADDED 2026-08-24: "Price Volatile" flag — Jordan: "since we have ebay
+// getting prices now no matter what, can we still have some sort of symbol
+// that lets me know if market price is within that previous 25% trigger we
+// had? that way i know to actually lookup the card and not trust the
+// market price from tcg even if there is no ebay price as well?" c.price
+// Volatile is true when TCGplayer's own cheapest active listing was >=
+// market price * 1.25 as of the card's last live pokemontcg.io fetch (see
+// ebay_pricing.is_price_gap_triggered() / POKEMON_RARITY_COLLECTOR.py) —
+// independent of whether an eBay cross-check actually ran for this card
+// today (day-alternating NM/PSA-10 schedule, 2026-08-22), so this is the
+// one signal that still fires even on a day/mode where no eBay data exists
+// for this specific card at all.
+//
+// Deliberately a DIFFERENT glyph/color from the stale-price ⚠ above (blue
+// ⇄ vs yellow/red ⚠) so the two warnings never look like duplicates of the
+// same thing when they appear side by side — this one means "TCGplayer's
+// own number may not be trustworthy right now," not "this data is old."
+function priceVolatileBadge(c) {
+  if (!c.priceVolatile) return '';
+  return `<span class="price-volatile" title="TCGplayer's cheapest active listing is 25%+ above its own market price — the market price may be stale or unreliable. Worth looking up manually.">Verify price</span>`;
+}
+
+function priceVolatileIcon(c) {
+  // FEATURE (2026-08-24): hidden entirely in read-only share view, same
+  // reasoning as staleWarningIcon() above — this is owner-facing "should I
+  // double check this number" guidance, not something a visitor browsing
+  // someone else's collection needs.
+  if (READ_ONLY_SHARE) return '';
+  if (!c.priceVolatile) return '';
+  return `<span class="price-volatile-icon" title="TCGplayer's cheapest active listing is 25%+ above its own market price — worth verifying manually">⇄</span>`;
+}
+
 function priceVal(p) {
   if (!p || p === 'N/A') return -1;
   return parseFloat(p.replace(/[^0-9.]/g, '')) || 0;

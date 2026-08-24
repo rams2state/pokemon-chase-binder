@@ -443,7 +443,7 @@ function renderTrend(el) {
         <div class="crow-set">${c.set}</div>
       </div>
       <div class="crow-price-wrap">
-        <span class="crow-price">${c.price!=='N/A'?c.price:'—'}</span>${staleWarningIcon(c)}
+        <span class="crow-price">${c.price!=='N/A'?c.price:'—'}</span>${staleWarningIcon(c)}${priceVolatileIcon(c)}
         <div style="font-size:10px;color:var(--dim);text-align:right;">was $${c._pv.toFixed(2)} (7d ago)</div>
         ${badge}
         ${seventyPercentBadgeHtml(c)}
@@ -486,7 +486,7 @@ function renderFlatList(cards, el, title) {
         <div class="crow-set">${c.set}</div>
       </div>
       <div class="crow-price-wrap">
-        <span class="crow-price">${c.price!=='N/A'?c.price:'—'}</span>${staleWarningIcon(c)}
+        <span class="crow-price">${c.price!=='N/A'?c.price:'—'}</span>${staleWarningIcon(c)}${priceVolatileIcon(c)}
         ${seventyPercentBadgeHtml(c)}
       </div>
     </div>`;
@@ -849,7 +849,7 @@ function renderSetDetail(cards, el) {
         <span class="crow-num">#${c.num||'—'}</span>
         <span class="crow-name">${c.name||'—'}</span>
         <div class="crow-price-wrap">
-          <span class="crow-price">${c.price!=='N/A'?c.price:'—'}</span>${staleWarningIcon(c)}${changeBadge}
+          <span class="crow-price">${c.price!=='N/A'?c.price:'—'}</span>${staleWarningIcon(c)}${priceVolatileIcon(c)}${changeBadge}
           ${seventyPercentBadgeHtml(c)}
         </div>
       </div>`;
@@ -891,7 +891,7 @@ function renderGridFlat(cards, el, title) {
         <div class="tile-name" title="${c.name||''}">${c.name||'—'}</div>
         <div class="tile-set" title="${c.set}">${c.set}</div>
         <div class="tile-footer">
-          <div class="tile-price-row"><span class="tile-price">${c.price!=='N/A'?c.price:'—'}</span>${seventyPercentBadgeHtml(c)}${changeBadge}</div>
+          <div class="tile-price-row"><span class="tile-price">${c.price!=='N/A'?c.price:'—'}</span>${priceVolatileIcon(c)}${seventyPercentBadgeHtml(c)}${changeBadge}</div>
           <span class="pill ${cls}">${short}</span>
         </div>
       </div>
@@ -936,7 +936,7 @@ function renderGrid(cards, el) {
           <div class="tile-name" title="${c.name||''}">${c.name||'—'}</div>
           <div class="tile-set" title="${c.set}">${c.set}</div>
           <div class="tile-footer">
-            <div class="tile-price-row"><span class="tile-price">${c.price!=='N/A'?c.price:'—'}</span>${staleWarningIcon(c)}${seventyPercentBadgeHtml(c)}${changeBadge}</div>
+            <div class="tile-price-row"><span class="tile-price">${c.price!=='N/A'?c.price:'—'}</span>${staleWarningIcon(c)}${priceVolatileIcon(c)}${seventyPercentBadgeHtml(c)}${changeBadge}</div>
             <span class="pill ${cls}">${short}</span>
           </div>
         </div>

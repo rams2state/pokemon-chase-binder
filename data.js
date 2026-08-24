@@ -373,20 +373,23 @@ function normalizeCard(raw) {
   //     collapsed/not visible. Shown ALONGSIDE the TCGplayer price, never
   //     replacing it — the gap between the two numbers is itself the
   //     useful signal.
-  //   - tagSlabPrice: fully automatic for every card (no allowlist) — the
-  //     asking-price floor (lowest 3 active listings, averaged) for TAG-10
-  //     (Technical Authentication Guaranty, grade 10 only) graded slabs.
-  //     Paced via an alternating-THIRDS schedule (changed 2026-08-13 from
-  //     halves — every card checked every 3 days, not every card every
-  //     day), so this may be blank on a given day simply because that
-  //     card's third didn't run today, not because no TAG-10 listings
-  //     exist. Also commonly blank even ON a checked day — TAG-10 is a
-  //     genuinely thin active-listing market, so 3+ qualifying listings for
-  //     one specific card is a real bar, not a rare edge case. No JustTCG
-  //     fallback (JustTCG doesn't track graded slabs), so this stays blank
-  //     if eBay can't clear MIN_LISTINGS_REQUIRED.
-  const ebayNM       = raw.ebay_nm || raw['ebay_nm'] || raw.verified_ebay_price || raw['verified_ebay_price'] || '';
-  const tagSlabPrice = raw.tag_slab_price || raw['tag_slab_price'] || '';
+  //   - psa10Price (renamed 2026-08-22, was tagSlabPrice / "TAG Slab
+  //     Price"): fully automatic for every card (no allowlist) — the
+  //     asking-price floor (lowest 3 active listings, averaged) for PSA-10
+  //     (Professional Sports Authenticator, grade 10 only) graded slabs.
+  //     Paced via a day-alternating schedule (changed 2026-08-22 — see
+  //     ebay_daily_runner.py's module docstring): every OTHER collector
+  //     run is a "PSA day" where every card gets checked, alternating with
+  //     "NM days" where the raw NM price gets checked instead. So this may
+  //     be blank on a given day simply because today was an NM day, not
+  //     because no PSA-10 listings exist. Also commonly blank even on a
+  //     PSA day — PSA-10 is a genuinely thin active-listing market, so 3+
+  //     qualifying listings for one specific card is a real bar, not a
+  //     rare edge case. No JustTCG fallback (JustTCG doesn't track graded
+  //     slabs), so this stays blank if eBay can't clear
+  //     MIN_LISTINGS_REQUIRED.
+  const ebayNM    = raw.ebay_nm || raw['ebay_nm'] || raw.verified_ebay_price || raw['verified_ebay_price'] || '';
+  const psa10Price = raw.psa10_slab_price || raw['psa10_slab_price'] || raw.tag_slab_price || raw['tag_slab_price'] || '';
   // ADDED 2026-08-22: real per-card evidence of whether THIS card's own
   // stored price is drawn from a 1st Edition print — written by
   // POKEMON_RARITY_COLLECTOR.py (checks tcgplayer.prices for a
@@ -399,7 +402,23 @@ function normalizeCard(raw) {
   // — don't claim it," the same safe default used everywhere else in this
   // app when a signal is missing.
   const is1stEditionHolofoil = (raw.is_1st_edition || raw['is_1st_edition'] || '').toLowerCase() === 'true';
-  return { name, series, set, setCode, num, setTotal, rarity, price, prevPrice, cardId, pic, setLogo, setSymbol, date, lastChecked, lastPriced, supertype, subtypes, priceNM, priceLP, priceMP, priceHP, priceDMG, sourceNM, sourceLP, sourceMP, sourceHP, sourceDMG, ebayNM, tagSlabPrice, _is1stEditionHolofoil: is1stEditionHolofoil };
+  // ADDED 2026-08-24: "Price Volatile" — Jordan: "since we have ebay
+  // getting prices now no matter what, can we still have some sort of
+  // symbol that lets me know if market price is within that previous 25%
+  // trigger we had? that way i know to actually lookup the card and not
+  // trust the market price from tcg even if there is no ebay price as
+  // well?" True when TCGplayer's own cheapest active listing was >= market
+  // price * 1.25 as of the last run that had a live pokemontcg.io fetch
+  // for this card (the old price-gap trigger — see
+  // POKEMON_RARITY_COLLECTOR.py / ebay_pricing.is_price_gap_triggered()) —
+  // a signal TCGplayer's own active inventory looked thin/priced oddly
+  // relative to its market snapshot, independent of whether an eBay check
+  // happened to run for this card today. False/blank for Japanese cards
+  // (no TCGplayer low-price field to compare) and for rows written before
+  // this column existed — same "don't guess when there's no real data"
+  // default used everywhere else in this app.
+  const priceVolatile = (raw.price_volatile || raw['price_volatile'] || '').toLowerCase() === 'true';
+  return { name, series, set, setCode, num, setTotal, rarity, price, prevPrice, cardId, pic, setLogo, setSymbol, date, lastChecked, lastPriced, supertype, subtypes, priceNM, priceLP, priceMP, priceHP, priceDMG, sourceNM, sourceLP, sourceMP, sourceHP, sourceDMG, ebayNM, psa10Price, priceVolatile, _is1stEditionHolofoil: is1stEditionHolofoil };
 }
 
 // Formats a release/history date for display as MM/DD/YYYY. Accepts either

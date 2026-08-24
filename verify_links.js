@@ -112,17 +112,61 @@ function buildVerifySearchText(c, conditionKey) {
 }
 
 // eBay: opens a live search filtered to the condition, using the same
-// active-Buy-It-Now scope the backend's own eBay calls use (raw cards only
-// — graded slabs excluded via "-psa -bgs -cgc -sgc -tag -graded -slab", same
-// exclusion list ebay_pricing.py applies server-side) so what Jordan sees
-// matches what fed the price.
+// active-Buy-It-Now scope the backend's own eBay calls use.
+//
+// BUG FIX (2026-08-24): this used to append
+// "-psa -bgs -cgc -sgc -tag -graded -slab" to try to exclude graded slabs —
+// Jordan found live that this exclusion string returns 0 results ("i
+// noticed that the ... on the end of the search string was returning
+// nothing"). Root cause: eBay's keyword matcher AND's every required term
+// together, and for cards whose real inventory is mostly graded (true of
+// most valuable vintage/Japanese cards), a 7-term exclusion list on top of
+// an already-specific name/set/condition query collapses matches to zero.
+// Per Jordan, dropping the exclusions entirely and filtering the (mixed
+// graded+raw) results by hand is an acceptable tradeoff — restored to that.
 function buildEbayVerifyUrl(c, conditionKey) {
-  const searchText = buildVerifySearchText(c, conditionKey) +
-    ' -psa -bgs -cgc -sgc -tag -graded -slab';
+  const searchText = buildVerifySearchText(c, conditionKey);
   const params = new URLSearchParams({
     _nkw: searchText,
     _sacat: '183454', // Pokémon Individual Cards — same category ebay_pricing.py scopes to
     LH_BIN: '1',       // Buy It Now only, matching the backend's active-listing model
+  });
+  return `https://www.ebay.com/sch/i.html?${params.toString()}`;
+}
+
+// eBay PSA 10: opens a live search for graded PSA 10 copies of this card —
+// same query shape ebay_pricing.py itself uses server-side to produce the
+// PSA10 Slab Price shown on the card (is_slab=True), so clicking this
+// reproduces the actual comps behind that price. No condition label (a
+// graded slab has no separate raw condition — PSA's grade IS the
+// condition; confirmed live that adding one, e.g. "Near Mint", zeroes out
+// real PSA 10 results). Used by the new always-visible PSA10 price box in
+// the modal (2026-08-24) — clickable whether or not a PSA10 price is known
+// yet for this card, so Jordan can always check eBay directly.
+function buildEbayPsa10VerifyUrl(c) {
+  const name = c.name || '';
+  const num = (c.num || '').toString().trim();
+  let searchText;
+  if (_verifyIsJapanese(c)) {
+    const cleanSet = _verifyCleanSet(c);
+    const parts = [];
+    if (_verifyIsJapanese1stEdition(c)) parts.push('1st Edition');
+    parts.push(name, 'Japanese', cleanSet, 'Holo');
+    searchText = parts.filter(Boolean).join(' ');
+  } else {
+    const cleanSet = c.set || '';
+    const parts = [];
+    if (_verifyIs1stEdition(c)) parts.push('1st Edition');
+    parts.push(name, cleanSet);
+    if (_verifyIsVintageRareHolo(c) || _verifyIs1stEdition(c)) parts.push('Holo');
+    if (num) parts.push(num);
+    searchText = parts.filter(Boolean).join(' ');
+  }
+  searchText += ' "PSA 10" -"PSA 9" -"PSA 8" -"PSA 7" -"PSA 6" -"PSA 5" -bgs -cgc -sgc -tag -proxy -replica -digital';
+  const params = new URLSearchParams({
+    _nkw: searchText,
+    _sacat: '183454',
+    LH_BIN: '1',
   });
   return `https://www.ebay.com/sch/i.html?${params.toString()}`;
 }

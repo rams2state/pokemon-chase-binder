@@ -278,91 +278,16 @@ function tilePsa10Html(c) {
   return `<span class="tile-psa10" title="PSA 10 (ask) — average of the 3 cheapest currently-active PSA 10 Buy It Now listings on eBay">PSA10 ${c.psa10Price}</span>`;
 }
 
-// FEATURE (2026-08-12 → updated): condition-tiered pricing (NM/LP/MP/HP/DMG),
-// shown only in the card detail modal (not list/grid — those stay single-price
-// to avoid crowding).
-//
-// PRIMARY SOURCE: real per-condition market prices from JustTCG, baked into
-// the CSV by the daily Python run (columns: Price NM/LP/MP/HP/DMG). These are
-// actual TCGplayer-backed condition prices — one price per condition per card,
-// updated daily alongside the main NM price.
-//
-// FALLBACK: when JustTCG data is absent for a card (set not indexed, new set,
-// promo single, etc.), fall back to the deterministic percentage formula:
-// condition_price = market_price × 0.70 × tier%. The 0.70 factor matches the
-// 70%-of-market vendor discount in seventyPercentVal(). Tier percentages
-// (NM 100%, LP 80%, MP 50%, HP 30%, DMG 10%) are a standard collector ladder.
-const CONDITION_TIERS = [
-  { key: 'NM',  label: 'Near Mint',         pct: 1.00, field: 'priceNM',  sourceField: 'sourceNM'  },
-  { key: 'LP',  label: 'Lightly Played',    pct: 0.80, field: 'priceLP',  sourceField: 'sourceLP'  },
-  { key: 'MP',  label: 'Moderately Played', pct: 0.50, field: 'priceMP',  sourceField: 'sourceMP'  },
-  { key: 'HP',  label: 'Heavily Played',    pct: 0.30, field: 'priceHP',  sourceField: 'sourceHP'  },
-  { key: 'DMG', label: 'Damaged',           pct: 0.10, field: 'priceDMG', sourceField: 'sourceDMG' },
-];
-function conditionPrices(c) {
-  // Check if real prices are available (at least NM must be present) — from
-  // EITHER JustTCG (the common case) or eBay (when the price-gap variance
-  // trigger fired for this card AND that specific condition cleared eBay's
-  // 3-active-listing bar — see per-tier sourceField below). REDESIGN
-  // (2026-08-18): eBay's number is now an active-listing asking-price floor
-  // (lowest 3 Buy-It-Now listings, averaged), not a sold-listing average —
-  // see ebay_pricing.py's module docstring for why.
-  const nmRaw = c.priceNM;
-  const hasRealPrices = nmRaw && nmRaw !== '' && nmRaw !== 'N/A';
-
-  // FEATURE (2026-08-13): each tier now returns BOTH the real market price
-  // (marketValue) and the 70% vendor-offer price (value, field name kept
-  // as-is for backward compat with existing callers). Jordan pointed out
-  // that only ever seeing the 70% number makes the OTHER side of vendor
-  // math hard — buying at 70% then reselling at real market requires
-  // knowing the real number too, not just what to offer. Showing both
-  // means no mental "divide by 0.7" required at the table.
-  //
-  // FEATURE (2026-08-13, revised same day): source is now read PER TIER
-  // from c[t.sourceField] (e.g. c.sourceNM, c.sourceLP — baked in by the
-  // daily Python run, 'ebay' or 'justtcg' independently per condition)
-  // instead of one shared source for the whole row. A triggered card can
-  // legitimately end up mixed — e.g. NM/LP from eBay (deep, liquid market,
-  // clears the 3-active-listing bar easily), MP/HP/DMG from JustTCG (eBay
-  // came back too thin for those, so the existing JustTCG number was kept
-  // rather than left blank). This is intentional, confirmed with Jordan.
-  if (hasRealPrices) {
-    // Real per-condition market prices — apply 70% vendor discount to each
-    // condition's own market price. NM's 70%-of-market value matches
-    // seventyPercentVal() exactly (same calculation, same number — they
-    // can't drift out of sync). LP/MP/HP/DMG each get 70% of their own
-    // condition market price, not 70% of NM scaled down.
-    const tiers = [];
-    for (const t of CONDITION_TIERS) {
-      const raw = c[t.field];
-      if (!raw || raw === '' || raw === 'N/A') continue;
-      const market = parseFloat(raw.replace('$', ''));
-      if (isNaN(market) || market <= 0) continue;
-      const source = c[t.sourceField] === 'ebay' ? 'ebay' : 'justtcg';
-      tiers.push({
-        key: t.key,
-        label: t.label,
-        marketValue: market,
-        value: market * 0.70,
-        source,
-      });
-    }
-    if (tiers.length > 0) return tiers;
-    // If parsing failed for all conditions, fall through to formula
-  }
-
-  // Fallback: percentage formula applied to the card's main market price.
-  const v = priceVal(c.price);
-  if (v <= 0) return null;
-  const base = v * 0.70;
-  return CONDITION_TIERS.map(t => ({
-    key: t.key,
-    label: t.label,
-    marketValue: v * t.pct,
-    value: base * t.pct,
-    source: 'formula',
-  }));
-}
+// REMOVED (2026-08-24): CONDITION_TIERS/conditionPrices() — the per-
+// condition (NM/LP/MP/HP/DMG) pricing grid these fed was already removed
+// from the modal UI on 2026-08-22 (see modal.js), and the CSV columns they
+// read (priceNM/priceLP/priceMP/priceHP/priceDMG, sourceNM/sourceLP/
+// sourceMP/sourceHP/sourceDMG) are now gone entirely too — see data.js's
+// REDESIGN comment for why (most "Price NM" values in the live CSV turned
+// out to be stale/wrong data from the retired eBay raw-NM override, not a
+// real cross-check). This function had exactly one reference left anywhere
+// in the codebase — a comment in modal.js noting it was already unused —
+// so it's fully dead code now, not just UI-orphaned.
 
 // FEATURE (2026-08-08): "% change" everywhere in the app now compares
 // today's price against the price from ~7 days ago, not against yesterday's

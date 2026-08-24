@@ -123,14 +123,26 @@ function openModal(c, updateList = true) {
   // provide at all). Still an asking-price floor (average of the 3
   // cheapest currently-active PSA-10 Buy It Now listings), not a sold
   // price — see ebay_pricing.py's module docstring.
+  //
+  // REDESIGN (2026-08-24, take 2): PSA10 is now a clickable BOX, always
+  // shown (not just when c.psa10Price exists) — Jordan: "show this price
+  // box on every card now(right of the 70%), so that when it either has or
+  // doesnt have a price i can still click the box and go to ebay for the
+  // psa 10 lookup." Clicking opens the same PSA 10 eBay search
+  // buildEbayPsa10VerifyUrl() builds (verify_links.js) regardless of
+  // whether a price is known yet — this is the "check eBay" affordance for
+  // PSA10 specifically, separate from the "Find on eBay" NM-search button
+  // further down.
   if (!READ_ONLY_SHARE) {
     const seventyLabel = seventyPercentLabel(c);
-    if (seventyLabel || c.psa10Price) {
-      let line = `70%: ${seventyLabel || '—'}`;
-      if (c.psa10Price) {
-        line += `<span class="modal-70pct-psa10" title="PSA 10 (ask) — average of the 3 cheapest currently-active PSA 10-graded (Professional Sports Authenticator) Buy It Now listings on eBay, not a sold price">PSA 10: ${c.psa10Price}</span>`;
-      }
+    const psa10Url = buildEbayPsa10VerifyUrl(c);
+    const psa10Text = c.psa10Price ? `PSA10: ${c.psa10Price}` : 'PSA10 —';
+    const psa10Box = `<a class="modal-70pct-psa10" href="${psa10Url}" target="_blank" rel="noopener" title="PSA 10 (ask) — average of the 3 cheapest currently-active PSA 10-graded (Professional Sports Authenticator) Buy It Now listings on eBay, not a sold price. Click to search eBay for PSA 10 listings.">${psa10Text}</a>`;
+    if (seventyLabel) {
+      const line = `70%: ${seventyLabel}${psa10Box}`;
       priceHtml += `<div class="modal-70pct">${line}</div>`;
+    } else {
+      priceHtml += `<div class="modal-70pct">${psa10Box}</div>`;
     }
     // FEATURE (2026-07-29): show what was actually paid, but ONLY if a real
     // purchase price was recorded (Skip leaves it unset — never show "$0.00"
@@ -148,8 +160,10 @@ function openModal(c, updateList = true) {
   // remove the condition pricing row entirely." Replaced by the "Find on
   // eBay" button below (next to the existing "Find on TCGplayer" button),
   // which opens a live NM-condition, print-aware search instead of showing
-  // a computed price. conditionPrices()/CONDITION_TIERS still exist in
-  // rarity.js (harmless, unused) in case this is ever revisited.
+  // a computed price. conditionPrices()/CONDITION_TIERS themselves were
+  // removed from rarity.js on 2026-08-24, once the CSV columns they read
+  // (priceNM/priceLP/etc.) were dropped too — see data.js's REDESIGN
+  // comment.
   //
   // REMOVED (2026-08-24): the standalone "eBay verification fields" box
   // (#mEbayPrices) that used to render here — eBay NM is gone entirely and
@@ -207,14 +221,20 @@ function openModal(c, updateList = true) {
     `https://www.tcgplayer.com/search/pokemon/product?q=${tcgQuery}&view=grid`;
 
   // FEATURE (2026-08-22): "Find on eBay" button, same place/style as the
-  // TCGplayer button above — replaces the removed per-condition verify
-  // links (see the removed condition-pricing block earlier in this
-  // function). Fixed to NM ("just near mint from ebay and tcgplayer will
-  // do") — reuses verify_links.js's buildEbayVerifyUrl(), same era/print-
-  // aware query construction (1st Edition, Japanese phrasing, Holo + card
-  // number for vintage cards, etc.) already built and tested for the
-  // condition grid, just always called with 'NM' now instead of once per
-  // condition tier.
+  // TCGplayer button above — reuses verify_links.js's buildEbayVerifyUrl(),
+  // same era/print-aware query construction (1st Edition, Japanese
+  // phrasing, Holo + card number for vintage cards), fixed to NM ("just
+  // near mint from ebay and tcgplayer will do").
+  //
+  // BUG FIX (2026-08-24): used to append a graded-slab exclusion list
+  // ("-psa -bgs -cgc -sgc -tag -graded -slab") that Jordan found returns 0
+  // results live — eBay's matcher AND's every required/excluded term, and
+  // that many exclusions on top of an already-specific query collapses
+  // matches to zero for cards whose real inventory is mostly graded.
+  // Exclusions dropped per Jordan: "dropping the exclusions works, i just
+  // have to manually filter which i suppose is fine." (Separate from the
+  // new always-visible PSA10 box above, which searches PSA 10 specifically
+  // — this button stays a general NM-labeled search.)
   const mBuyEbay = document.getElementById('mBuyEbay');
   if (mBuyEbay) {
     mBuyEbay.href = buildEbayVerifyUrl(c, 'NM');

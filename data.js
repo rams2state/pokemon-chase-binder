@@ -319,52 +319,23 @@ function normalizeCard(raw) {
   if (rarity === 'Rare Holo LV.X') {
     rarity = 'LV.X';
   }
-  // Per-condition prices — SOURCE VARIES PER CONDITION, PER CARD, PER DAY
-  // (see sourceNM/sourceLP/etc. below — changed 2026-08-13 from one shared
-  // source to per-condition tracking, since a triggered card's row can be
-  // genuinely mixed-source). Baked in by the daily Python run: JustTCG is
-  // the baseline for every condition; when a card's TCGplayer data looked
-  // stale/volatile that day (the price-gap variance trigger), each
-  // condition INDIVIDUALLY gets a chance to be replaced by an eBay number —
-  // if eBay comes back too thin for a specific condition, that cell just
-  // keeps its JustTCG baseline instead of going blank. See
-  // ebay_daily_runner.py / POKEMON_RARITY_COLLECTOR.py. Empty string means
-  // neither source had data for that condition.
-  //
-  // REDESIGN (2026-08-18): the eBay number for a condition is now the
-  // average of the 3 CHEAPEST currently-ACTIVE Buy-It-Now listings for that
-  // condition, NOT an average of recent sold listings — eBay's Browse API
-  // (the only API this app has access to) can only search active listings,
-  // never sold/historical ones (see ebay_pricing.py's module docstring for
-  // the full story of why the earlier sold-listing design never actually
-  // worked). This is effectively "what would this cost me on eBay right
-  // now" rather than "what did this recently sell for" — a deliberately
-  // different, and for a buy/flip use case arguably more directly useful,
-  // number. Still requires 3+ qualifying active listings to populate a
-  // cell at all (see ebay_pricing.MIN_LISTINGS_REQUIRED).
-  const priceNM  = raw.price_nm  || raw['price_nm']  || '';
-  const priceLP  = raw.price_lp  || raw['price_lp']  || '';
-  const priceMP  = raw.price_mp  || raw['price_mp']  || '';
-  const priceHP  = raw.price_hp  || raw['price_hp']  || '';
-  const priceDMG = raw.price_dmg || raw['price_dmg'] || '';
-  // Which source produced EACH condition price above, independently:
-  // 'ebay' or 'justtcg' (empty string for older rows written before this
-  // column existed, or a condition with no data at all). Drives the
-  // per-cell "eBay" vs "JustTCG" label in the modal — see modal.js. A
-  // triggered card's row can legitimately show a mix, e.g. sourceNM/
-  // sourceLP === 'ebay' while sourceMP/sourceHP/sourceDMG === 'justtcg'.
-  const sourceNM  = raw.source_nm  || raw['source_nm']  || '';
-  const sourceLP  = raw.source_lp  || raw['source_lp']  || '';
-  const sourceMP  = raw.source_mp  || raw['source_mp']  || '';
-  const sourceHP  = raw.source_hp  || raw['source_hp']  || '';
-  const sourceDMG = raw.source_dmg || raw['source_dmg'] || '';
-  // REMOVED (2026-08-24): ebayNM ("eBay NM (ask)") — Jordan: "ebay nm ask
-  // should not exist anymore." eBay's raw-NM check is retired entirely (see
-  // ebay_pricing.py's 2026-08-24 REDESIGN section) — NM pricing is
-  // JustTCG/TCGplayer only now (priceNM/sourceNM above). The CSV's "eBay
-  // NM" column still exists (always blank going forward, kept for backward
-  // compat — see POKEMON_RARITY_COLLECTOR.py), so simply not parsing it
-  // here is enough; no downstream code references raw.ebay_nm any more.
+  // REMOVED (2026-08-24): the entire per-condition (NM/LP/MP/HP/DMG) price
+  // + per-condition source parsing that used to live here (priceNM/priceLP/
+  // priceMP/priceHP/priceDMG, sourceNM/sourceLP/sourceMP/sourceHP/
+  // sourceDMG). Jordan: "csv doesnt need the condition columns besides nm,
+  // dont need the source columns, we should have just price or just price
+  // nm." Investigating the live CSV first showed why dropping ALL of it
+  // (not just LP/MP/HP/DMG) was the right call: 1,549 cards had both
+  // "Price" and "Price NM" populated, and 1,526 of those had "Price NM"
+  // sourced from the retired eBay raw-NM override — frozen/stale, and in
+  // several cases badly wrong (e.g. Base Set Alakazam: Price $345.61 vs
+  // Price NM $7.49, a 46x gap — almost certainly an eBay print-mismatch,
+  // not a real price). The condition-tier UI itself was already fully
+  // removed 2026-08-22 (see modal.js) — priceLP/MP/HP/DMG and their sources
+  // had no consumer left even before this. Single "price"/"priceSource"
+  // field below (from the CSV's "Price"/"Price Source" columns, unchanged)
+  // is the only price now. The CSV writer (POKEMON_RARITY_COLLECTOR.py) no
+  // longer writes these columns at all, so there's nothing left to parse.
   //
   // psa10Price (renamed 2026-08-22, was tagSlabPrice / "TAG Slab Price"):
   // an ACTIVE-LISTING asking-price floor (lowest 3 currently-active PSA-10
@@ -408,7 +379,7 @@ function normalizeCard(raw) {
   // this column existed — same "don't guess when there's no real data"
   // default used everywhere else in this app.
   const priceVolatile = (raw.price_volatile || raw['price_volatile'] || '').toLowerCase() === 'true';
-  return { name, series, set, setCode, num, setTotal, rarity, price, prevPrice, cardId, pic, setLogo, setSymbol, date, lastChecked, lastPriced, supertype, subtypes, priceNM, priceLP, priceMP, priceHP, priceDMG, sourceNM, sourceLP, sourceMP, sourceHP, sourceDMG, psa10Price, priceVolatile, _is1stEditionHolofoil: is1stEditionHolofoil };
+  return { name, series, set, setCode, num, setTotal, rarity, price, prevPrice, cardId, pic, setLogo, setSymbol, date, lastChecked, lastPriced, supertype, subtypes, psa10Price, priceVolatile, _is1stEditionHolofoil: is1stEditionHolofoil };
 }
 
 // Formats a release/history date for display as MM/DD/YYYY. Accepts either

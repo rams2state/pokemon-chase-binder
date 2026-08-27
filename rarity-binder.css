@@ -782,7 +782,19 @@
     main{padding:16px 12px 80px;}
 
     /* Set overview — 1 column on mobile */
+    /* BUG FIX (2026-08-27): grid-template-columns:1fr alone doesn't stop a
+       long set title from pushing the card wider than the viewport — grid
+       items default to min-width:auto, so a track refuses to shrink below
+       its content's unbroken intrinsic width (the "grid blowout" bug).
+       Confirmed live at 360x780: "Expansion Pack (No Rarity) (Japanese)"
+       measured 556px wide, clipped off the right edge of the screen with
+       no ellipsis ever kicking in, because .set-ov-name's overflow:hidden
+       had nothing to actually clip against. min-width:0 lets the card
+       shrink to the grid track's real (viewport) width, which then lets
+       .set-ov-name's existing white-space:nowrap + text-overflow:ellipsis
+       do its job. */
     .set-overview-grid{grid-template-columns:1fr;}
+    .set-ov-card{min-width:0;}
 
     /* Detail card grid — SINGLE column on mobile so nothing cuts off */
     .detail-card-grid{grid-template-columns:1fr;}

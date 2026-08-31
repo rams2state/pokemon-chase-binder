@@ -400,7 +400,15 @@ function formatDateDisplay(dateStr) {
 // routing (openSetDetail, era/set grouping, etc.).
 function shortSetName(setName) {
   if (!setName) return setName;
-  return setName.replace('Trainer Gallery', 'TG').replace('Galarian Gallery', 'GG');
+  return setName.replace('Trainer Gallery', 'TG').replace('Galarian Gallery', 'GG').replace(/ \(Japanese\)$/, '');
+}
+// True if this is a Japanese-market synthetic set (its full Set Name carries
+// the literal " (Japanese)" suffix japanese_cards.py appends). Used to swap
+// the old inline "(Japanese)" text for an explicit EN/JP language pill
+// (2026-08-31, requested: "remove (japanese) from set names and maybe have
+// a pill that shows whether the set is english or japanese instead").
+function isJapaneseSetName(setName) {
+  return !!setName && / \(Japanese\)$/.test(setName);
 }
 // Japanese set symbol equivalents, keyed by exact CSV/rarity-binder Set Name.
 // Each value is a list of {name, symbol} for the JP set(s) that correspond to
@@ -591,6 +599,7 @@ const JP_SET_TO_ENGLISH = {
   "BW8: Thunder Knuckle (Japanese)": { englishSet: "Plasma Freeze", name: "Thunder Knuckle", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/thunder-knuckle.png" },
   "BW9: Megalo Cannon (Japanese)": { englishSet: "Plasma Blast", name: "Megalo Cannon", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/megalo-cannon.png" },
   "Base Expansion Pack (Japanese)": { englishSet: "Expedition Base Set", name: "Base Expansion Pack", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/base-expansion-pack.png" },
+  "Challenge from the Darkness (Japanese)": { englishSet: "Gym Challenge", name: "Challenge from the Darkness", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/challenge-from-the-darkness.png" },
   "Clash of the Blue Sky (Japanese)": { englishSet: "Deoxys", name: "Clash of the Blue Sky", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/clash-of-the-blue-sky.png" },
   "DP1: Space-Time Creation (Japanese)": { englishSet: "Diamond & Pearl", name: "Space-Time Creation: Diamond Collection", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/space-time-creation-diamond-collection.png" },
   "DP2: Secret of the Lakes (Japanese)": { englishSet: "Mysterious Treasures", name: "Secret of the Lakes", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/secret-of-the-lakes.png" },
@@ -609,6 +618,7 @@ const JP_SET_TO_ENGLISH = {
   "L1: SoulSilver Collection (Japanese)": { englishSet: "HeartGold & SoulSilver", name: "SoulSilver Collection", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/soulsilver-collection.png" },
   "L2: Reviving Legends (Japanese)": { englishSet: "HS—Undaunted", name: "Reviving Legends", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/reviving-legends.png" },
   "L3: Clash at the Summit (Japanese)": { englishSet: "HS—Triumphant", name: "Clash at the Summit", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/clash-at-the-summit.png" },
+  "LL: Lost Link (Japanese)": { englishSet: null, name: "Lost Link", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/lost-link.png" },
   "Leaders' Stadium (Japanese)": { englishSet: "Gym Heroes", name: "Leaders' Stadium", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/leaders-stadium.png" },
   "Magma VS Aqua: Two Ambitions (Japanese)": { englishSet: "Team Magma vs Team Aqua", name: "Magma VS Aqua: Two Ambitions", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/magma-vs-aqua-two-ambitions.png" },
   "Miracle Crystal (Japanese)": { englishSet: "Crystal Guardians", name: "Miracle Crystal", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/miracle-crystal.png" },
@@ -616,7 +626,17 @@ const JP_SET_TO_ENGLISH = {
   "Mirage Forest (Japanese)": { englishSet: "Legend Maker", name: "Mirage Forest", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/mirage-forest.png" },
   "Mysterious Mountains (Japanese)": { englishSet: "Skyridge", name: "Mysterious Mountains", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/mysterious-mountains.png" },
   "Mystery of the Fossils (Japanese)": { englishSet: "Fossil", name: "Mystery of the Fossils", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/mystery-of-the-fossils.png" },
+  "Neo Destiny (Japanese)": { englishSet: "Neo Destiny", name: "Neo Destiny", symbol: "https://archives.bulbagarden.net/media/upload/thumb/8/88/SetSymbolNeo_Destiny.png/120px-SetSymbolNeo_Destiny.png" },
+  "Neo Discovery (Japanese)": { englishSet: "Neo Discovery", name: "Neo Discovery", symbol: "https://archives.bulbagarden.net/media/upload/thumb/f/f8/SetSymbolNeo_Discovery.png/120px-SetSymbolNeo_Discovery.png" },
+  "Neo Genesis (Japanese)": { englishSet: "Neo Genesis", name: "Neo Genesis", symbol: "https://archives.bulbagarden.net/media/upload/thumb/7/75/SetSymbolNeo_Genesis.png/120px-SetSymbolNeo_Genesis.png" },
+  "Neo Revelation (Japanese)": { englishSet: "Neo Revelation", name: "Neo Revelation", symbol: "https://archives.bulbagarden.net/media/upload/thumb/c/c6/SetSymbolNeo_Revelation.png/120px-SetSymbolNeo_Revelation.png" },
   "Offense and Defense of the Furthest Ends (Japanese)": { englishSet: "Dragon Frontiers", name: "Offense and Defense of the Furthest Ends", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/offense-and-defense-of-the-furthest-ends.png" },
+  "Pokemon Jungle (Japanese)": { englishSet: null, name: "Pokemon Jungle", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/pokemon-jungle.png" },
+  "Pokemon VS (Japanese)": { englishSet: null, name: "Pokemon VS", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/pokemon-vs.png" },
+  "Pokemon Web (Japanese)": { englishSet: null, name: "Pokemon Web", symbol: "https://archives.bulbagarden.net/media/upload/thumb/a/ad/SetSymbolPok%C3%A9mon_Web.png/120px-SetSymbolPok%C3%A9mon_Web.png" },
+  "Pokémon TCG Classic (Blastoise Deck) (Japanese)": { englishSet: null, name: "Pokémon TCG Classic (Blastoise Deck)", symbol: "https://archives.bulbagarden.net/media/upload/1/17/SetSymbolPCG_Classic_Blastoise.png" },
+  "Pokémon TCG Classic (Charizard Deck) (Japanese)": { englishSet: null, name: "Pokémon TCG Classic (Charizard Deck)", symbol: "https://archives.bulbagarden.net/media/upload/7/76/SetSymbolPCG_Classic_Charizard.png" },
+  "Pokémon TCG Classic (Venusaur Deck) (Japanese)": { englishSet: null, name: "Pokémon TCG Classic (Venusaur Deck)", symbol: "https://archives.bulbagarden.net/media/upload/3/3b/SetSymbolPCG_Classic_Venusaur.png" },
   "Pt1: Galactic's Conquest (Japanese)": { englishSet: "Platinum", name: "Galactic's Conquest", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/galactics-conquest.png" },
   "Pt2: Bonds to the End of Time (Japanese)": { englishSet: "Rising Rivals", name: "Bonds to the End of Time", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/bonds-to-the-end-of-time.png" },
   "Pt3: Beat of the Frontier (Japanese)": { englishSet: "Supreme Victors", name: "Beat of the Frontier", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/beat-of-the-frontier.png" },
@@ -628,6 +648,9 @@ const JP_SET_TO_ENGLISH = {
   "The Town on No Map (Japanese)": { englishSet: "Aquapolis", name: "The Town on No Map", symbol: "https://pokesymbols.com/images/tcg/japanese-sets/symbols/the-town-on-no-map.png" },
   "Undone Seal (Japanese)": { englishSet: "Hidden Legends", name: "Undone Seal", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/undone-seal.png" },
   "Wind from the Sea (Japanese)": { englishSet: "Aquapolis", name: "Wind from the Sea", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/wind-from-the-sea.png" },
+  "World Champions Pack (Japanese)": { englishSet: "Power Keepers", name: "World Champions Pack", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/world-champions-pack.png" },
+  "XY Collection X (Japanese)": { englishSet: "XY", name: "XY Collection X", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/collection-x.png" },
+  "XY Collection Y (Japanese)": { englishSet: "XY", name: "XY Collection Y", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/collection-y.png" },
   "XY10: Awakening Psychic King (Japanese)": { englishSet: "Fates Collide", name: "Awakening Psychic King", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/awakening-psychic-king.png" },
   "XY11-Bb: Fever-Burst Fighter (Japanese)": { englishSet: "Steam Siege", name: "Fever-Burst Fighter", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/fever-burst-fighter.png" },
   "XY11-Br: Cruel Traitor (Japanese)": { englishSet: "Steam Siege", name: "Cruel Traitor", symbol: "https://pokesymbols.com/images/low-res/japanese-sets/symbols/cruel-traitor.png" },

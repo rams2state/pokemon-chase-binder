@@ -258,9 +258,21 @@
   /* set name */
   .set-ov-name{
     font-family:'Luckiest Guy','Bebas Neue';font-size:29px;color:var(--text);
-    letter-spacing:0.01em;line-height:1.05;margin-bottom:5px;
+    letter-spacing:0.01em;line-height:1.05;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
+  /* Name + EN/JP language pill, side by side (added 2026-08-31, replaces
+     the old inline "(Japanese)" suffix that used to be baked into the
+     displayed name itself — see isJapaneseSetName()/shortSetName() in
+     data.js). Name keeps its own ellipsis; pill never shrinks. */
+  .set-ov-name-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;min-width:0;}
+  .set-ov-name-row .set-ov-name{margin-bottom:0;flex:1;min-width:0;}
+  .set-ov-lang-pill{
+    flex-shrink:0;font-size:11px;font-weight:800;padding:3px 9px;border-radius:10px;
+    letter-spacing:0.03em;font-family:inherit;
+  }
+  .set-ov-lang-pill.en{background:rgba(99,179,237,0.18);color:#63b3ed;}
+  .set-ov-lang-pill.jp{background:rgba(245,101,101,0.18);color:#f56565;}
   /* Card count + rarity pills right-aligned to free up left-side room for the
      bigger symbol/logo/name above */
   .set-ov-total{font-size:13px;color:var(--dim);margin-bottom:12px;text-align:right;}
@@ -289,6 +301,7 @@
   .set-detail-info{flex:1;}
   .set-detail-era{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:0.1em;font-weight:700;}
   .set-detail-name{font-family:'Luckiest Guy','Bebas Neue';font-size:24px;color:var(--text);letter-spacing:0.01em;line-height:1;}
+  .set-detail-name-row{display:flex;align-items:center;gap:8px;}
 
   /* rarity group inside set detail */
   .rarity-group{margin-bottom:24px;}

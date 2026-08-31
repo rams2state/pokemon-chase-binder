@@ -717,7 +717,10 @@ function renderSetOverview(cards, el) {
           </div>
           <span class="set-ov-year">${setYear}</span>
         </div>
-        <div class="set-ov-name">${shortSetName(set)}</div>
+        <div class="set-ov-name-row">
+          <div class="set-ov-name">${shortSetName(set)}</div>
+          <span class="set-ov-lang-pill ${isJapaneseSetName(set) ? 'jp' : 'en'}">${isJapaneseSetName(set) ? 'JP' : 'EN'}</span>
+        </div>
         <div class="set-ov-total">${setTotal} card${setTotal!==1?'s':''}</div>
         <div class="set-ov-pills">${pillsHtml}</div>
       </div>`;
@@ -810,7 +813,10 @@ function renderSetDetail(cards, el) {
     ${ownJpBadgeDetailHtml}
     <div class="set-detail-info">
       <div class="set-detail-era">${era} · ${setYear}</div>
-      <div class="set-detail-name">${set}</div>
+      <div class="set-detail-name-row">
+        <div class="set-detail-name">${shortSetName(set)}</div>
+        <span class="set-ov-lang-pill ${isJapaneseSetName(set) ? 'jp' : 'en'}">${isJapaneseSetName(set) ? 'JP' : 'EN'}</span>
+      </div>
     </div>
   </div>`;
 

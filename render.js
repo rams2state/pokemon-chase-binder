@@ -431,7 +431,7 @@ function renderTrend(el) {
     const arrow = c._delta >= 0 ? '↑' : '↓';
     const badge = `<span class="price-change ${cls}"><span class="price-change-period">7D</span> ${arrow} ${sign}$${Math.abs(c._delta).toFixed(2)} (${sign}${c._pct.toFixed(1)}%)</span>`;
     const thumbHtml = c.pic && c.pic !== 'N/A'
-      ? `<img class="crow-thumb" src="${c.pic}" alt="${c.name||''}" loading="lazy" onerror="this.style.display='none'">`
+      ? `<img class="crow-thumb" src="${c.pic}" alt="${c.name||''}" loading="lazy" referrerpolicy="origin" onerror="this.style.display='none'">`
       : `<div class="crow-thumb-empty">?</div>`;
 
     html += `<div class="card-row${owned?' owned':''}" id="row-${key}" onclick='openModal(${cdata})'>
@@ -474,7 +474,7 @@ function renderFlatList(cards, el, title) {
     const cdata = JSON.stringify(c).replace(/'/g,'&#39;');
     const key = cardKey(c).replace(/[^a-z0-9]/gi,'_');
     const thumbHtml = c.pic && c.pic !== 'N/A'
-      ? `<img class="crow-thumb" src="${c.pic}" alt="${c.name||''}" loading="lazy" onerror="this.style.display='none'">`
+      ? `<img class="crow-thumb" src="${c.pic}" alt="${c.name||''}" loading="lazy" referrerpolicy="origin" onerror="this.style.display='none'">`
       : `<div class="crow-thumb-empty">?</div>`;
 
     html += `<div class="card-row${owned?' owned':''}" id="row-${key}" onclick='openModal(${cdata})'>
@@ -847,7 +847,7 @@ function renderSetDetail(cards, el) {
       const key = cardKey(c).replace(/[^a-z0-9]/gi,'_');
       const changeBadge = priceChangeBadge(c.price, c.cardId);
       const thumbHtml = c.pic && c.pic !== 'N/A'
-        ? `<img class="crow-thumb" src="${c.pic}" alt="${c.name||''}" loading="lazy" onerror="this.style.display='none'">`
+        ? `<img class="crow-thumb" src="${c.pic}" alt="${c.name||''}" loading="lazy" referrerpolicy="origin" onerror="this.style.display='none'">`
         : `<div class="crow-thumb-empty">?</div>`;
       html += `<div class="card-row${owned?' owned':''}" id="row-${key}" onclick='openModal(${cdata})'>
         <div class="crow-check${owned?' owned':''}" onclick='event.stopPropagation();handleToggle(${cdata})'>${owned?'✓':''}</div>
@@ -889,7 +889,7 @@ function renderGridFlat(cards, el, title) {
     const changeBadge = priceChangeBadge(c.price, c.prevPrice);
     const imgSrc = c.pic && c.pic !== 'N/A' ? c.pic : '';
     const imgTag = imgSrc
-      ? `<img src="${imgSrc}" alt="${c.name||''}" loading="lazy" onerror="this.style.background='var(--panel2)';this.removeAttribute('src')">`
+      ? `<img src="${imgSrc}" alt="${c.name||''}" loading="lazy" referrerpolicy="origin" onerror="this.style.background='var(--panel2)';this.removeAttribute('src')">`
       : `<div style="aspect-ratio:2.5/3.5;background:var(--panel2);display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:12px;">No Image</div>`;
     html += `<div class="card-tile${owned?' owned':''}" id="tile-${key}" onclick='openModal(${cdata})'>
       ${imgTag}
@@ -935,7 +935,7 @@ function renderGrid(cards, el) {
       const changeBadge = priceChangeBadge(c.price, c.cardId);
       const imgSrc = c.pic && c.pic !== 'N/A' ? c.pic : '';
       const imgTag = imgSrc
-        ? `<img src="${imgSrc}" alt="${c.name||''}" loading="lazy" onerror="this.style.background='var(--panel2)';this.removeAttribute('src')">`
+        ? `<img src="${imgSrc}" alt="${c.name||''}" loading="lazy" referrerpolicy="origin" onerror="this.style.background='var(--panel2)';this.removeAttribute('src')">`
         : `<div style="aspect-ratio:2.5/3.5;background:var(--panel2);display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:12px;">No Image</div>`;
       html += `<div class="card-tile${owned?' owned':''}" id="tile-${key}" onclick='openModal(${cdata})'>
         ${imgTag}

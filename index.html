@@ -3,6 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- BUG FIX (2026-09-02): artofpkm.com's CDN allowlists our Referer header
+     and serves the real card image only when it sees one — with no
+     referrer (or a mismatched one) it silently serves a small generic
+     "Image hosted at artofpkm.com" placeholder graphic instead (confirmed
+     live: same URL returns a 69KB real JPEG with our origin as Referer vs.
+     a 25KB placeholder WebP with no/wrong referrer). Modern browsers'
+     default cross-origin referrer policy (strict-origin-when-cross-origin)
+     already sends our origin, which the CDN accepts — but privacy-hardened
+     browsers/extensions (Safari ITP, Brave Shields, strict-mode Firefox,
+     several ad blockers) strip it regardless of page policy, which is what
+     was showing Jordan the placeholder. This meta tag is a belt-and-
+     suspenders default (see also each card <img>'s own referrerpolicy=
+     "origin" attribute in render.js) — it won't fix privacy tools that
+     strip referrers outright, only browsers respecting page-level policy. -->
+<meta name="referrer" content="origin">
 <title>Pokémon Rarity Binder v2.0 — Chase Cards Across Every Era</title>
 <link rel="manifest" href="manifest.json">
 <script>

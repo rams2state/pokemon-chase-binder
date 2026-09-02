@@ -366,6 +366,20 @@
   .tile-footer{display:flex;justify-content:space-between;align-items:center;}
   .tile-price-row{display:flex;align-items:center;flex-wrap:wrap;gap:2px;}
   .tile-price{font-size:12px;font-weight:800;color:var(--gold-bright);}
+  /* BUG FIX (2026-09-01): tile-psa10 (grid-view PSA10 ask price, see
+     tilePsa10Html() in rarity.js) had NO rule anywhere in this file — it
+     was rendering at the ambient inherited font-size (no explicit size on
+     any ancestor either, so it fell all the way back to the browser
+     default, ~2x .tile-price's deliberate 12px) instead of matching the
+     other price text on the tile. Jordan: "shrink the size of the psa 10
+     and its price on the card grid view. seems way too big and doesnt
+     match other price sizes." Sized to match .tile-price exactly; kept the
+     existing violet PSA10 branding color from .modal-70pct-psa10 above so
+     it still reads as a distinct badge, just no longer oversized. */
+  .tile-psa10{
+    font-size:12px;font-weight:800;color:#c084fc;
+    display:inline-block;margin-top:2px;white-space:nowrap;
+  }
   .tile-check{
     position:absolute;top:7px;right:7px;width:28px;height:28px;
     background:rgba(14,16,22,0.75);border:2px solid var(--line);border-radius:6px;

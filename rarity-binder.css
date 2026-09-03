@@ -530,11 +530,13 @@
   }
   .modal-buy:hover{background:var(--gold-bright);box-shadow:0 4px 16px rgba(255,203,5,0.3);}
   /* FEATURE (2026-08-22): "Find on eBay" button, same shape/size as the
-     TCGplayer button above (.modal-buy) but in eBay's blue — same accent
-     color already used elsewhere for eBay-sourced figures (cond-dot--ebay,
-     etc.) so this reads as visually related to eBay across the app. */
-  .modal-buy--ebay{background:#60a5fa;color:#0a1a2e;}
-  .modal-buy--ebay:hover{background:#7cb8fb;box-shadow:0 4px 16px rgba(96,165,250,0.35);}
+     TCGplayer button. REPLACED (2026-09-02) with "Find on PriceCharting" —
+     see modal.js's matching comment for why (shows ungraded + all graded
+     tiers from sold listings; PSA10 box stays on eBay, untouched). Kept a
+     distinct color (amber/gold, PriceCharting's own brand tone) rather than
+     reusing eBay's blue, so the two buttons stay visually distinguishable. */
+  .modal-buy--pricecharting{background:#fbbf24;color:#1a1400;}
+  .modal-buy--pricecharting:hover{background:#fcd34d;box-shadow:0 4px 16px rgba(251,191,36,0.35);}
 
   /* FEATURE (2026-08-02): read-only share modal trimmed to just image, name,
      rarity/set/series/date, price, and the TCGPlayer link — hide the price

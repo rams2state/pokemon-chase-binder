@@ -221,23 +221,22 @@ function openModal(c, updateList = true) {
     `https://www.tcgplayer.com/search/pokemon/product?q=${tcgQuery}&view=grid`;
 
   // FEATURE (2026-08-22): "Find on eBay" button, same place/style as the
-  // TCGplayer button above — reuses verify_links.js's buildEbayVerifyUrl(),
-  // same era/print-aware query construction (1st Edition, Japanese
-  // phrasing, Holo + card number for vintage cards), fixed to NM ("just
-  // near mint from ebay and tcgplayer will do").
+  // TCGplayer button above.
   //
-  // BUG FIX (2026-08-24): used to append a graded-slab exclusion list
-  // ("-psa -bgs -cgc -sgc -tag -graded -slab") that Jordan found returns 0
-  // results live — eBay's matcher AND's every required/excluded term, and
-  // that many exclusions on top of an already-specific query collapses
-  // matches to zero for cards whose real inventory is mostly graded.
-  // Exclusions dropped per Jordan: "dropping the exclusions works, i just
-  // have to manually filter which i suppose is fine." (Separate from the
-  // new always-visible PSA10 box above, which searches PSA 10 specifically
-  // — this button stays a general NM-labeled search.)
+  // REPLACED (2026-09-02): swapped for a "Find on PriceCharting" button —
+  // Jordan: "i like the idea of swapping find on ebay button with
+  // pricecharting button instead that way we can see ungraded and graded
+  // prices" / "in the mean time keep everything ebay, but just replace the
+  // find on ebay button with pricecharting button. we can still click on
+  // the psa10 button to go to ebay." PriceCharting shows ungraded AND every
+  // graded tier (PSA 9, PSA 10, etc.) on one page, sourced from sold
+  // listings rather than eBay's active-listings-only model — see
+  // buildPriceChartingVerifyUrl() in verify_links.js. The PSA10 box above
+  // is UNCHANGED and still opens an eBay PSA-10 search — only this
+  // general-purpose raw/graded lookup button moved.
   const mBuyEbay = document.getElementById('mBuyEbay');
   if (mBuyEbay) {
-    mBuyEbay.href = buildEbayVerifyUrl(c, 'NM');
+    mBuyEbay.href = buildPriceChartingVerifyUrl(c);
   }
 
   // Update own button state (hidden entirely in read-only share view — see

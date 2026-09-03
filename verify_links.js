@@ -143,15 +143,35 @@ function buildEbayVerifyUrl(c, conditionKey) {
 // real PSA 10 results). Used by the new always-visible PSA10 price box in
 // the modal (2026-08-24) — clickable whether or not a PSA10 price is known
 // yet for this card, so Jordan can always check eBay directly.
+//
+// SIMPLIFIED (2026-09-02): dropped the other-grade/other-grader/junk
+// exclusion list (-"PSA 9" -"PSA 8" ... -bgs -cgc -sgc -tag -proxy -replica
+// -digital, 11 terms). Jordan: "I think ebay query should go something
+// like '{first edition (if not dont include)} + {cardname} + {set} +
+// {holo (if not dont include)} psa 10'" — no exclusions at all, matching
+// the exact same lesson this codebase already learned twice before (see
+// ebay_pricing.py's _PSA_GRADES_BELOW_10 trim and the 2026-08-24 raw-NM
+// bug fix): eBay's Browse/search matcher effectively ANDs every excluded
+// term in with the required ones, so a long exclusion list on top of an
+// already-specific name+set+grade query collapses real matches to almost
+// nothing. Query is now just: [1st Edition] name [Japanese] set [Holo]
+// "PSA 10" — nothing subtracted.
 function buildEbayPsa10VerifyUrl(c) {
+  // WORD ORDER (2026-09-02): "Japanese" moved right after the optional
+  // 1st-Edition marker, ahead of the card name — Jordan: "I think ebay
+  // query should go something like '{first edition (if not dont include)}
+  // + {cardname} + {set} + {holo (if not dont include)} psa 10'" followed
+  // by "throw japanese(if not dont include) to the front of that". Mirrors
+  // the same reorder made in ebay_pricing.py's PRINTING_JAPANESE_VINTAGE /
+  // PRINTING_JAPANESE_1ST_ED branches, so this button's query matches what
+  // the backend collector actually searches for.
   const name = c.name || '';
-  const num = (c.num || '').toString().trim();
   let searchText;
   if (_verifyIsJapanese(c)) {
     const cleanSet = _verifyCleanSet(c);
     const parts = [];
     if (_verifyIsJapanese1stEdition(c)) parts.push('1st Edition');
-    parts.push(name, 'Japanese', cleanSet, 'Holo');
+    parts.push('Japanese', name, cleanSet, 'Holo');
     searchText = parts.filter(Boolean).join(' ');
   } else {
     const cleanSet = c.set || '';
@@ -159,16 +179,52 @@ function buildEbayPsa10VerifyUrl(c) {
     if (_verifyIs1stEdition(c)) parts.push('1st Edition');
     parts.push(name, cleanSet);
     if (_verifyIsVintageRareHolo(c) || _verifyIs1stEdition(c)) parts.push('Holo');
-    if (num) parts.push(num);
     searchText = parts.filter(Boolean).join(' ');
   }
-  searchText += ' "PSA 10" -"PSA 9" -"PSA 8" -"PSA 7" -"PSA 6" -"PSA 5" -bgs -cgc -sgc -tag -proxy -replica -digital';
+  searchText += ' "PSA 10"';
   const params = new URLSearchParams({
     _nkw: searchText,
     _sacat: '183454',
     LH_BIN: '1',
   });
   return `https://www.ebay.com/sch/i.html?${params.toString()}`;
+}
+
+// PriceCharting: shows BOTH ungraded and every graded tier (PSA 9, PSA 10,
+// etc.) on one page, sourced from actual sold listings rather than eBay's
+// current-active-listings-only model — added 2026-09-02 to replace the
+// "Find on eBay" raw-card button. Jordan: "i like the idea of swapping find
+// on ebay button with pricecharting button instead that way we can see
+// ungraded and graded prices" / "in the mean time keep everything ebay,
+// but just replace the find on ebay button with pricecharting button. we
+// can still click on the psa10 button to go to ebay" — so ONLY this
+// general-purpose button changes; the PSA10 box (buildEbayPsa10VerifyUrl
+// above) still goes to eBay, untouched.
+//
+// Uses PriceCharting's search page (no API key needed — this is a plain
+// browser link, not the paid Prices/Marketplace API) rather than trying to
+// guess a direct product-page slug: PriceCharting's game-page URLs are
+// slugified per-console/per-card in ways not worth reverse-engineering
+// client-side, and their search results page reliably surfaces the right
+// card near the top for a specific-enough query, same tradeoff the
+// existing buildTcgplayerVerifyUrl() above already makes.
+function buildPriceChartingVerifyUrl(c) {
+  const name = c.name || '';
+  const num = (c.num || '').toString().trim();
+  const cleanSet = _verifyCleanSet(c) || c.set || '';
+  const parts = [];
+  if (_verifyIsJapanese(c)) {
+    if (_verifyIsJapanese1stEdition(c)) parts.push('1st Edition');
+    parts.push(name, 'Japanese', cleanSet);
+  } else {
+    if (_verifyIs1stEdition(c)) parts.push('1st Edition');
+    parts.push(name, cleanSet);
+    if (_verifyIsVintageRareHolo(c) || _verifyIs1stEdition(c)) parts.push('Holo');
+  }
+  if (num) parts.push(num);
+  const q = parts.filter(Boolean).join(' ');
+  const params = new URLSearchParams({ q, type: 'prices' });
+  return `https://www.pricecharting.com/search-products?${params.toString()}`;
 }
 
 // TCGplayer: no per-condition filter in TCGplayer's URL scheme the way

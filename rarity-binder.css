@@ -362,6 +362,12 @@
   .card-tile img{width:100%;display:block;aspect-ratio:2.5/3.5;object-fit:cover;background:var(--panel);}
   .tile-info{padding:9px 11px;}
   .tile-name{font-size:13px;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  /* ADDED: card number shown alongside the name so cards that share a
+     display name (e.g. multiple Japanese secret-rare reprints of the same
+     Pokemon, whose "(secret)"/"(a)"/"(b)" disambiguator is intentionally
+     stripped from the display name in japanese_cards.py) are still visually
+     distinguishable from each other, rather than looking like duplicates. */
+  .tile-num{font-size:11px;font-weight:600;color:var(--dim);}
   .tile-set{font-size:10.5px;color:var(--dim);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .tile-footer{display:flex;justify-content:space-between;align-items:center;}
   .tile-price-row{display:flex;align-items:center;flex-wrap:wrap;gap:2px;}

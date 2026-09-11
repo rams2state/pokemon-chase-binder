@@ -895,7 +895,7 @@ function renderGridFlat(cards, el, title) {
       ${imgTag}
       <div class="tile-check" onclick='event.stopPropagation();handleToggle(${cdata})'>${owned?'✓':''}</div>
       <div class="tile-info">
-        <div class="tile-name" title="${c.name||''}">${c.name||'—'}</div>
+        <div class="tile-name" title="${c.name||''}${c.num?' #'+c.num:''}">${c.name||'—'}${c.num?` <span class="tile-num">#${c.num}</span>`:''}</div>
         <div class="tile-set" title="${c.set}">${c.set}</div>
         <div class="tile-footer">
           <div class="tile-price-row"><span class="tile-price">${c.price!=='N/A'?c.price:'—'}</span>${priceVolatileIcon(c)}${seventyPercentBadgeHtml(c)}${changeBadge}</div>
@@ -941,7 +941,7 @@ function renderGrid(cards, el) {
         ${imgTag}
         <div class="tile-check" onclick='event.stopPropagation();handleToggle(${cdata})'>${owned?'✓':''}</div>
         <div class="tile-info">
-          <div class="tile-name" title="${c.name||''}">${c.name||'—'}</div>
+          <div class="tile-name" title="${c.name||''}${c.num?' #'+c.num:''}">${c.name||'—'}${c.num?` <span class="tile-num">#${c.num}</span>`:''}</div>
           <div class="tile-set" title="${c.set}">${c.set}</div>
           <div class="tile-footer">
             <div class="tile-price-row"><span class="tile-price">${c.price!=='N/A'?c.price:'—'}</span>${staleWarningIcon(c)}${priceVolatileIcon(c)}${seventyPercentBadgeHtml(c)}${changeBadge}</div>

@@ -178,14 +178,16 @@ if ('serviceWorker' in navigator) {
       <div class="modal-actions">
         <button class="modal-own" id="mOwn" onclick="toggleFromModal()">＋ Mark as Owned</button>
         <a class="modal-buy" id="mBuy" href="#" target="_blank" rel="noopener">Find on TCGplayer →</a>
-        <!-- FEATURE (2026-08-22): "I do want a find on ebay button similar
-             to find on tcgplayer button" — replaces the removed per-
-             condition verify links (NM/LP/MP/HP/DMG grid is gone; "just
-             near mint from ebay and tcgplayer will do") with one button
-             here, same place/style as the TCGplayer button. See
-             verify_links.js for the query construction (NM condition,
-             era/print-aware). -->
-        <a class="modal-buy modal-buy--pricecharting" id="mBuyEbay" href="#" target="_blank" rel="noopener">Find on PriceCharting →</a>
+        <!-- FEATURE (2026-08-22): "Find on eBay" button, same place/style as
+             the TCGplayer button. Briefly replaced with a "Find on
+             PriceCharting" button (2026-09-02), then REVERTED (2026-09-12)
+             per Jordan: "remove the pricecharting button and logic. I want
+             only the tcgplayer button and a find on ebay button... replace
+             the pricecharting button with an ebay button and move the logic
+             to there for the psa 10." Now points at the PSA 10 eBay search
+             that used to live on the separate PSA10 box (removed — see
+             modal.js), not the old NM/raw-card search. -->
+        <a class="modal-buy" id="mBuyEbay" href="#" target="_blank" rel="noopener">Find on eBay →</a>
       </div>
       <!-- FEATURE (2026-07-29): shown right after marking a card owned (from
            either the list/grid checkbox or the button above) — prompts for

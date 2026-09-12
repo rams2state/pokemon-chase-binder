@@ -110,39 +110,17 @@ function openModal(c, updateList = true) {
   // "Paid" price are hidden entirely in read-only share view — neither is
   // useful or appropriate to show a visitor browsing someone else's collection.
   //
-  // REDESIGN (2026-08-24): PSA-10 (ask) moved onto the SAME line as the 70%
-  // label, to its right — Jordan: "i also want the psa 10 price to go to
-  // the right of 70% price in the card modal view." Previously PSA-10 lived
-  // in a separate standalone box below (see the REMOVED block that used to
-  // sit here, and #mEbayPrices in POKEMON_RARITY_BINDER.html, also
-  // removed). eBay NM (ask) is gone entirely — "ebay nm ask should not
-  // exist anymore" — NM pricing is JustTCG/TCGplayer only now (see
-  // ebay_pricing.py's 2026-08-24 REDESIGN section for why: eBay's Browse
-  // API can only ever return active asking prices, never sold comps, so
-  // eBay's job was narrowed to PSA-10 slabs — the one thing JustTCG can't
-  // provide at all). Still an asking-price floor (average of the 3
-  // cheapest currently-active PSA-10 Buy It Now listings), not a sold
-  // price — see ebay_pricing.py's module docstring.
-  //
-  // REDESIGN (2026-08-24, take 2): PSA10 is now a clickable BOX, always
-  // shown (not just when c.psa10Price exists) — Jordan: "show this price
-  // box on every card now(right of the 70%), so that when it either has or
-  // doesnt have a price i can still click the box and go to ebay for the
-  // psa 10 lookup." Clicking opens the same PSA 10 eBay search
-  // buildEbayPsa10VerifyUrl() builds (verify_links.js) regardless of
-  // whether a price is known yet — this is the "check eBay" affordance for
-  // PSA10 specifically, separate from the "Find on eBay" NM-search button
-  // further down.
+  // REMOVED (2026-09-12) per Jordan: "remove the pricecharting button and
+  // logic... we can remove the psa10 price/button as well." The standalone
+  // PSA10 price box (clickable pill next to the 70% line, added 2026-08-24)
+  // is gone — the PSA 10 eBay search it used to open now lives on the
+  // "Find on eBay" button instead (buildEbayPsa10VerifyUrl(c), wired up
+  // below where the old PriceCharting button href used to be set). The 70%
+  // label alone (no PSA10 alongside it) still renders when present.
   if (!READ_ONLY_SHARE) {
     const seventyLabel = seventyPercentLabel(c);
-    const psa10Url = buildEbayPsa10VerifyUrl(c);
-    const psa10Text = c.psa10Price ? `PSA10: ${c.psa10Price}` : 'PSA10 —';
-    const psa10Box = `<a class="modal-70pct-psa10" href="${psa10Url}" target="_blank" rel="noopener" title="PSA 10 (ask) — average of the 3 cheapest currently-active PSA 10-graded (Professional Sports Authenticator) Buy It Now listings on eBay, not a sold price. Click to search eBay for PSA 10 listings.">${psa10Text}</a>`;
     if (seventyLabel) {
-      const line = `70%: ${seventyLabel}${psa10Box}`;
-      priceHtml += `<div class="modal-70pct">${line}</div>`;
-    } else {
-      priceHtml += `<div class="modal-70pct">${psa10Box}</div>`;
+      priceHtml += `<div class="modal-70pct">70%: ${seventyLabel}</div>`;
     }
     // FEATURE (2026-07-29): show what was actually paid, but ONLY if a real
     // purchase price was recorded (Skip leaves it unset — never show "$0.00"
@@ -221,22 +199,18 @@ function openModal(c, updateList = true) {
     `https://www.tcgplayer.com/search/pokemon/product?q=${tcgQuery}&view=grid`;
 
   // FEATURE (2026-08-22): "Find on eBay" button, same place/style as the
-  // TCGplayer button above.
-  //
-  // REPLACED (2026-09-02): swapped for a "Find on PriceCharting" button —
-  // Jordan: "i like the idea of swapping find on ebay button with
-  // pricecharting button instead that way we can see ungraded and graded
-  // prices" / "in the mean time keep everything ebay, but just replace the
-  // find on ebay button with pricecharting button. we can still click on
-  // the psa10 button to go to ebay." PriceCharting shows ungraded AND every
-  // graded tier (PSA 9, PSA 10, etc.) on one page, sourced from sold
-  // listings rather than eBay's active-listings-only model — see
-  // buildPriceChartingVerifyUrl() in verify_links.js. The PSA10 box above
-  // is UNCHANGED and still opens an eBay PSA-10 search — only this
-  // general-purpose raw/graded lookup button moved.
+  // TCGplayer button above. REPLACED (2026-09-02) with "Find on
+  // PriceCharting", then REVERTED (2026-09-12) per Jordan: "remove the
+  // pricecharting button and logic. I want only the tcgplayer button and a
+  // find on ebay button... replace the pricecharting button with an ebay
+  // button and move the logic to there for the psa 10." So this button is
+  // "Find on eBay" again, but now points at the PSA 10 search
+  // (buildEbayPsa10VerifyUrl) that used to live on the separate PSA10 box —
+  // that box is removed (see the modal_price block above), and this button
+  // is where clicking through to check PSA 10 listings now lives.
   const mBuyEbay = document.getElementById('mBuyEbay');
   if (mBuyEbay) {
-    mBuyEbay.href = buildPriceChartingVerifyUrl(c);
+    mBuyEbay.href = buildEbayPsa10VerifyUrl(c);
   }
 
   // Update own button state (hidden entirely in read-only share view — see

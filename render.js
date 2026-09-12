@@ -899,7 +899,6 @@ function renderGridFlat(cards, el, title) {
         <div class="tile-set" title="${c.set}">${c.set}</div>
         <div class="tile-footer">
           <div class="tile-price-row"><span class="tile-price">${c.price!=='N/A'?c.price:'—'}</span>${priceVolatileIcon(c)}${seventyPercentBadgeHtml(c)}${changeBadge}</div>
-          ${tilePsa10Html(c)}
         </div>
       </div>
     </div>`;
@@ -945,7 +944,6 @@ function renderGrid(cards, el) {
           <div class="tile-set" title="${c.set}">${c.set}</div>
           <div class="tile-footer">
             <div class="tile-price-row"><span class="tile-price">${c.price!=='N/A'?c.price:'—'}</span>${staleWarningIcon(c)}${priceVolatileIcon(c)}${seventyPercentBadgeHtml(c)}${changeBadge}</div>
-            ${tilePsa10Html(c)}
           </div>
         </div>
       </div>`;

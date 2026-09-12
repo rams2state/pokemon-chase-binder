@@ -261,22 +261,11 @@ function seventyPercentBadgeHtml(c) {
   return label ? `<span class="price-70pct" title="70% of market price">70%: ${label}</span>` : '';
 }
 
-// ADDED 2026-08-24: PSA-10 (ask) badge for GRID tiles — Jordan: "can we
-// remove rarity pills so that we can show psa 10 price comfortably on grid
-// view?" Takes the spot the rarity pill used to occupy in the tile footer
-// (see render.js's renderGrid/renderGridFlat) — rarity pill stays in the
-// modal, unaffected (see #mRarityPill in modal.js). Only renders when this
-// card actually has a PSA-10 ask price (most cards won't, on any given
-// day — see ebay_pricing.py's module docstring on PSA-10 market thinness),
-// same "don't show a badge with nothing behind it" principle as
-// seventyPercentBadgeHtml() above. Hidden in read-only share view for the
-// same reason priceVolatileIcon() is — owner-facing "should I check this"
-// signal, not visitor-facing collection browsing info.
-function tilePsa10Html(c) {
-  if (READ_ONLY_SHARE) return '';
-  if (!c.psa10Price) return '';
-  return `<span class="tile-psa10" title="PSA 10 (ask) — average of the 3 cheapest currently-active PSA 10 Buy It Now listings on eBay">PSA10 ${c.psa10Price}</span>`;
-}
+// REMOVED (2026-09-12) per Jordan: "we can remove the psa10 price/button
+// as well" — tilePsa10Html() (grid-tile PSA-10 ask price badge, added
+// 2026-08-24) is gone; its call sites in render.js were removed too, and
+// its "Find on eBay" PSA-10 search is now the "Find on eBay" modal button
+// (see modal.js/verify_links.js).
 
 // REMOVED (2026-08-24): CONDITION_TIERS/conditionPrices() — the per-
 // condition (NM/LP/MP/HP/DMG) pricing grid these fed was already removed

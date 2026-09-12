@@ -346,10 +346,16 @@ function normalizeCard(raw) {
   // blank value here means PSA-10 is a genuinely thin active-listing market
   // for this specific card (a real, common outcome), not "wrong day/mode."
   // No JustTCG fallback (JustTCG doesn't track graded slabs), so this stays
-  // blank if eBay can't clear MIN_LISTINGS_REQUIRED. Shown inline next to
-  // the 70%-of-market price in the modal (see modal.js) — never in the
-  // grid/list rows, only the modal and grid tiles (see tilePsa10Html() in
-  // rarity.js).
+  // blank if eBay can't clear MIN_LISTINGS_REQUIRED.
+  //
+  // REMOVED FROM UI (2026-09-12) per Jordan: "we can remove the psa10
+  // price/button as well" — the PSA10 price is no longer displayed
+  // anywhere (modal box and grid-tile badge both removed; see modal.js,
+  // render.js, rarity.js). Still parsed here and left available on the
+  // card object in case something needs it later, but nothing currently
+  // renders it. The "Find on eBay" modal button now opens a live PSA 10
+  // eBay search directly (buildEbayPsa10VerifyUrl in verify_links.js)
+  // rather than showing this stored price.
   const psa10Price = raw.psa10_slab_price || raw['psa10_slab_price'] || raw.tag_slab_price || raw['tag_slab_price'] || '';
   // ADDED 2026-08-22: real per-card evidence of whether THIS card's own
   // stored price is drawn from a 1st Edition print — written by

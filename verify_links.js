@@ -190,42 +190,12 @@ function buildEbayPsa10VerifyUrl(c) {
   return `https://www.ebay.com/sch/i.html?${params.toString()}`;
 }
 
-// PriceCharting: shows BOTH ungraded and every graded tier (PSA 9, PSA 10,
-// etc.) on one page, sourced from actual sold listings rather than eBay's
-// current-active-listings-only model — added 2026-09-02 to replace the
-// "Find on eBay" raw-card button. Jordan: "i like the idea of swapping find
-// on ebay button with pricecharting button instead that way we can see
-// ungraded and graded prices" / "in the mean time keep everything ebay,
-// but just replace the find on ebay button with pricecharting button. we
-// can still click on the psa10 button to go to ebay" — so ONLY this
-// general-purpose button changes; the PSA10 box (buildEbayPsa10VerifyUrl
-// above) still goes to eBay, untouched.
-//
-// Uses PriceCharting's search page (no API key needed — this is a plain
-// browser link, not the paid Prices/Marketplace API) rather than trying to
-// guess a direct product-page slug: PriceCharting's game-page URLs are
-// slugified per-console/per-card in ways not worth reverse-engineering
-// client-side, and their search results page reliably surfaces the right
-// card near the top for a specific-enough query, same tradeoff the
-// existing buildTcgplayerVerifyUrl() above already makes.
-function buildPriceChartingVerifyUrl(c) {
-  const name = c.name || '';
-  const num = (c.num || '').toString().trim();
-  const cleanSet = _verifyCleanSet(c) || c.set || '';
-  const parts = [];
-  if (_verifyIsJapanese(c)) {
-    if (_verifyIsJapanese1stEdition(c)) parts.push('1st Edition');
-    parts.push(name, 'Japanese', cleanSet);
-  } else {
-    if (_verifyIs1stEdition(c)) parts.push('1st Edition');
-    parts.push(name, cleanSet);
-    if (_verifyIsVintageRareHolo(c) || _verifyIs1stEdition(c)) parts.push('Holo');
-  }
-  if (num) parts.push(num);
-  const q = parts.filter(Boolean).join(' ');
-  const params = new URLSearchParams({ q, type: 'prices' });
-  return `https://www.pricecharting.com/search-products?${params.toString()}`;
-}
+// REMOVED (2026-09-12) per Jordan: "remove the pricecharting button and
+// logic. I want only the tcgplayer button and a find on ebay button...
+// replace the pricecharting button with an ebay button and move the logic
+// to there for the psa 10." buildPriceChartingVerifyUrl() (added 2026-09-02
+// to back the "Find on PriceCharting" button) is gone — the "Find on eBay"
+// button now uses buildEbayPsa10VerifyUrl() above instead (see modal.js).
 
 // TCGplayer: no per-condition filter in TCGplayer's URL scheme the way
 // eBay has one, but the search can still be scoped to the right card/set/

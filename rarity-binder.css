@@ -372,20 +372,9 @@
   .tile-footer{display:flex;justify-content:space-between;align-items:center;}
   .tile-price-row{display:flex;align-items:center;flex-wrap:wrap;gap:2px;}
   .tile-price{font-size:12px;font-weight:800;color:var(--gold-bright);}
-  /* BUG FIX (2026-09-01): tile-psa10 (grid-view PSA10 ask price, see
-     tilePsa10Html() in rarity.js) had NO rule anywhere in this file — it
-     was rendering at the ambient inherited font-size (no explicit size on
-     any ancestor either, so it fell all the way back to the browser
-     default, ~2x .tile-price's deliberate 12px) instead of matching the
-     other price text on the tile. Jordan: "shrink the size of the psa 10
-     and its price on the card grid view. seems way too big and doesnt
-     match other price sizes." Sized to match .tile-price exactly; kept the
-     existing violet PSA10 branding color from .modal-70pct-psa10 above so
-     it still reads as a distinct badge, just no longer oversized. */
-  .tile-psa10{
-    font-size:12px;font-weight:800;color:#c084fc;
-    display:inline-block;margin-top:2px;white-space:nowrap;
-  }
+  /* REMOVED (2026-09-12) per Jordan: "we can remove the psa10 price/button
+     as well" — .tile-psa10 (grid-view PSA10 ask price, tilePsa10Html() in
+     rarity.js) is gone; grid tiles no longer show a PSA10 price at all. */
   .tile-check{
     position:absolute;top:7px;right:7px;width:28px;height:28px;
     background:rgba(14,16,22,0.75);border:2px solid var(--line);border-radius:6px;
@@ -535,14 +524,10 @@
     font-size:14px;letter-spacing:0.01em;transition:all .2s;
   }
   .modal-buy:hover{background:var(--gold-bright);box-shadow:0 4px 16px rgba(255,203,5,0.3);}
-  /* FEATURE (2026-08-22): "Find on eBay" button, same shape/size as the
-     TCGplayer button. REPLACED (2026-09-02) with "Find on PriceCharting" —
-     see modal.js's matching comment for why (shows ungraded + all graded
-     tiers from sold listings; PSA10 box stays on eBay, untouched). Kept a
-     distinct color (amber/gold, PriceCharting's own brand tone) rather than
-     reusing eBay's blue, so the two buttons stay visually distinguishable. */
-  .modal-buy--pricecharting{background:#fbbf24;color:#1a1400;}
-  .modal-buy--pricecharting:hover{background:#fcd34d;box-shadow:0 4px 16px rgba(251,191,36,0.35);}
+  /* REMOVED (2026-09-12) per Jordan: "remove the pricecharting button and
+     logic" — .modal-buy--pricecharting (amber/gold styling for the "Find on
+     PriceCharting" button) is gone; the button reverted to plain
+     .modal-buy styling ("Find on eBay" again — see POKEMON_RARITY_BINDER.html). */
 
   /* FEATURE (2026-08-02): read-only share modal trimmed to just image, name,
      rarity/set/series/date, price, and the TCGPlayer link — hide the price
@@ -637,21 +622,10 @@
   .modal-70pct{font-size:13px;font-weight:600;color:var(--dim);margin-top:2px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
   .modal-purchase-price{font-size:13px;font-weight:700;color:#4ade80;margin-top:2px;}
 
-  /* FEATURE (2026-08-24): PSA10 box, modal only — always visible next to the
-     70% line (not just when a price is known), clickable through to a live
-     eBay PSA 10 search either way. Jordan: "show this price box on every
-     card now(right of the 70%), so that when it either has or doesnt have a
-     price i can still click the box and go to ebay for the psa 10 lookup."
-     Violet to stay visually distinct from the blue price-volatile/stale
-     icons and the green purchase-price line. Styled as a small pill/button
-     (border + padding) rather than plain text, since it's now interactive. */
-  .modal-70pct-psa10{
-    display:inline-block;font-size:11px;font-weight:700;color:#c084fc;
-    border:1px solid #c084fc55;border-radius:5px;padding:2px 7px;
-    text-decoration:none;white-space:nowrap;cursor:pointer;
-    transition:background-color 0.15s,border-color 0.15s;
-  }
-  .modal-70pct-psa10:hover{background:#c084fc1a;border-color:#c084fc;}
+  /* REMOVED (2026-09-12) per Jordan: "we can remove the psa10 price/button
+     as well" — .modal-70pct-psa10 (the clickable PSA10 pill next to the 70%
+     line) is gone; its eBay PSA 10 search now lives on the "Find on eBay"
+     button instead (see modal.js). */
 
   /* FEATURE (2026-08-12): condition-tiered pricing (NM/LP/MP/HP/DMG) grid,
      modal only — see conditionPrices() in rarity.js. Quiet, compact 5-across

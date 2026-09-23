@@ -126,6 +126,12 @@ function shortRarity(r, name, num, subtypes, supertype) {
     'Rare BREAK':                'BRK',
     'Rare Holo Star':            'HO★',
     'Rare Holo':                 'RH',
+    // ADDED (2026-09-23, by request): 30th Celebration set-specific
+    // rarities. "RGB" (the R/G/B Mew trio, renamed from "Holo Rare" — see
+    // celebration30_data.py) is deliberately NOT listed here: it's already
+    // 3 characters, so it passes through the fallback below unchanged.
+    'Pikachu Rare':              'PIKA',
+    'Futuristic Rare':           'FUR',
   };
   for (const [k, v] of Object.entries(map)) {
     if (r.includes(k)) return v;
@@ -468,7 +474,12 @@ function rarityColor(r, name, num) {
     'Radiant Rare':              '#fb923c',
     'Rare Secret':               '#9d7cff',
     'Rare Ultra':                '#94a3b8',
-    'Illustration Rare':         '#FFE066',
+    // CHANGED (2026-09-23, by request): IR used to share this exact yellow
+    // (#FFE066) with the newly-added Pikachu Rare (PIKA) pill below — since
+    // Jordan asked for PIKA to be yellow specifically, IR was moved to a
+    // distinct teal so the two no longer look identical on the set-overview
+    // tile.
+    'Illustration Rare':         '#2dd4bf',
     'Double Rare':               '#94a3b8',
     'Gold Star':                 '#5ce1e6',
     'LEGEND':                    '#ffd700',
@@ -480,6 +491,12 @@ function rarityColor(r, name, num) {
     'Rare':                      '#c0c5d1',
     'Uncommon':                  '#9aa5b8',
     'Common':                    '#77808f',
+    // ADDED (2026-09-23, by request): 30th Celebration set-specific
+    // rarities. PIKA (Pikachu Rare) set to yellow per request. RGB (the
+    // R/G/B Mew trio) has no entry here, so it falls through to the
+    // default gray (#8b8fa3) below — not specifically requested to change.
+    'Pikachu Rare':              '#FFE066',
+    'Futuristic Rare':           '#7dd3fc',
   };
   return map[r] || '#8b8fa3';
 }

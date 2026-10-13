@@ -18,7 +18,26 @@ const APP_VERSION = '1.0.1';
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
 let ALL_CARDS = [];
-let PRICE_HISTORY = {};  // card_id -> [{d: 'YYYY-MM-DD', p: 1.23}, ...]
+let PRICE_HISTORY = {};
+let PRICE_HISTORY_LOADED = false;  // full history is fetched only when a price chart opens (modal.js)
+let PRICE_7D = {};
+
+// ─── LANGUAGE TOGGLE (2026-10-13) ────────────────────────────────────────────
+// 'all' | 'en' | 'jp'. Remembered per browser; not cleared by Reset (it's a
+// viewing preference, like List/Grid).
+const LANG_STORAGE_KEY = 'pokemon-binder-lang';
+let LANG_FILTER = 'all';
+try {
+  const savedLang = localStorage.getItem(LANG_STORAGE_KEY);
+  if (savedLang === 'en' || savedLang === 'jp') LANG_FILTER = savedLang;
+} catch (e) {}
+function isJapaneseCard(c) {
+  return (c.cardId || '').startsWith('jp-') || c.setCode === 'JP';
+}
+function langMatch(c) {
+  if (LANG_FILTER === 'all') return true;
+  return LANG_FILTER === 'jp' ? isJapaneseCard(c) : !isJapaneseCard(c);
+}  // card_id -> price ~7 days ago, from the CSV's "Price 7d Ago" column  // card_id -> [{d: 'YYYY-MM-DD', p: 1.23}, ...]
 let currentView = 'list';  // default to list view
 let showOwnedOnly = false;
 const STORAGE_KEY = 'pokemon-rarity-binder-owned';
@@ -177,6 +196,7 @@ function updateCollectionValue() {
   let total = 0;
   let count = 0;
   for (const c of ALL_CARDS) {
+    if (!langMatch(c)) continue;
     if (owned.has(cardKey(c))) {
       const v = priceVal(c.price);
       if (v > 0) total += v;
@@ -272,6 +292,8 @@ function normalizeCard(raw) {
   const date = raw.release_date || raw['release_date'] || '';
   const lastChecked = raw.last_checked || raw['last_checked'] || '';
   const lastPriced = raw.last_priced || raw['last_priced'] || '';
+  const p7 = parseFloat(raw.price_7d_ago || '');
+  if (!isNaN(p7) && (raw.card_id || '')) PRICE_7D[raw.card_id] = p7;
   const supertype = raw.supertype || raw['supertype'] || '';
   // Subtypes is stored pipe-joined in the CSV (e.g. "Basic|EX" or "Basic|TAG TEAM|GX").
   // Split into an array so callers can check e.g. subtypes.includes('EX').

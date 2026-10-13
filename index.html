@@ -37,7 +37,7 @@ if ('serviceWorker' in navigator) {
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%23e63946' stroke='%23111' stroke-width='4'/%3E%3Crect x='2' y='46' width='96' height='8' fill='%23111'/%3E%3Ccircle cx='50' cy='50' r='48' fill='none' stroke='%23111' stroke-width='4'/%3E%3Ccircle cx='50' cy='50' r='14' fill='%23fff' stroke='%23111' stroke-width='4'/%3E%3Ccircle cx='50' cy='50' r='7' fill='%23e63946'/%3E%3Cpath d='M2 46 Q50 2 98 46' fill='%23e63946'/%3E%3Cpath d='M2 54 Q50 98 98 54' fill='%23f1f1f1'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Luckiest+Guy&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<!-- Chart.js now loads on first card open (modal.js loadChartDeps) -->
 <link rel="stylesheet" href="rarity-binder.css">
 
 </head>
@@ -85,6 +85,11 @@ if ('serviceWorker' in navigator) {
     <button class="vbtn" id="btnList" onclick="setView('list')">☰ List</button>
     <button class="vbtn" id="btnGrid" onclick="setView('grid')">⊞ Grid</button>
   </div>
+  <div class="lang-toggle" role="group" aria-label="Card language">
+    <button class="vbtn lang-btn" data-lang="all" onclick="setLang('all')" title="English and Japanese cards">All</button>
+    <button class="vbtn lang-btn" data-lang="en" onclick="setLang('en')" title="English cards only">EN</button>
+    <button class="vbtn lang-btn" data-lang="jp" onclick="setLang('jp')" title="Japanese cards only">JP</button>
+  </div>
   <button class="vbtn trend-btn" id="btnGainers" style="display:none;" onclick="setTrend('gainers')">📈 Gainers</button>
   <button class="vbtn trend-btn" id="btnDrops" style="display:none;" onclick="setTrend('drops')">📉 Losers</button>
   <button class="vbtn trend-btn" id="btnNowDesktop" onclick="toggleNow()">⚡ Now</button>
@@ -119,6 +124,14 @@ if ('serviceWorker' in navigator) {
   <button class="vbtn" id="btnGridQ" onclick="setView('grid')">⊞ Grid</button>
   <button class="vbtn trend-btn" id="btnNow" onclick="toggleNow()">⚡ Now</button>
   <button class="reset-btn" id="resetBtnM" onclick="resetFilters()">✕ Reset</button>
+</div>
+<!-- Language toggle, mobile (desktop copy lives in the toolbar) -->
+<div class="lang-row" id="langRowM">
+  <div class="lang-toggle" role="group" aria-label="Card language">
+    <button class="vbtn lang-btn" data-lang="all" onclick="setLang('all')" title="English and Japanese cards">All</button>
+    <button class="vbtn lang-btn" data-lang="en" onclick="setLang('en')" title="English cards only">English</button>
+    <button class="vbtn lang-btn" data-lang="jp" onclick="setLang('jp')" title="Japanese cards only">Japanese</button>
+  </div>
 </div>
 
 <main>

@@ -1,7 +1,18 @@
+// 2026-10-13: tiles/rows used to inline each card's full JSON (twice) into
+// their onclick attributes — megabytes of markup for ~4,500 cards. They now
+// point at the card object by key instead.
+const CARD_BY_KEY = {};
+function cardRefExpr(c) {
+  const k = cardKey(c).replace(/[^a-z0-9]/gi, '_');
+  CARD_BY_KEY[k] = c;
+  return `CARD_BY_KEY["${k}"]`;
+}
+
 // ─── LOAD DATA ───────────────────────────────────────────────────────────────
 function loadCards(rawCards) {
   ALL_CARDS = rawCards.map(normalizeCard).filter(c => c.set || c.name);
   updateStats();
+  updateLangButtons();
   populateFilters();
   document.getElementById('toolbar').style.display = '';
   document.getElementById('noDataState').style.display = 'none';
@@ -50,8 +61,27 @@ function applyReadOnlyShareUI() {
 window.applyReadOnlyShareUI = applyReadOnlyShareUI;
 
 function updateStats() {
-  document.getElementById('statCards').textContent = ALL_CARDS.length.toLocaleString();
+  document.getElementById('statCards').textContent = ALL_CARDS.filter(langMatch).length.toLocaleString();
 }
+
+function updateLangButtons() {
+  document.querySelectorAll('.lang-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.lang === LANG_FILTER));
+}
+
+function setLang(lang) {
+  if (lang === LANG_FILTER) return;
+  LANG_FILTER = lang;
+  try { localStorage.setItem(LANG_STORAGE_KEY, lang); } catch (e) {}
+  updateLangButtons();
+  updateStats();
+  updateCollectionValue();
+  // A set page can't switch language in place (e.g. a Japanese set has no
+  // English cards), so go back to the set overview, same as Reset does.
+  if (_activeSet) history.back();
+  else render();
+}
+window.setLang = setLang;
 
 function populateFilters() {
   const eras = [...new Set(ALL_CARDS.map(c => c.series).filter(Boolean))].sort();
@@ -211,6 +241,7 @@ function getFiltered() {
   const rarityTokens = rarity ? rarity.split('|') : null;
 
   let cards = ALL_CARDS.filter(c => {
+    if (!langMatch(c)) return false;
     if (showOwnedOnly && !isOwned(c)) return false;
     if (era && c.series !== era) return false;
     if (rarityTokens) {
@@ -372,6 +403,7 @@ function renderTrend(el) {
   // and this keeps every price-change display in the app using the same
   // window.
   const withChange = ALL_CARDS
+    .filter(langMatch)
     .map(c => {
       const cv = priceVal(c.price), pv = getPriceNDaysAgo(c.cardId, 7);
       return { ...c, _pv7: pv, _cv: cv };
@@ -424,7 +456,7 @@ function renderTrend(el) {
 
   sorted.forEach((c, i) => {
     const owned = isOwned(c);
-    const cdata = JSON.stringify(c).replace(/'/g,'&#39;');
+    const cdata = cardRefExpr(c);
     const key = cardKey(c).replace(/[^a-z0-9]/gi,'_');
     const sign = c._delta >= 0 ? '+' : '';
     const cls = c._delta >= 0 ? 'price-up' : 'price-down';
@@ -471,7 +503,7 @@ function renderFlatList(cards, el, title) {
 
   cards.forEach((c, i) => {
     const owned = isOwned(c);
-    const cdata = JSON.stringify(c).replace(/'/g,'&#39;');
+    const cdata = cardRefExpr(c);
     const key = cardKey(c).replace(/[^a-z0-9]/gi,'_');
     const thumbHtml = c.pic && c.pic !== 'N/A'
       ? `<img class="crow-thumb" src="${c.pic}" alt="${c.name||''}" loading="lazy" referrerpolicy="origin" onerror="this.style.display='none'">`
@@ -843,7 +875,7 @@ function renderSetDetail(cards, el) {
     for (const c of rarCards) {
       onScreenOrder.push(c);
       const owned = isOwned(c);
-      const cdata = JSON.stringify(c).replace(/'/g,'&#39;');
+      const cdata = cardRefExpr(c);
       const key = cardKey(c).replace(/[^a-z0-9]/gi,'_');
       const changeBadge = priceChangeBadge(c.price, c.cardId);
       const thumbHtml = c.pic && c.pic !== 'N/A'
@@ -884,9 +916,9 @@ function renderGridFlat(cards, el, title) {
     // used to build the rarity pill below, now removed from grid tiles —
     // see the tile-footer comment further down.
     const owned = isOwned(c);
-    const cdata = JSON.stringify(c).replace(/'/g, '&#39;');
+    const cdata = cardRefExpr(c);
     const key = cardKey(c).replace(/[^a-z0-9]/gi,'_');
-    const changeBadge = priceChangeBadge(c.price, c.prevPrice);
+    const changeBadge = priceChangeBadge(c.price, c.cardId);
     const imgSrc = c.pic && c.pic !== 'N/A' ? c.pic : '';
     const imgTag = imgSrc
       ? `<img src="${imgSrc}" alt="${c.name||''}" loading="lazy" referrerpolicy="origin" onerror="this.style.background='var(--panel2)';this.removeAttribute('src')">`
@@ -929,7 +961,7 @@ function renderGrid(cards, el) {
       // used to build the rarity pill below, now removed from grid tiles —
       // see the tile-footer comment further down.
       const owned = isOwned(c);
-      const cdata = JSON.stringify(c).replace(/'/g, '&#39;');
+      const cdata = cardRefExpr(c);
       const key = cardKey(c).replace(/[^a-z0-9]/gi,'_');
       const changeBadge = priceChangeBadge(c.price, c.cardId);
       const imgSrc = c.pic && c.pic !== 'N/A' ? c.pic : '';

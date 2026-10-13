@@ -149,15 +149,18 @@ dz.addEventListener('drop', e => {
 
 // ─── AUTO-LOAD: try fetching CSV from same directory ─────────────────────────
 async function tryAutoLoad() {
-  const bust = `?v=${Date.now()}`;
-
-  // Also try to load price history JSON
+  // 2026-10-13: the collector writes data-version.json once per run. Using
+  // that as the cache key (instead of Date.now() on every visit) lets the
+  // browser reuse its copy of the card list until the next daily run.
+  // The full price history is no longer fetched here — see loadChartDeps()
+  // in modal.js; the 7-day % badges come from the CSV instead.
+  let version = String(Date.now());
   try {
-    const histResp = await fetch('card-price-history.json' + bust);
-    if (histResp.ok) {
-      PRICE_HISTORY = await histResp.json();
-    }
+    const vr = await fetch('data-version.json', { cache: 'no-store' });
+    if (vr.ok) version = (await vr.json()).v || version;
   } catch(e) {}
+  window.DATA_VERSION = version;
+  const bust = `?v=${version}`;
 
   // Try to fetch the CSV from the same folder (works when served via HTTP)
   const candidates = [

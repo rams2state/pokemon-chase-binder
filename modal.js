@@ -309,9 +309,51 @@ function closeModal(restoreScroll = true) {
 }
 
 // ─── PRICE HISTORY CHART ─────────────────────────────────────────────────────
+// 2026-10-13: Chart.js and the full price history (~4 MB) are only needed
+// for this chart, so they load the first time a card is opened instead of
+// on every page visit.
+const CHART_JS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js';
+let _chartDepsPromise = null;
+function loadChartDeps() {
+  if (_chartDepsPromise) return _chartDepsPromise;
+  const chartLib = (typeof Chart !== 'undefined') ? Promise.resolve() : new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = CHART_JS_URL;
+    s.onload = resolve;
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+  const history = PRICE_HISTORY_LOADED ? Promise.resolve() :
+    fetch('card-price-history.json?v=' + (window.DATA_VERSION || Date.now()))
+      .then(r => r.ok ? r.json() : {})
+      .then(h => { PRICE_HISTORY = h || {}; PRICE_HISTORY_LOADED = true; })
+      .catch(() => {});
+  _chartDepsPromise = Promise.all([chartLib, history]).catch(e => { _chartDepsPromise = null; throw e; });
+  return _chartDepsPromise;
+}
+
 function renderPriceChart(cardId) {
   const canvas = document.getElementById('priceChart');
   const emptyMsg = document.getElementById('mChartEmpty');
+  if (!emptyMsg.dataset.defaultText) emptyMsg.dataset.defaultText = emptyMsg.textContent;
+
+  if (!PRICE_HISTORY_LOADED || typeof Chart === 'undefined') {
+    if (_priceChart) { _priceChart.destroy(); _priceChart = null; }
+    canvas.style.display = 'none';
+    emptyMsg.textContent = 'Loading price history…';
+    emptyMsg.style.display = '';
+    loadChartDeps().then(() => {
+      // Only draw if this card's modal is still the one open.
+      if (_modalCard && (_modalCard.cardId || '') === cardId &&
+          document.getElementById('modalBackdrop').classList.contains('active')) {
+        renderPriceChart(cardId);
+      }
+    }).catch(() => {
+      emptyMsg.textContent = "Couldn't load price history — check your connection.";
+    });
+    return;
+  }
+  emptyMsg.textContent = emptyMsg.dataset.defaultText;
 
   // Destroy existing chart instance
   if (_priceChart) { _priceChart.destroy(); _priceChart = null; }

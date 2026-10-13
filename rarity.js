@@ -298,6 +298,12 @@ function seventyPercentBadgeHtml(c) {
 // history entry old enough yet (e.g. a card added to the app less than a
 // week ago) — callers should treat null the same as "no previous price".
 function getPriceNDaysAgo(cardId, days) {
+  // 2026-10-13: the 7-day value now comes straight from the CSV (PRICE_7D),
+  // so the full history file doesn't have to load just for the badges.
+  if (days === 7 && !PRICE_HISTORY_LOADED) {
+    const p7 = PRICE_7D[cardId];
+    return (typeof p7 === 'number' && !isNaN(p7)) ? p7 : null;
+  }
   const history = (typeof PRICE_HISTORY !== 'undefined' && PRICE_HISTORY[cardId]) || [];
   if (history.length === 0) return null;
   const cutoff = new Date();
